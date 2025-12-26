@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Player with Frame Control</title>
+    <title>Video Pose Estimation App</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- MediaPipe Pose Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="container">
@@ -15,7 +20,10 @@
         </div>
 
         <div id="videoSection" style="display: none;">
-            <video id="video" controls></video>
+            <div class="video-wrapper">
+                <video id="video" controls></video>
+                <canvas id="poseCanvas"></canvas>
+            </div>
 
             <div class="controls">
                 <div class="playback-controls">
@@ -28,10 +36,20 @@
                 </div>
             </div>
 
+            <div class="pose-controls">
+                <label>
+                    <input type="checkbox" id="showPose" checked> Show Pose Estimation
+                </label>
+                <label>
+                    <input type="checkbox" id="showJointNumbers" checked> Show Joint Numbers
+                </label>
+            </div>
+
             <div class="info">
                 <p><strong>Video:</strong> <span id="videoInfo">Loading...</span></p>
                 <p><strong>Current Time:</strong> <span id="timeDisplay">0:00</span></p>
                 <p><strong>Frame:</strong> <span id="frameNumber">0</span> / <span id="totalFrames">0</span></p>
+                <p><strong>Detected Joints:</strong> <span id="jointCount">0</span></p>
                 <p id="frameStep" class="frame-step" style="display: none;">Frame stepping...</p>
             </div>
         </div>
