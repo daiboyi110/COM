@@ -26,9 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Detect FPS using requestVideoFrameCallback if available
         await detectFPS();
 
+        // Calculate total frames
+        frameCount = Math.floor(video.duration * fps);
+        document.getElementById('totalFrames').textContent = frameCount;
+
         // Display video info
         console.log(`Video: ${video.videoWidth}x${video.videoHeight} @ ${fps} FPS`);
         console.log(`Duration: ${video.duration}s`);
+        console.log(`Total Frames: ${frameCount}`);
 
         updateTimeDisplay();
         updateFrameNumber();
@@ -53,16 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Previous frame
     prevFrameBtn.addEventListener('click', () => {
-        video.pause();
-        const frameTime = 1 / fps;
-        video.currentTime = Math.max(0, video.currentTime - frameTime);
+        stepFrame(-1);
     });
 
     // Next frame
     nextFrameBtn.addEventListener('click', () => {
-        video.pause();
-        const frameTime = 1 / fps;
-        video.currentTime = Math.min(video.duration, video.currentTime + frameTime);
+        stepFrame(1);
     });
 
     // Keyboard controls
@@ -155,5 +156,27 @@ function updateVideoInfo() {
     const info = document.getElementById('videoInfo');
     if (info) {
         info.textContent = `${video.videoWidth}x${video.videoHeight} @ ${fps} FPS`;
+    }
+}
+
+function stepFrame(direction) {
+    video.pause();
+    const frameTime = 1 / fps;
+    const newTime = video.currentTime + (frameTime * direction);
+
+    // Clamp to valid range
+    video.currentTime = Math.max(0, Math.min(video.duration, newTime));
+
+    // Show visual feedback
+    showFrameStepIndicator();
+}
+
+function showFrameStepIndicator() {
+    const indicator = document.getElementById('frameStep');
+    if (indicator) {
+        indicator.style.display = 'block';
+        setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 300);
     }
 }

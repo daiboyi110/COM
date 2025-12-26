@@ -18,16 +18,21 @@
             <video id="video" controls></video>
 
             <div class="controls">
-                <button id="playBtn">Play</button>
-                <button id="pauseBtn">Pause</button>
-                <button id="prevFrameBtn">← Previous Frame</button>
-                <button id="nextFrameBtn">Next Frame →</button>
+                <div class="playback-controls">
+                    <button id="playBtn" class="btn-primary">▶ Play</button>
+                    <button id="pauseBtn" class="btn-primary">⏸ Pause</button>
+                </div>
+                <div class="frame-controls">
+                    <button id="prevFrameBtn" class="btn-frame">⏮ Previous Frame</button>
+                    <button id="nextFrameBtn" class="btn-frame">Next Frame ⏭</button>
+                </div>
             </div>
 
             <div class="info">
-                <p>Video: <span id="videoInfo">Loading...</span></p>
-                <p>Current Time: <span id="timeDisplay">0:00</span></p>
-                <p>Frame: <span id="frameNumber">0</span></p>
+                <p><strong>Video:</strong> <span id="videoInfo">Loading...</span></p>
+                <p><strong>Current Time:</strong> <span id="timeDisplay">0:00</span></p>
+                <p><strong>Frame:</strong> <span id="frameNumber">0</span> / <span id="totalFrames">0</span></p>
+                <p id="frameStep" class="frame-step" style="display: none;">Frame stepping...</p>
             </div>
         </div>
     </div>
