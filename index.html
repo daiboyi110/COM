@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Pose Estimation App</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Video Pose Estimation App</h1>
+            <p>Upload a video to analyze human pose and extract 3D joint data</p>
+        </header>
+
+        <div class="upload-section">
+            <input type="file" id="videoUpload" accept="video/*">
+            <label for="videoUpload" class="upload-button">Choose Video File</label>
+        </div>
+
+        <div class="video-container" id="videoContainer" style="display: none;">
+            <div class="video-wrapper">
+                <video id="videoPlayer" crossorigin="anonymous"></video>
+                <canvas id="overlayCanvas"></canvas>
+            </div>
+
+            <div class="controls">
+                <div class="playback-controls">
+                    <button id="playPauseBtn" class="control-btn">
+                        <span class="play-icon">▶</span>
+                        <span class="pause-icon" style="display: none;">⏸</span>
+                    </button>
+                    <button id="prevFrameBtn" class="control-btn" title="Previous Frame">⏮</button>
+                    <button id="nextFrameBtn" class="control-btn" title="Next Frame">⏭</button>
+                    <span id="timeDisplay" class="time-display">0:00 / 0:00</span>
+                </div>
+
+                <div class="timeline-container">
+                    <input type="range" id="timeline" class="timeline" min="0" max="100" value="0" step="0.01">
+                </div>
+
+                <div class="frame-controls">
+                    <label>Frame: <span id="currentFrame">0</span> / <span id="totalFrames">0</span></label>
+                    <label>
+                        <input type="checkbox" id="showSkeleton" checked>
+                        Show Skeleton
+                    </label>
+                    <label>
+                        <input type="checkbox" id="enablePoseDetection" checked>
+                        Enable Pose Detection
+                    </label>
+                </div>
+            </div>
+
+            <div class="data-section">
+                <div class="data-info">
+                    <h3>Pose Data</h3>
+                    <p>Detected Joints: <span id="jointCount">0</span></p>
+                    <p>Total Frames Processed: <span id="processedFrames">0</span></p>
+                </div>
+                <div class="export-controls">
+                    <button id="exportJsonBtn" class="export-btn">Export as JSON</button>
+                    <button id="exportCsvBtn" class="export-btn">Export as CSV</button>
+                    <button id="clearDataBtn" class="export-btn clear-btn">Clear Data</button>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h3>Instructions</h3>
+                <ul>
+                    <li><strong>Play/Pause:</strong> Click the play button or press Space</li>
+                    <li><strong>Frame-by-Frame:</strong> Use the ⏮ and ⏭ buttons or arrow keys</li>
+                    <li><strong>Timeline:</strong> Drag the slider to navigate</li>
+                    <li><strong>Export:</strong> Click export buttons to save 3D joint data</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="status-message" id="statusMessage"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
