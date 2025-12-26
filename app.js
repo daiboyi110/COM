@@ -96,6 +96,13 @@ function setupEventListeners() {
             processCurrentFrame();
         }
     });
+
+    // Window resize handler
+    window.addEventListener('resize', () => {
+        if (video.videoWidth > 0) {
+            resizeCanvas();
+        }
+    });
 }
 
 function handleVideoUpload(event) {
@@ -114,6 +121,9 @@ function onVideoLoaded() {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
+    // Ensure canvas visually matches video dimensions
+    resizeCanvas();
+
     // Estimate FPS (default to 30 if not available)
     fps = 30;
 
@@ -126,6 +136,13 @@ function onVideoLoaded() {
     document.getElementById('totalFrames').textContent = totalFrames;
 
     showStatus('Video ready for analysis', 'info');
+}
+
+function resizeCanvas() {
+    // Match canvas display size to video display size
+    const rect = video.getBoundingClientRect();
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
 }
 
 function togglePlayPause() {
