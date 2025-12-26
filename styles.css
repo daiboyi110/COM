@@ -11,7 +11,7 @@ body {
 }
 
 .container {
-    max-width: 1000px;
+    max-width: 1960px;
     margin: 0 auto;
     background: white;
     padding: 30px;
@@ -37,7 +37,8 @@ h1 {
 
 #video {
     width: 100%;
-    max-width: 800px;
+    max-width: 1920px;
+    height: auto;
     display: block;
     margin: 0 auto 20px;
     background: #000;

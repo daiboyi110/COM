@@ -1,5 +1,6 @@
 let video;
-let fps = 30;
+let fps = 30; // Default, will be detected
+let frameCount = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
     video = document.getElementById('video');
@@ -21,9 +22,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // When video metadata is loaded
-    video.addEventListener('loadedmetadata', () => {
+    video.addEventListener('loadedmetadata', async () => {
+        // Detect FPS using requestVideoFrameCallback if available
+        await detectFPS();
+
+        // Display video info
+        console.log(`Video: ${video.videoWidth}x${video.videoHeight} @ ${fps} FPS`);
+        console.log(`Duration: ${video.duration}s`);
+
         updateTimeDisplay();
         updateFrameNumber();
+        updateVideoInfo();
     });
 
     // Update display as video plays
@@ -92,4 +101,59 @@ function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+async function detectFPS() {
+    return new Promise((resolve) => {
+        if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+            // Use requestVideoFrameCallback for accurate FPS detection
+            let lastTime = null;
+            let frameTimes = [];
+            let callbackCount = 0;
+            const maxCallbacks = 10;
+
+            const measureFrame = (now, metadata) => {
+                if (lastTime !== null) {
+                    const frameDuration = (now - lastTime) / 1000; // Convert to seconds
+                    frameTimes.push(frameDuration);
+                }
+                lastTime = now;
+                callbackCount++;
+
+                if (callbackCount < maxCallbacks && !video.paused) {
+                    video.requestVideoFrameCallback(measureFrame);
+                } else {
+                    // Calculate average FPS
+                    if (frameTimes.length > 0) {
+                        const avgFrameDuration = frameTimes.reduce((a, b) => a + b) / frameTimes.length;
+                        fps = Math.round(1 / avgFrameDuration);
+                        // Clamp to common FPS values
+                        if (fps >= 59 && fps <= 61) fps = 60;
+                        else if (fps >= 29 && fps <= 31) fps = 30;
+                        else if (fps >= 23 && fps <= 25) fps = 24;
+                    }
+                    video.pause();
+                    video.currentTime = 0;
+                    resolve();
+                }
+            };
+
+            video.currentTime = 0;
+            video.play().then(() => {
+                video.requestVideoFrameCallback(measureFrame);
+            });
+        } else {
+            // Fallback: assume standard FPS based on duration
+            // Most common: 30 fps, but could be 24, 25, 60
+            fps = 30; // Default assumption
+            resolve();
+        }
+    });
+}
+
+function updateVideoInfo() {
+    const info = document.getElementById('videoInfo');
+    if (info) {
+        info.textContent = `${video.videoWidth}x${video.videoHeight} @ ${fps} FPS`;
+    }
 }
