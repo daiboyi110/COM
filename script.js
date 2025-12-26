@@ -7,6 +7,8 @@ let frameCount = 0;
 let isProcessing = false;
 let showPose = true;
 let showJointNumbers = true;
+let lastProcessedTime = 0;
+let processingInterval = 1000 / 30; // Process at max 30 FPS
 
 // MediaPipe Pose connections for drawing skeleton
 const POSE_CONNECTIONS = [
@@ -29,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextFrameBtn = document.getElementById('nextFrameBtn');
     const showPoseCheckbox = document.getElementById('showPose');
     const showJointNumbersCheckbox = document.getElementById('showJointNumbers');
+    const processingSpeedSelect = document.getElementById('processingSpeed');
 
     // Initialize MediaPipe Pose
     initializePose();
@@ -112,6 +115,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             processPoseFrame();
         }
+    });
+
+    // Processing speed control
+    processingSpeedSelect.addEventListener('change', (e) => {
+        const targetFPS = parseInt(e.target.value);
+        processingInterval = 1000 / targetFPS;
+        console.log(`Processing speed set to ${targetFPS} FPS`);
     });
 
     // Previous frame
@@ -251,7 +261,7 @@ function initializePose() {
     });
 
     pose.setOptions({
-        modelComplexity: 1,
+        modelComplexity: 0, // Use lite model for faster processing
         smoothLandmarks: true,
         enableSegmentation: false,
         minDetectionConfidence: 0.5,
@@ -259,6 +269,7 @@ function initializePose() {
     });
 
     pose.onResults(onPoseResults);
+    console.log('MediaPipe Pose initialized with lite model for better performance');
 }
 
 // Process a single frame for pose detection
@@ -273,14 +284,21 @@ async function processPoseFrame() {
 }
 
 // Process video continuously while playing
-async function processVideoContinuously() {
+function processVideoContinuously() {
     if (video.paused || video.ended) {
         isProcessing = false;
         return;
     }
 
     isProcessing = true;
-    await processPoseFrame();
+    const currentTime = performance.now();
+
+    // Throttle processing to avoid blocking video playback
+    if (currentTime - lastProcessedTime >= processingInterval) {
+        lastProcessedTime = currentTime;
+        // Process asynchronously without blocking
+        processPoseFrame().catch(err => console.error('Pose processing error:', err));
+    }
 
     if (isProcessing) {
         requestAnimationFrame(processVideoContinuously);

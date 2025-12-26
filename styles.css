@@ -135,6 +135,20 @@ h1 {
     vertical-align: middle;
 }
 
+.pose-controls select {
+    margin-left: 8px;
+    padding: 5px 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+}
+
+.pose-controls select:hover {
+    border-color: #007bff;
+}
+
 .info {
     text-align: center;
     margin: 20px 0;
