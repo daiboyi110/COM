@@ -9,6 +9,7 @@ let showPose = true;
 let showJointNumbers = true;
 let processingInterval = 1000 / 5; // Default 5 FPS (200ms) - video plays at full speed
 let processingTimer = null;
+let poseDataArray = []; // Store all captured pose data
 
 // MediaPipe Pose connections for drawing skeleton
 const POSE_CONNECTIONS = [
@@ -43,6 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = URL.createObjectURL(file);
             video.src = url;
             videoSection.style.display = 'block';
+            // Clear previous pose data
+            poseDataArray = [];
+            document.getElementById('capturedFrames').textContent = '0';
         }
     });
 
@@ -158,6 +162,12 @@ document.addEventListener('DOMContentLoaded', () => {
             nextFrameBtn.click();
         }
     });
+
+    // Export button handlers
+    document.getElementById('exportJsonBtn').addEventListener('click', exportAsJson);
+    document.getElementById('exportCsvBtn').addEventListener('click', exportAsCsv);
+    document.getElementById('exportExcelBtn').addEventListener('click', exportAsExcel);
+    document.getElementById('clearDataBtn').addEventListener('click', clearPoseData);
 });
 
 function updateTimeDisplay() {
@@ -325,6 +335,9 @@ function onPoseResults(results) {
 
     drawPose(results.poseLandmarks);
     document.getElementById('jointCount').textContent = results.poseLandmarks.length;
+
+    // Store pose data for export
+    savePoseData(results.poseLandmarks, results.poseWorldLandmarks);
 }
 
 // Draw pose skeleton and landmarks
@@ -376,4 +389,182 @@ function drawPose(landmarks) {
 // Clear the canvas
 function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// Save pose data for export
+function savePoseData(landmarks2D, landmarks3D) {
+    const currentTime = video.currentTime;
+    const currentFrame = Math.floor(currentTime * fps);
+
+    // Check if we already have data for this frame (avoid duplicates)
+    const existingIndex = poseDataArray.findIndex(d => d.frame === currentFrame);
+
+    const frameData = {
+        frame: currentFrame,
+        timestamp: currentTime,
+        landmarks2D: landmarks2D.map((lm, index) => ({
+            id: index,
+            x: lm.x,
+            y: lm.y,
+            z: lm.z,
+            visibility: lm.visibility
+        })),
+        landmarks3D: landmarks3D ? landmarks3D.map((lm, index) => ({
+            id: index,
+            x: lm.x,
+            y: lm.y,
+            z: lm.z,
+            visibility: lm.visibility || 1.0
+        })) : []
+    };
+
+    if (existingIndex >= 0) {
+        poseDataArray[existingIndex] = frameData;
+    } else {
+        poseDataArray.push(frameData);
+        poseDataArray.sort((a, b) => a.frame - b.frame);
+    }
+
+    // Update UI
+    document.getElementById('capturedFrames').textContent = poseDataArray.length;
+}
+
+// Export as JSON
+function exportAsJson() {
+    if (poseDataArray.length === 0) {
+        alert('No pose data to export. Play or step through the video to capture pose data.');
+        return;
+    }
+
+    const exportData = {
+        metadata: {
+            totalFrames: frameCount,
+            capturedFrames: poseDataArray.length,
+            fps: fps,
+            duration: video.duration,
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            exportDate: new Date().toISOString()
+        },
+        poseData: poseDataArray
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    downloadFile(dataStr, 'pose_data.json', 'application/json');
+    console.log(`Exported ${poseDataArray.length} frames to JSON`);
+}
+
+// Export as CSV
+function exportAsCsv() {
+    if (poseDataArray.length === 0) {
+        alert('No pose data to export. Play or step through the video to capture pose data.');
+        return;
+    }
+
+    let csv = 'Frame,Timestamp,Landmark_ID,X_2D,Y_2D,Z_2D,Visibility,X_3D,Y_3D,Z_3D\n';
+
+    poseDataArray.forEach(frameData => {
+        frameData.landmarks2D.forEach((lm2d, index) => {
+            const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+            csv += `${frameData.frame},${frameData.timestamp.toFixed(3)},${lm2d.id},${lm2d.x.toFixed(6)},${lm2d.y.toFixed(6)},${lm2d.z.toFixed(6)},${lm2d.visibility.toFixed(3)},${lm3d.x.toFixed(6)},${lm3d.y.toFixed(6)},${lm3d.z.toFixed(6)}\n`;
+        });
+    });
+
+    downloadFile(csv, 'pose_data.csv', 'text/csv');
+    console.log(`Exported ${poseDataArray.length} frames to CSV`);
+}
+
+// Export as Excel
+function exportAsExcel() {
+    if (poseDataArray.length === 0) {
+        alert('No pose data to export. Play or step through the video to capture pose data.');
+        return;
+    }
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+
+    // Metadata sheet
+    const metadataSheet = XLSX.utils.aoa_to_sheet([
+        ['Property', 'Value'],
+        ['Total Frames', frameCount],
+        ['Captured Frames', poseDataArray.length],
+        ['FPS', fps],
+        ['Duration (seconds)', video.duration.toFixed(2)],
+        ['Video Width', video.videoWidth],
+        ['Video Height', video.videoHeight],
+        ['Export Date', new Date().toISOString()]
+    ]);
+    XLSX.utils.book_append_sheet(wb, metadataSheet, 'Metadata');
+
+    // Pose data sheet
+    const poseDataRows = [['Frame', 'Timestamp', 'Landmark_ID', 'X_2D', 'Y_2D', 'Z_2D', 'Visibility', 'X_3D', 'Y_3D', 'Z_3D']];
+
+    poseDataArray.forEach(frameData => {
+        frameData.landmarks2D.forEach((lm2d, index) => {
+            const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+            poseDataRows.push([
+                frameData.frame,
+                parseFloat(frameData.timestamp.toFixed(3)),
+                lm2d.id,
+                parseFloat(lm2d.x.toFixed(6)),
+                parseFloat(lm2d.y.toFixed(6)),
+                parseFloat(lm2d.z.toFixed(6)),
+                parseFloat(lm2d.visibility.toFixed(3)),
+                parseFloat(lm3d.x.toFixed(6)),
+                parseFloat(lm3d.y.toFixed(6)),
+                parseFloat(lm3d.z.toFixed(6))
+            ]);
+        });
+    });
+
+    const poseSheet = XLSX.utils.aoa_to_sheet(poseDataRows);
+    XLSX.utils.book_append_sheet(wb, poseSheet, 'Pose Data');
+
+    // Summary by frame sheet
+    const summaryRows = [['Frame', 'Timestamp', 'Detected_Joints', 'Avg_Visibility']];
+
+    poseDataArray.forEach(frameData => {
+        const avgVisibility = frameData.landmarks2D.reduce((sum, lm) => sum + lm.visibility, 0) / frameData.landmarks2D.length;
+        summaryRows.push([
+            frameData.frame,
+            parseFloat(frameData.timestamp.toFixed(3)),
+            frameData.landmarks2D.length,
+            parseFloat(avgVisibility.toFixed(3))
+        ]);
+    });
+
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+    XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+
+    // Download the file
+    XLSX.writeFile(wb, 'pose_data.xlsx');
+    console.log(`Exported ${poseDataArray.length} frames to Excel`);
+}
+
+// Clear all captured pose data
+function clearPoseData() {
+    if (poseDataArray.length === 0) {
+        alert('No data to clear.');
+        return;
+    }
+
+    if (confirm(`Are you sure you want to clear ${poseDataArray.length} frames of pose data?`)) {
+        poseDataArray = [];
+        document.getElementById('capturedFrames').textContent = '0';
+        console.log('Pose data cleared');
+    }
+}
+
+// Download file helper
+function downloadFile(content, filename, contentType) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }

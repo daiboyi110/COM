@@ -177,3 +177,69 @@ h1 {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
 }
+
+.export-section {
+    text-align: center;
+    margin: 25px 0;
+    padding: 20px;
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+}
+
+.export-section h3 {
+    margin: 0 0 15px 0;
+    color: #856404;
+    font-size: 18px;
+}
+
+.export-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-export {
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    background: #28a745;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-export:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-export:active {
+    transform: translateY(0);
+}
+
+.btn-clear {
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    background: #dc3545;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-clear:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.btn-clear:active {
+    transform: translateY(0);
+}
