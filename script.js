@@ -7,8 +7,8 @@ let frameCount = 0;
 let isProcessing = false;
 let showPose = true;
 let showJointNumbers = true;
-let lastProcessedTime = 0;
-let processingInterval = 1000 / 30; // Process at max 30 FPS
+let processingInterval = 1000 / 5; // Default 5 FPS (200ms) - video plays at full speed
+let processingTimer = null;
 
 // MediaPipe Pose connections for drawing skeleton
 const POSE_CONNECTIONS = [
@@ -81,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Play button
     playBtn.addEventListener('click', () => {
         video.play();
-        processVideoContinuously();
     });
 
     // Pause button
@@ -91,11 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Video play/pause events
     video.addEventListener('play', () => {
-        processVideoContinuously();
+        startPoseProcessing();
     });
 
     video.addEventListener('pause', () => {
-        isProcessing = false;
+        stopPoseProcessing();
     });
 
     // Checkbox controls
@@ -121,7 +120,13 @@ document.addEventListener('DOMContentLoaded', () => {
     processingSpeedSelect.addEventListener('change', (e) => {
         const targetFPS = parseInt(e.target.value);
         processingInterval = 1000 / targetFPS;
-        console.log(`Processing speed set to ${targetFPS} FPS`);
+        console.log(`Processing speed set to ${targetFPS} FPS (${processingInterval}ms interval)`);
+
+        // Restart processing with new interval if video is playing
+        if (!video.paused) {
+            stopPoseProcessing();
+            startPoseProcessing();
+        }
     });
 
     // Previous frame
@@ -283,25 +288,29 @@ async function processPoseFrame() {
     }
 }
 
-// Process video continuously while playing
-function processVideoContinuously() {
-    if (video.paused || video.ended) {
-        isProcessing = false;
-        return;
-    }
+// Start pose processing using interval (doesn't block video playback)
+function startPoseProcessing() {
+    stopPoseProcessing(); // Clear any existing timer
 
-    isProcessing = true;
-    const currentTime = performance.now();
+    if (!showPose) return;
 
-    // Throttle processing to avoid blocking video playback
-    if (currentTime - lastProcessedTime >= processingInterval) {
-        lastProcessedTime = currentTime;
-        // Process asynchronously without blocking
-        processPoseFrame().catch(err => console.error('Pose processing error:', err));
-    }
+    // Use setInterval to process frames independently of video playback
+    processingTimer = setInterval(() => {
+        if (!video.paused && !video.ended && showPose) {
+            processPoseFrame().catch(err => console.error('Pose processing error:', err));
+        } else {
+            stopPoseProcessing();
+        }
+    }, processingInterval);
 
-    if (isProcessing) {
-        requestAnimationFrame(processVideoContinuously);
+    console.log(`Pose processing started at ${1000/processingInterval} FPS`);
+}
+
+// Stop pose processing
+function stopPoseProcessing() {
+    if (processingTimer) {
+        clearInterval(processingTimer);
+        processingTimer = null;
     }
 }
 
