@@ -471,31 +471,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Edit mode controls
-    editModeImageCheckbox.addEventListener('change', (e) => {
-        isEditMode = e.target.checked;
-        if (isEditMode) {
-            imageCanvas.classList.add('editable');
-            console.log('Edit mode enabled for image');
-        } else {
-            imageCanvas.classList.remove('editable');
-            isDragging = false;
-            draggedJointIndex = null;
-            console.log('Edit mode disabled for image');
-        }
-    });
+    if (editModeImageCheckbox) {
+        editModeImageCheckbox.addEventListener('change', (e) => {
+            isEditMode = e.target.checked;
+            if (isEditMode) {
+                imageCanvas.classList.add('editable');
+                console.log('Edit mode enabled for image');
+            } else {
+                imageCanvas.classList.remove('editable');
+                isDragging = false;
+                draggedJointIndex = null;
+                console.log('Edit mode disabled for image');
+            }
+        });
+    }
 
-    editModeVideoCheckbox.addEventListener('change', (e) => {
-        isEditMode = e.target.checked;
-        if (isEditMode) {
-            canvas.classList.add('editable');
-            console.log('Edit mode enabled for video');
-        } else {
-            canvas.classList.remove('editable');
-            isDragging = false;
-            draggedJointIndex = null;
-            console.log('Edit mode disabled for video');
-        }
-    });
+    if (editModeVideoCheckbox) {
+        editModeVideoCheckbox.addEventListener('change', (e) => {
+            isEditMode = e.target.checked;
+            if (isEditMode) {
+                canvas.classList.add('editable');
+                console.log('Edit mode enabled for video');
+            } else {
+                canvas.classList.remove('editable');
+                isDragging = false;
+                draggedJointIndex = null;
+                console.log('Edit mode disabled for video');
+            }
+        });
+    }
 
     if (editModeCalibrationVideoCheckbox) {
         editModeCalibrationVideoCheckbox.addEventListener('change', (e) => {
