@@ -489,10 +489,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('exportExcelBtnImage').addEventListener('click', exportImageAsExcel);
 
     // Analysis mode radio buttons - Video
+    const calibrationScaleLabelVideo = document.getElementById('calibrationScaleLabelVideo');
     document.querySelectorAll('input[name="analysisModeVideo"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             analysisModeVideo = e.target.value;
             console.log(`Video analysis mode changed to: ${analysisModeVideo}`);
+
+            // Show/hide calibration scale input
+            if (analysisModeVideo === '2D') {
+                calibrationScaleLabelVideo.style.display = 'inline-block';
+            } else {
+                calibrationScaleLabelVideo.style.display = 'none';
+            }
+
             // Redraw current frame
             if (!video.paused) {
                 clearCanvas();
@@ -503,10 +512,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Analysis mode radio buttons - Image
+    const calibrationScaleLabelImage = document.getElementById('calibrationScaleLabelImage');
     document.querySelectorAll('input[name="analysisModeImage"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             analysisModeImage = e.target.value;
             console.log(`Image analysis mode changed to: ${analysisModeImage}`);
+
+            // Show/hide calibration scale input
+            if (analysisModeImage === '2D') {
+                calibrationScaleLabelImage.style.display = 'inline-block';
+            } else {
+                calibrationScaleLabelImage.style.display = 'none';
+            }
+
             redrawImagePose();
         });
     });
