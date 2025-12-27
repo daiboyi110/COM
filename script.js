@@ -25,6 +25,10 @@ let imagePoseData = null; // Store pose data for the image
 let analysisModeVideo = '2D'; // '2D' or '3D'
 let analysisModeImage = '2D'; // '2D' or '3D'
 
+// Sex selection for COM calculation
+let sexSelectionVideo = 'male'; // 'male' or 'female'
+let sexSelectionImage = 'male'; // 'male' or 'female'
+
 // Joint dragging variables
 let isDragging = false;
 let draggedJointIndex = null;
@@ -76,7 +80,40 @@ const LANDMARK_NAMES = [
     'Left_Foot_Index',
     'Right_Foot_Index',
     'Mid_Shoulder',  // 33: Calculated midpoint
-    'Mid_Hip'        // 34: Calculated midpoint
+    'Mid_Hip',       // 34: Calculated midpoint
+    'Head_COM',      // 35: Center of Mass
+    'Trunk_COM',     // 36: Center of Mass
+    'Left_Upper_Arm_COM',   // 37: Center of Mass
+    'Right_Upper_Arm_COM',  // 38: Center of Mass
+    'Left_Forearm_COM',     // 39: Center of Mass
+    'Right_Forearm_COM',    // 40: Center of Mass
+    'Left_Hand_COM',        // 41: Center of Mass
+    'Right_Hand_COM',       // 42: Center of Mass
+    'Left_Thigh_COM',       // 43: Center of Mass
+    'Right_Thigh_COM',      // 44: Center of Mass
+    'Left_Shank_COM',       // 45: Center of Mass
+    'Right_Shank_COM',      // 46: Center of Mass
+    'Left_Foot_COM',        // 47: Center of Mass
+    'Right_Foot_COM'        // 48: Center of Mass
+];
+
+// Segment definitions for Center of Mass calculations
+// Each segment has proximal and distal joint indices and COM position percentages for male/female
+const SEGMENT_DEFINITIONS = [
+    { name: 'Head_COM', index: 35, proximal: 7, distal: 8, male: 0.5, female: 0.5 },
+    { name: 'Trunk_COM', index: 36, proximal: 33, distal: 34, male: 0.431, female: 0.3782 },
+    { name: 'Left_Upper_Arm_COM', index: 37, proximal: 11, distal: 13, male: 0.5772, female: 0.5754 },
+    { name: 'Right_Upper_Arm_COM', index: 38, proximal: 12, distal: 14, male: 0.5772, female: 0.5754 },
+    { name: 'Left_Forearm_COM', index: 39, proximal: 13, distal: 15, male: 0.4574, female: 0.4559 },
+    { name: 'Right_Forearm_COM', index: 40, proximal: 14, distal: 16, male: 0.4574, female: 0.4559 },
+    { name: 'Left_Hand_COM', index: 41, proximal: 15, distal: 19, male: 0.7900, female: 0.7474 },
+    { name: 'Right_Hand_COM', index: 42, proximal: 16, distal: 20, male: 0.7900, female: 0.7474 },
+    { name: 'Left_Thigh_COM', index: 43, proximal: 23, distal: 25, male: 0.4095, female: 0.3612 },
+    { name: 'Right_Thigh_COM', index: 44, proximal: 24, distal: 26, male: 0.4095, female: 0.3612 },
+    { name: 'Left_Shank_COM', index: 45, proximal: 25, distal: 27, male: 0.4459, female: 0.4416 },
+    { name: 'Right_Shank_COM', index: 46, proximal: 26, distal: 28, male: 0.4459, female: 0.4416 },
+    { name: 'Left_Foot_COM', index: 47, proximal: 29, distal: 31, male: 0.4415, female: 0.4014 },
+    { name: 'Right_Foot_COM', index: 48, proximal: 30, distal: 32, male: 0.4415, female: 0.4014 }
 ];
 
 // Landmarks to exclude from display
@@ -531,6 +568,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Sex selection radio buttons - Video
+    document.querySelectorAll('input[name="sexSelectionVideo"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            sexSelectionVideo = e.target.value;
+            console.log(`Video sex selection changed to: ${sexSelectionVideo}`);
+
+            // Redraw current frame to recalculate COM
+            if (!video.paused) {
+                clearCanvas();
+            } else {
+                processPoseFrame();
+            }
+        });
+    });
+
+    // Sex selection radio buttons - Image
+    document.querySelectorAll('input[name="sexSelectionImage"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            sexSelectionImage = e.target.value;
+            console.log(`Image sex selection changed to: ${sexSelectionImage}`);
+
+            redrawImagePose();
+        });
+    });
+
     // Calibration scale input handlers
     const calibrationScaleVideoInput = document.getElementById('calibrationScaleVideo');
     const calibrationScaleImageInput = document.getElementById('calibrationScaleImage');
@@ -793,6 +855,47 @@ function calculateMidpoints(landmarks2D, landmarks3D) {
     return { midpoints2D, midpoints3D };
 }
 
+// Calculate segment centers of mass based on proximal and distal joints
+function calculateSegmentCOMs(extendedLandmarks2D, extendedLandmarks3D, sex) {
+    const segmentCOMs2D = [];
+    const segmentCOMs3D = [];
+
+    // Calculate COM for each segment using the formula:
+    // segment COM = proximal + percent * (distal - proximal)
+    for (const segment of SEGMENT_DEFINITIONS) {
+        const { index, proximal, distal, male, female } = segment;
+        const percent = sex === 'male' ? male : female;
+
+        // Calculate 2D COM
+        if (extendedLandmarks2D[proximal] && extendedLandmarks2D[distal]) {
+            const prox = extendedLandmarks2D[proximal];
+            const dist = extendedLandmarks2D[distal];
+
+            segmentCOMs2D[index] = {
+                x: prox.x + percent * (dist.x - prox.x),
+                y: prox.y + percent * (dist.y - prox.y),
+                z: prox.z + percent * (dist.z - prox.z),
+                visibility: Math.min(prox.visibility || 1.0, dist.visibility || 1.0)
+            };
+        }
+
+        // Calculate 3D COM
+        if (extendedLandmarks3D && extendedLandmarks3D[proximal] && extendedLandmarks3D[distal]) {
+            const prox = extendedLandmarks3D[proximal];
+            const dist = extendedLandmarks3D[distal];
+
+            segmentCOMs3D[index] = {
+                x: prox.x + percent * (dist.x - prox.x),
+                y: prox.y + percent * (dist.y - prox.y),
+                z: prox.z + percent * (dist.z - prox.z),
+                visibility: Math.min(prox.visibility || 1.0, dist.visibility || 1.0)
+            };
+        }
+    }
+
+    return { segmentCOMs2D, segmentCOMs3D };
+}
+
 // Draw pose skeleton and landmarks
 function drawPose(landmarks, landmarks3D) {
     const width = canvas.width;
@@ -808,6 +911,15 @@ function drawPose(landmarks, landmarks3D) {
     if (midpoints2D[34]) extendedLandmarks2D[34] = midpoints2D[34];
     if (midpoints3D[33]) extendedLandmarks3D[33] = midpoints3D[33];
     if (midpoints3D[34]) extendedLandmarks3D[34] = midpoints3D[34];
+
+    // Calculate segment centers of mass
+    const { segmentCOMs2D, segmentCOMs3D } = calculateSegmentCOMs(extendedLandmarks2D, extendedLandmarks3D, sexSelectionVideo);
+
+    // Extend landmarks array with COMs
+    for (let i = 35; i <= 48; i++) {
+        if (segmentCOMs2D[i]) extendedLandmarks2D[i] = segmentCOMs2D[i];
+        if (segmentCOMs3D[i]) extendedLandmarks3D[i] = segmentCOMs3D[i];
+    }
 
     // Draw connections (skeleton)
     ctx.strokeStyle = '#00FF00';
@@ -842,13 +954,19 @@ function drawPose(landmarks, landmarks3D) {
 
         // Draw joint circle - highlight if being dragged
         const isBeingDragged = isDragging && draggedJointIndex === index;
-        // Use different color for calculated midpoints
+        // Use different color for calculated midpoints and COMs
         const isMidpoint = index === 33 || index === 34;
+        const isCOM = index >= 35 && index <= 48;
 
         if (isBeingDragged) {
             ctx.fillStyle = '#FF00FF'; // Magenta for dragged joint
             ctx.beginPath();
             ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.fill();
+        } else if (isCOM) {
+            ctx.fillStyle = '#9D00FF'; // Purple for COMs
+            ctx.beginPath();
+            ctx.arc(x, y, 7, 0, 2 * Math.PI);
             ctx.fill();
         } else {
             ctx.fillStyle = isMidpoint ? '#FFA500' : '#FF0000'; // Orange for midpoints, red for others
@@ -1514,6 +1632,15 @@ function drawImagePose(landmarks, landmarks3D) {
     if (midpoints3D[33]) extendedLandmarks3D[33] = midpoints3D[33];
     if (midpoints3D[34]) extendedLandmarks3D[34] = midpoints3D[34];
 
+    // Calculate segment centers of mass
+    const { segmentCOMs2D, segmentCOMs3D } = calculateSegmentCOMs(extendedLandmarks2D, extendedLandmarks3D, sexSelectionImage);
+
+    // Extend landmarks array with COMs
+    for (let i = 35; i <= 48; i++) {
+        if (segmentCOMs2D[i]) extendedLandmarks2D[i] = segmentCOMs2D[i];
+        if (segmentCOMs3D[i]) extendedLandmarks3D[i] = segmentCOMs3D[i];
+    }
+
     // Draw connections (skeleton)
     imageCtx.strokeStyle = '#00FF00';
     imageCtx.lineWidth = 4;
@@ -1547,13 +1674,19 @@ function drawImagePose(landmarks, landmarks3D) {
 
         // Draw joint circle - highlight if being dragged
         const isBeingDragged = isDragging && draggedJointIndex === index;
-        // Use different color for calculated midpoints
+        // Use different color for calculated midpoints and COMs
         const isMidpoint = index === 33 || index === 34;
+        const isCOM = index >= 35 && index <= 48;
 
         if (isBeingDragged) {
             imageCtx.fillStyle = '#FF00FF'; // Magenta for dragged joint
             imageCtx.beginPath();
             imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
+            imageCtx.fill();
+        } else if (isCOM) {
+            imageCtx.fillStyle = '#9D00FF'; // Purple for COMs
+            imageCtx.beginPath();
+            imageCtx.arc(x, y, 7, 0, 2 * Math.PI);
             imageCtx.fill();
         } else {
             imageCtx.fillStyle = isMidpoint ? '#FFA500' : '#FF0000'; // Orange for midpoints, red for others
