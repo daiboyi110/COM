@@ -34,6 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const showJointNumbersCheckbox = document.getElementById('showJointNumbers');
     const processingSpeedSelect = document.getElementById('processingSpeed');
 
+    // Check if XLSX library is loaded
+    if (typeof XLSX !== 'undefined') {
+        console.log('✓ SheetJS (XLSX) library loaded successfully');
+    } else {
+        console.error('✗ SheetJS (XLSX) library failed to load - Excel export will not work');
+    }
+
     // Initialize MediaPipe Pose
     initializePose();
 
@@ -481,65 +488,85 @@ function exportAsExcel() {
         return;
     }
 
-    // Create workbook
-    const wb = XLSX.utils.book_new();
+    // Check if XLSX library is loaded
+    if (typeof XLSX === 'undefined') {
+        alert('Excel library not loaded. Please refresh the page and try again.');
+        console.error('XLSX library is not loaded');
+        return;
+    }
 
-    // Metadata sheet
-    const metadataSheet = XLSX.utils.aoa_to_sheet([
-        ['Property', 'Value'],
-        ['Total Frames', frameCount],
-        ['Captured Frames', poseDataArray.length],
-        ['FPS', fps],
-        ['Duration (seconds)', video.duration.toFixed(2)],
-        ['Video Width', video.videoWidth],
-        ['Video Height', video.videoHeight],
-        ['Export Date', new Date().toISOString()]
-    ]);
-    XLSX.utils.book_append_sheet(wb, metadataSheet, 'Metadata');
+    try {
+        console.log('Starting Excel export...');
 
-    // Pose data sheet
-    const poseDataRows = [['Frame', 'Timestamp', 'Landmark_ID', 'X_2D', 'Y_2D', 'Z_2D', 'Visibility', 'X_3D', 'Y_3D', 'Z_3D']];
+        // Create workbook
+        const wb = XLSX.utils.book_new();
 
-    poseDataArray.forEach(frameData => {
-        frameData.landmarks2D.forEach((lm2d, index) => {
-            const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-            poseDataRows.push([
+        // Metadata sheet
+        const metadataSheet = XLSX.utils.aoa_to_sheet([
+            ['Property', 'Value'],
+            ['Total Frames', frameCount],
+            ['Captured Frames', poseDataArray.length],
+            ['FPS', fps],
+            ['Duration (seconds)', video.duration.toFixed(2)],
+            ['Video Width', video.videoWidth],
+            ['Video Height', video.videoHeight],
+            ['Export Date', new Date().toISOString()]
+        ]);
+        XLSX.utils.book_append_sheet(wb, metadataSheet, 'Metadata');
+        console.log('Metadata sheet created');
+
+        // Pose data sheet
+        const poseDataRows = [['Frame', 'Timestamp', 'Landmark_ID', 'X_2D', 'Y_2D', 'Z_2D', 'Visibility', 'X_3D', 'Y_3D', 'Z_3D']];
+
+        poseDataArray.forEach(frameData => {
+            frameData.landmarks2D.forEach((lm2d, index) => {
+                const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+                poseDataRows.push([
+                    frameData.frame,
+                    parseFloat(frameData.timestamp.toFixed(3)),
+                    lm2d.id,
+                    parseFloat(lm2d.x.toFixed(6)),
+                    parseFloat(lm2d.y.toFixed(6)),
+                    parseFloat(lm2d.z.toFixed(6)),
+                    parseFloat(lm2d.visibility.toFixed(3)),
+                    parseFloat(lm3d.x.toFixed(6)),
+                    parseFloat(lm3d.y.toFixed(6)),
+                    parseFloat(lm3d.z.toFixed(6))
+                ]);
+            });
+        });
+
+        const poseSheet = XLSX.utils.aoa_to_sheet(poseDataRows);
+        XLSX.utils.book_append_sheet(wb, poseSheet, 'Pose Data');
+        console.log('Pose Data sheet created with', poseDataRows.length - 1, 'rows');
+
+        // Summary by frame sheet
+        const summaryRows = [['Frame', 'Timestamp', 'Detected_Joints', 'Avg_Visibility']];
+
+        poseDataArray.forEach(frameData => {
+            const avgVisibility = frameData.landmarks2D.reduce((sum, lm) => sum + lm.visibility, 0) / frameData.landmarks2D.length;
+            summaryRows.push([
                 frameData.frame,
                 parseFloat(frameData.timestamp.toFixed(3)),
-                lm2d.id,
-                parseFloat(lm2d.x.toFixed(6)),
-                parseFloat(lm2d.y.toFixed(6)),
-                parseFloat(lm2d.z.toFixed(6)),
-                parseFloat(lm2d.visibility.toFixed(3)),
-                parseFloat(lm3d.x.toFixed(6)),
-                parseFloat(lm3d.y.toFixed(6)),
-                parseFloat(lm3d.z.toFixed(6))
+                frameData.landmarks2D.length,
+                parseFloat(avgVisibility.toFixed(3))
             ]);
         });
-    });
 
-    const poseSheet = XLSX.utils.aoa_to_sheet(poseDataRows);
-    XLSX.utils.book_append_sheet(wb, poseSheet, 'Pose Data');
+        const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+        XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+        console.log('Summary sheet created');
 
-    // Summary by frame sheet
-    const summaryRows = [['Frame', 'Timestamp', 'Detected_Joints', 'Avg_Visibility']];
+        // Download the file
+        console.log('Attempting to write Excel file...');
+        XLSX.writeFile(wb, 'pose_data.xlsx');
+        console.log(`Successfully exported ${poseDataArray.length} frames to Excel`);
+        alert(`Excel file downloaded successfully! (${poseDataArray.length} frames)`);
 
-    poseDataArray.forEach(frameData => {
-        const avgVisibility = frameData.landmarks2D.reduce((sum, lm) => sum + lm.visibility, 0) / frameData.landmarks2D.length;
-        summaryRows.push([
-            frameData.frame,
-            parseFloat(frameData.timestamp.toFixed(3)),
-            frameData.landmarks2D.length,
-            parseFloat(avgVisibility.toFixed(3))
-        ]);
-    });
-
-    const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
-    XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
-
-    // Download the file
-    XLSX.writeFile(wb, 'pose_data.xlsx');
-    console.log(`Exported ${poseDataArray.length} frames to Excel`);
+    } catch (error) {
+        console.error('Error exporting to Excel:', error);
+        alert(`Error creating Excel file: ${error.message}\n\nPlease try exporting as CSV instead.`);
+    }
 }
 
 // Clear all captured pose data
