@@ -1340,7 +1340,9 @@ function drawPose(landmarks, landmarks3D) {
 
     // Draw coordinate system if enabled
     if (showCoordinateSystem) {
-        drawCoordinateSystem(ctx, canvas.width, canvas.height, analysisModeVideo, calibrationPoint1Video, calibrationPoint2Video);
+        // Pass mid-hip landmark for 3D mode origin
+        const midHip = extendedLandmarks2D[34];
+        drawCoordinateSystem(ctx, canvas.width, canvas.height, analysisModeVideo, calibrationPoint1Video, calibrationPoint2Video, midHip);
     }
 }
 
@@ -1424,15 +1426,14 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
 }
 
 // Draw coordinate system axes
-function drawCoordinateSystem(context, width, height, analysisMode, calibrationPoint1, calibrationPoint2) {
+function drawCoordinateSystem(context, width, height, analysisMode, calibrationPoint1, calibrationPoint2, midHipLandmark) {
     const axisLength = 100; // Length of axes in pixels
     const arrowSize = 10; // Size of arrowhead
 
     if (analysisMode === '2D') {
-        // For 2D mode, origin is at calibration point 1
-        // Calculate origin position in pixels
-        const originX = calibrationPoint1.x * width;
-        const originY = calibrationPoint1.y * height;
+        // For 2D mode, origin is at left bottom corner
+        const originX = 0;
+        const originY = height;
 
         // Draw X axis (positive direction: right, red color)
         context.strokeStyle = '#FF0000'; // Red
@@ -1459,7 +1460,7 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
         context.strokeText('+X', originX + axisLength + 15, originY + 5);
         context.fillText('+X', originX + axisLength + 15, originY + 5);
 
-        // Draw Y axis (positive direction: down in screen space but up in our coordinate system, green color)
+        // Draw Y axis (positive direction: up, green color)
         context.strokeStyle = '#00FF00'; // Green
         context.lineWidth = 3;
         context.beginPath();
@@ -1489,13 +1490,18 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
         context.strokeStyle = '#000000';
         context.lineWidth = 2;
         context.font = `bold ${displayFontSize}px Arial`;
-        context.strokeText('O (0,0)', originX - 60, originY + 25);
-        context.fillText('O (0,0)', originX - 60, originY + 25);
+        context.strokeText('O (0,0)', originX + 10, originY - 10);
+        context.fillText('O (0,0)', originX + 10, originY - 10);
 
     } else if (analysisMode === '3D') {
-        // For 3D mode, show axes at a fixed position (top-left corner)
-        const originX = 100;
-        const originY = 100;
+        // For 3D mode, origin is at mid-hip position if available
+        let originX = 100; // Default position
+        let originY = 100;
+
+        if (midHipLandmark && midHipLandmark.visibility > 0.5) {
+            originX = midHipLandmark.x * width;
+            originY = midHipLandmark.y * height;
+        }
 
         // Draw X axis (red, pointing right)
         context.strokeStyle = '#FF0000'; // Red
@@ -2548,7 +2554,9 @@ function drawImagePose(landmarks, landmarks3D) {
 
     // Draw coordinate system if enabled
     if (showCoordinateSystemImage) {
-        drawCoordinateSystem(imageCtx, imageCanvas.width, imageCanvas.height, analysisModeImage, calibrationPoint1Image, calibrationPoint2Image);
+        // Pass mid-hip landmark for 3D mode origin
+        const midHip = extendedLandmarks2D[34];
+        drawCoordinateSystem(imageCtx, imageCanvas.width, imageCanvas.height, analysisModeImage, calibrationPoint1Image, calibrationPoint2Image, midHip);
     }
 }
 
