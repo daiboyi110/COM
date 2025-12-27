@@ -94,7 +94,8 @@ const LANDMARK_NAMES = [
     'Left_Shank_COM',       // 45: Center of Mass
     'Right_Shank_COM',      // 46: Center of Mass
     'Left_Foot_COM',        // 47: Center of Mass
-    'Right_Foot_COM'        // 48: Center of Mass
+    'Right_Foot_COM',       // 48: Center of Mass
+    'Total_Body_COM'        // 49: Total Body Center of Mass
 ];
 
 // Segment definitions for Center of Mass calculations
@@ -114,6 +115,25 @@ const SEGMENT_DEFINITIONS = [
     { name: 'Right_Shank_COM', index: 46, proximal: 26, distal: 28, male: 0.4459, female: 0.4416 },
     { name: 'Left_Foot_COM', index: 47, proximal: 29, distal: 31, male: 0.4415, female: 0.4014 },
     { name: 'Right_Foot_COM', index: 48, proximal: 30, distal: 32, male: 0.4415, female: 0.4014 }
+];
+
+// Segment mass percentages (proportion of total body mass)
+// Used for calculating total body center of mass
+const SEGMENT_MASS_PERCENTAGES = [
+    { name: 'Head_COM', index: 35, male: 0.0694, female: 0.0668 },
+    { name: 'Trunk_COM', index: 36, male: 0.4346, female: 0.4257 },
+    { name: 'Left_Upper_Arm_COM', index: 37, male: 0.0271, female: 0.0255 },
+    { name: 'Right_Upper_Arm_COM', index: 38, male: 0.0271, female: 0.0255 },
+    { name: 'Left_Forearm_COM', index: 39, male: 0.0162, female: 0.0138 },
+    { name: 'Right_Forearm_COM', index: 40, male: 0.0162, female: 0.0138 },
+    { name: 'Left_Hand_COM', index: 41, male: 0.0061, female: 0.0056 },
+    { name: 'Right_Hand_COM', index: 42, male: 0.0061, female: 0.0056 },
+    { name: 'Left_Thigh_COM', index: 43, male: 0.1416, female: 0.1478 },
+    { name: 'Right_Thigh_COM', index: 44, male: 0.1416, female: 0.1478 },
+    { name: 'Left_Shank_COM', index: 45, male: 0.0433, female: 0.0481 },
+    { name: 'Right_Shank_COM', index: 46, male: 0.0433, female: 0.0481 },
+    { name: 'Left_Foot_COM', index: 47, male: 0.0137, female: 0.0129 },
+    { name: 'Right_Foot_COM', index: 48, male: 0.0137, female: 0.0129 }
 ];
 
 // Landmarks to exclude from display
@@ -896,6 +916,72 @@ function calculateSegmentCOMs(extendedLandmarks2D, extendedLandmarks3D, sex) {
     return { segmentCOMs2D, segmentCOMs3D };
 }
 
+// Calculate total body center of mass using weighted average of segment COMs
+function calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex) {
+    let totalBodyCOM2D = null;
+    let totalBodyCOM3D = null;
+
+    // Calculate 2D total body COM
+    let sum2D = { x: 0, y: 0, z: 0 };
+    let totalMass2D = 0;
+    let minVisibility2D = 1.0;
+
+    for (const segmentMass of SEGMENT_MASS_PERCENTAGES) {
+        const { index, male, female } = segmentMass;
+        const massPercent = sex === 'male' ? male : female;
+        const segmentCOM = segmentCOMs2D[index];
+
+        if (segmentCOM) {
+            sum2D.x += segmentCOM.x * massPercent;
+            sum2D.y += segmentCOM.y * massPercent;
+            sum2D.z += segmentCOM.z * massPercent;
+            totalMass2D += massPercent;
+            minVisibility2D = Math.min(minVisibility2D, segmentCOM.visibility || 1.0);
+        }
+    }
+
+    if (totalMass2D > 0) {
+        totalBodyCOM2D = {
+            x: sum2D.x / totalMass2D,
+            y: sum2D.y / totalMass2D,
+            z: sum2D.z / totalMass2D,
+            visibility: minVisibility2D
+        };
+    }
+
+    // Calculate 3D total body COM
+    if (segmentCOMs3D) {
+        let sum3D = { x: 0, y: 0, z: 0 };
+        let totalMass3D = 0;
+        let minVisibility3D = 1.0;
+
+        for (const segmentMass of SEGMENT_MASS_PERCENTAGES) {
+            const { index, male, female } = segmentMass;
+            const massPercent = sex === 'male' ? male : female;
+            const segmentCOM = segmentCOMs3D[index];
+
+            if (segmentCOM) {
+                sum3D.x += segmentCOM.x * massPercent;
+                sum3D.y += segmentCOM.y * massPercent;
+                sum3D.z += segmentCOM.z * massPercent;
+                totalMass3D += massPercent;
+                minVisibility3D = Math.min(minVisibility3D, segmentCOM.visibility || 1.0);
+            }
+        }
+
+        if (totalMass3D > 0) {
+            totalBodyCOM3D = {
+                x: sum3D.x / totalMass3D,
+                y: sum3D.y / totalMass3D,
+                z: sum3D.z / totalMass3D,
+                visibility: minVisibility3D
+            };
+        }
+    }
+
+    return { totalBodyCOM2D, totalBodyCOM3D };
+}
+
 // Draw pose skeleton and landmarks
 function drawPose(landmarks, landmarks3D) {
     const width = canvas.width;
@@ -920,6 +1006,13 @@ function drawPose(landmarks, landmarks3D) {
         if (segmentCOMs2D[i]) extendedLandmarks2D[i] = segmentCOMs2D[i];
         if (segmentCOMs3D[i]) extendedLandmarks3D[i] = segmentCOMs3D[i];
     }
+
+    // Calculate total body center of mass
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionVideo);
+
+    // Add total body COM to extended landmarks (index 49)
+    if (totalBodyCOM2D) extendedLandmarks2D[49] = totalBodyCOM2D;
+    if (totalBodyCOM3D) extendedLandmarks3D[49] = totalBodyCOM3D;
 
     // Draw connections (skeleton)
     ctx.strokeStyle = '#00FF00';
@@ -954,17 +1047,29 @@ function drawPose(landmarks, landmarks3D) {
 
         // Draw joint circle - highlight if being dragged
         const isBeingDragged = isDragging && draggedJointIndex === index;
-        // Use different color for calculated midpoints and COMs
+        // Use different colors for different landmark types
         const isMidpoint = index === 33 || index === 34;
-        const isCOM = index >= 35 && index <= 48;
+        const isSegmentCOM = index >= 35 && index <= 48;
+        const isTotalBodyCOM = index === 49;
 
         if (isBeingDragged) {
             ctx.fillStyle = '#FF00FF'; // Magenta for dragged joint
             ctx.beginPath();
             ctx.arc(x, y, 10, 0, 2 * Math.PI);
             ctx.fill();
-        } else if (isCOM) {
-            ctx.fillStyle = '#9D00FF'; // Purple for COMs
+        } else if (isTotalBodyCOM) {
+            ctx.fillStyle = '#00FFFF'; // Cyan for Total Body COM
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.fill();
+            // Add outer ring for emphasis
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.stroke();
+        } else if (isSegmentCOM) {
+            ctx.fillStyle = '#9D00FF'; // Purple for segment COMs
             ctx.beginPath();
             ctx.arc(x, y, 7, 0, 2 * Math.PI);
             ctx.fill();
@@ -1641,6 +1746,13 @@ function drawImagePose(landmarks, landmarks3D) {
         if (segmentCOMs3D[i]) extendedLandmarks3D[i] = segmentCOMs3D[i];
     }
 
+    // Calculate total body center of mass
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionImage);
+
+    // Add total body COM to extended landmarks (index 49)
+    if (totalBodyCOM2D) extendedLandmarks2D[49] = totalBodyCOM2D;
+    if (totalBodyCOM3D) extendedLandmarks3D[49] = totalBodyCOM3D;
+
     // Draw connections (skeleton)
     imageCtx.strokeStyle = '#00FF00';
     imageCtx.lineWidth = 4;
@@ -1674,17 +1786,29 @@ function drawImagePose(landmarks, landmarks3D) {
 
         // Draw joint circle - highlight if being dragged
         const isBeingDragged = isDragging && draggedJointIndex === index;
-        // Use different color for calculated midpoints and COMs
+        // Use different colors for different landmark types
         const isMidpoint = index === 33 || index === 34;
-        const isCOM = index >= 35 && index <= 48;
+        const isSegmentCOM = index >= 35 && index <= 48;
+        const isTotalBodyCOM = index === 49;
 
         if (isBeingDragged) {
             imageCtx.fillStyle = '#FF00FF'; // Magenta for dragged joint
             imageCtx.beginPath();
             imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
             imageCtx.fill();
-        } else if (isCOM) {
-            imageCtx.fillStyle = '#9D00FF'; // Purple for COMs
+        } else if (isTotalBodyCOM) {
+            imageCtx.fillStyle = '#00FFFF'; // Cyan for Total Body COM
+            imageCtx.beginPath();
+            imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
+            imageCtx.fill();
+            // Add outer ring for emphasis
+            imageCtx.strokeStyle = '#FFFFFF';
+            imageCtx.lineWidth = 2;
+            imageCtx.beginPath();
+            imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
+            imageCtx.stroke();
+        } else if (isSegmentCOM) {
+            imageCtx.fillStyle = '#9D00FF'; // Purple for segment COMs
             imageCtx.beginPath();
             imageCtx.arc(x, y, 7, 0, 2 * Math.PI);
             imageCtx.fill();
