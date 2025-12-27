@@ -751,9 +751,9 @@ function drawPose(landmarks, landmarks3D) {
                     // Negate Y to make positive direction upward (conventional)
                     coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
                 } else if (analysisModeVideo === '2D') {
-                    // 2D normalized coordinates (0-1)
+                    // 2D normalized coordinates (0-1), X and Y only
                     // Transform Y: (1 - y) to make positive direction upward
-                    coordText = `2D: (${landmark.x.toFixed(3)}, ${(1 - landmark.y).toFixed(3)}, ${landmark.z.toFixed(3)})`;
+                    coordText = `2D: (${landmark.x.toFixed(3)}, ${(1 - landmark.y).toFixed(3)})`;
                 }
 
                 if (coordText) {
@@ -1268,9 +1268,9 @@ function drawImagePose(landmarks, landmarks3D) {
                     // Negate Y to make positive direction upward (conventional)
                     coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
                 } else if (analysisModeImage === '2D') {
-                    // 2D normalized coordinates (0-1)
+                    // 2D normalized coordinates (0-1), X and Y only
                     // Transform Y: (1 - y) to make positive direction upward
-                    coordText = `2D: (${landmark.x.toFixed(3)}, ${(1 - landmark.y).toFixed(3)}, ${landmark.z.toFixed(3)})`;
+                    coordText = `2D: (${landmark.x.toFixed(3)}, ${(1 - landmark.y).toFixed(3)})`;
                 }
 
                 if (coordText) {
