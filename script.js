@@ -40,7 +40,7 @@ let draggedCalibrationPoint = null; // Which calibration point is being dragged 
 let calibrationScaleVideo = 1.0; // Scale length in meters for video
 let calibrationScaleImage = 1.0; // Scale length in meters for image
 
-// MediaPipe Pose landmark names (33 landmarks)
+// MediaPipe Pose landmark names (33 landmarks + 2 calculated)
 const LANDMARK_NAMES = [
     'Nose',
     'Left_Eye_Inner',
@@ -74,7 +74,9 @@ const LANDMARK_NAMES = [
     'Left_Heel',
     'Right_Heel',
     'Left_Foot_Index',
-    'Right_Foot_Index'
+    'Right_Foot_Index',
+    'Mid_Shoulder',  // 33: Calculated midpoint
+    'Mid_Hip'        // 34: Calculated midpoint
 ];
 
 // Landmarks to exclude from display
@@ -740,10 +742,72 @@ function onPoseResults(results) {
     savePoseData(results.poseLandmarks, results.poseWorldLandmarks);
 }
 
+// Calculate midpoint landmarks
+function calculateMidpoints(landmarks2D, landmarks3D) {
+    const midpoints2D = [];
+    const midpoints3D = [];
+
+    // Mid-Shoulder (index 33): between Left_Shoulder (11) and Right_Shoulder (12)
+    if (landmarks2D[11] && landmarks2D[12]) {
+        midpoints2D[33] = {
+            x: (landmarks2D[11].x + landmarks2D[12].x) / 2,
+            y: (landmarks2D[11].y + landmarks2D[12].y) / 2,
+            z: (landmarks2D[11].z + landmarks2D[12].z) / 2,
+            visibility: Math.min(landmarks2D[11].visibility, landmarks2D[12].visibility)
+        };
+    }
+
+    // Mid-Hip (index 34): between Left_Hip (23) and Right_Hip (24)
+    if (landmarks2D[23] && landmarks2D[24]) {
+        midpoints2D[34] = {
+            x: (landmarks2D[23].x + landmarks2D[24].x) / 2,
+            y: (landmarks2D[23].y + landmarks2D[24].y) / 2,
+            z: (landmarks2D[23].z + landmarks2D[24].z) / 2,
+            visibility: Math.min(landmarks2D[23].visibility, landmarks2D[24].visibility)
+        };
+    }
+
+    // 3D midpoints
+    if (landmarks3D) {
+        // Mid-Shoulder 3D
+        if (landmarks3D[11] && landmarks3D[12]) {
+            midpoints3D[33] = {
+                x: (landmarks3D[11].x + landmarks3D[12].x) / 2,
+                y: (landmarks3D[11].y + landmarks3D[12].y) / 2,
+                z: (landmarks3D[11].z + landmarks3D[12].z) / 2,
+                visibility: Math.min(landmarks3D[11].visibility || 1.0, landmarks3D[12].visibility || 1.0)
+            };
+        }
+
+        // Mid-Hip 3D
+        if (landmarks3D[23] && landmarks3D[24]) {
+            midpoints3D[34] = {
+                x: (landmarks3D[23].x + landmarks3D[24].x) / 2,
+                y: (landmarks3D[23].y + landmarks3D[24].y) / 2,
+                z: (landmarks3D[23].z + landmarks3D[24].z) / 2,
+                visibility: Math.min(landmarks3D[23].visibility || 1.0, landmarks3D[24].visibility || 1.0)
+            };
+        }
+    }
+
+    return { midpoints2D, midpoints3D };
+}
+
 // Draw pose skeleton and landmarks
 function drawPose(landmarks, landmarks3D) {
     const width = canvas.width;
     const height = canvas.height;
+
+    // Calculate midpoint landmarks
+    const { midpoints2D, midpoints3D } = calculateMidpoints(landmarks, landmarks3D);
+
+    // Extend landmarks array with midpoints
+    const extendedLandmarks2D = [...landmarks];
+    const extendedLandmarks3D = landmarks3D ? [...landmarks3D] : [];
+    if (midpoints2D[33]) extendedLandmarks2D[33] = midpoints2D[33];
+    if (midpoints2D[34]) extendedLandmarks2D[34] = midpoints2D[34];
+    if (midpoints3D[33]) extendedLandmarks3D[33] = midpoints3D[33];
+    if (midpoints3D[34]) extendedLandmarks3D[34] = midpoints3D[34];
 
     // Draw connections (skeleton)
     ctx.strokeStyle = '#00FF00';
@@ -761,72 +825,79 @@ function drawPose(landmarks, landmarks3D) {
         }
     });
 
-    // Draw landmarks (joints)
-    landmarks.forEach((landmark, index) => {
+    // Draw landmarks (joints) - including calculated midpoints
+    extendedLandmarks2D.forEach((landmark, index) => {
         // Skip excluded landmarks (nose and eyes)
         if (EXCLUDED_LANDMARKS.includes(index)) {
             return;
         }
 
-        if (landmark.visibility > 0.5) {
-            const x = landmark.x * width;
-            const y = landmark.y * height;
+        // Skip if landmark doesn't exist or has low visibility
+        if (!landmark || landmark.visibility < 0.5) {
+            return;
+        }
 
-            // Draw joint circle - highlight if being dragged
-            const isBeingDragged = isDragging && draggedJointIndex === index;
-            if (isBeingDragged) {
-                ctx.fillStyle = '#FF00FF'; // Magenta for dragged joint
-                ctx.beginPath();
-                ctx.arc(x, y, 10, 0, 2 * Math.PI);
-                ctx.fill();
-            } else {
-                ctx.fillStyle = '#FF0000';
-                ctx.beginPath();
-                ctx.arc(x, y, 6, 0, 2 * Math.PI);
-                ctx.fill();
+        const x = landmark.x * width;
+        const y = landmark.y * height;
+
+        // Draw joint circle - highlight if being dragged
+        const isBeingDragged = isDragging && draggedJointIndex === index;
+        // Use different color for calculated midpoints
+        const isMidpoint = index === 33 || index === 34;
+
+        if (isBeingDragged) {
+            ctx.fillStyle = '#FF00FF'; // Magenta for dragged joint
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.fill();
+        } else {
+            ctx.fillStyle = isMidpoint ? '#FFA500' : '#FF0000'; // Orange for midpoints, red for others
+            ctx.beginPath();
+            ctx.arc(x, y, isMidpoint ? 8 : 6, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        let textY = y - 10;
+
+        // Draw joint name
+        if (showJointNumbers) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
+            ctx.font = 'bold 14px Arial';
+            const jointName = LANDMARK_NAMES[index];
+            ctx.strokeText(jointName, x + 10, textY);
+            ctx.fillText(jointName, x + 10, textY);
+            textY -= 18;
+        }
+
+        // Draw coordinates
+        if (showCoordinates) {
+            let coordText;
+
+            if (analysisModeVideo === '3D' && extendedLandmarks3D && extendedLandmarks3D[index]) {
+                // 3D world coordinates (meters)
+                const lm3d = extendedLandmarks3D[index];
+                // Negate Y to make positive direction upward (conventional)
+                coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
+            } else if (analysisModeVideo === '2D') {
+                // 2D coordinates in pixels, divided by calibration distance
+                const pixelX = landmark.x * width;
+                const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
+
+                // Calculate calibration distance in pixels
+                const p1x = calibrationPoint1Video.x * width;
+                const p1y = calibrationPoint1Video.y * height;
+                const p2x = calibrationPoint2Video.x * width;
+                const p2y = calibrationPoint2Video.y * height;
+                const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
+
+                // Normalize by calibration distance
+                const normalizedX = pixelX / calibDistance;
+                const normalizedY = pixelY / calibDistance;
+
+                coordText = `2D: (${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
             }
-
-            let textY = y - 10;
-
-            // Draw joint name
-            if (showJointNumbers) {
-                ctx.fillStyle = '#FFFFFF';
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 3;
-                ctx.font = 'bold 14px Arial';
-                const jointName = LANDMARK_NAMES[index];
-                ctx.strokeText(jointName, x + 10, textY);
-                ctx.fillText(jointName, x + 10, textY);
-                textY -= 18;
-            }
-
-            // Draw coordinates
-            if (showCoordinates) {
-                let coordText;
-
-                if (analysisModeVideo === '3D' && landmarks3D && landmarks3D[index]) {
-                    // 3D world coordinates (meters)
-                    const lm3d = landmarks3D[index];
-                    // Negate Y to make positive direction upward (conventional)
-                    coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
-                } else if (analysisModeVideo === '2D') {
-                    // 2D coordinates in pixels, divided by calibration distance
-                    const pixelX = landmark.x * width;
-                    const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
-
-                    // Calculate calibration distance in pixels
-                    const p1x = calibrationPoint1Video.x * width;
-                    const p1y = calibrationPoint1Video.y * height;
-                    const p2x = calibrationPoint2Video.x * width;
-                    const p2y = calibrationPoint2Video.y * height;
-                    const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
-
-                    // Normalize by calibration distance
-                    const normalizedX = pixelX / calibDistance;
-                    const normalizedY = pixelY / calibDistance;
-
-                    coordText = `2D: (${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
-                }
 
                 if (coordText) {
                     ctx.fillStyle = '#FFFF00';
@@ -1433,6 +1504,17 @@ function drawImagePose(landmarks, landmarks3D) {
     const width = imageCanvas.width;
     const height = imageCanvas.height;
 
+    // Calculate midpoint landmarks
+    const { midpoints2D, midpoints3D } = calculateMidpoints(landmarks, landmarks3D);
+
+    // Extend landmarks array with midpoints
+    const extendedLandmarks2D = [...landmarks];
+    const extendedLandmarks3D = landmarks3D ? [...landmarks3D] : [];
+    if (midpoints2D[33]) extendedLandmarks2D[33] = midpoints2D[33];
+    if (midpoints2D[34]) extendedLandmarks2D[34] = midpoints2D[34];
+    if (midpoints3D[33]) extendedLandmarks3D[33] = midpoints3D[33];
+    if (midpoints3D[34]) extendedLandmarks3D[34] = midpoints3D[34];
+
     // Draw connections (skeleton)
     imageCtx.strokeStyle = '#00FF00';
     imageCtx.lineWidth = 4;
@@ -1449,32 +1531,39 @@ function drawImagePose(landmarks, landmarks3D) {
         }
     });
 
-    // Draw landmarks (joints)
-    landmarks.forEach((landmark, index) => {
+    // Draw landmarks (joints) - including calculated midpoints
+    extendedLandmarks2D.forEach((landmark, index) => {
         // Skip excluded landmarks (nose and eyes)
         if (EXCLUDED_LANDMARKS.includes(index)) {
             return;
         }
 
-        if (landmark.visibility > 0.5) {
-            const x = landmark.x * width;
-            const y = landmark.y * height;
+        // Skip if landmark doesn't exist or has low visibility
+        if (!landmark || landmark.visibility < 0.5) {
+            return;
+        }
 
-            // Draw joint circle - highlight if being dragged
-            const isBeingDragged = isDragging && draggedJointIndex === index;
-            if (isBeingDragged) {
-                imageCtx.fillStyle = '#FF00FF'; // Magenta for dragged joint
-                imageCtx.beginPath();
-                imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
-                imageCtx.fill();
-            } else {
-                imageCtx.fillStyle = '#FF0000';
-                imageCtx.beginPath();
-                imageCtx.arc(x, y, 6, 0, 2 * Math.PI);
-                imageCtx.fill();
-            }
+        const x = landmark.x * width;
+        const y = landmark.y * height;
 
-            let textY = y - 10;
+        // Draw joint circle - highlight if being dragged
+        const isBeingDragged = isDragging && draggedJointIndex === index;
+        // Use different color for calculated midpoints
+        const isMidpoint = index === 33 || index === 34;
+
+        if (isBeingDragged) {
+            imageCtx.fillStyle = '#FF00FF'; // Magenta for dragged joint
+            imageCtx.beginPath();
+            imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
+            imageCtx.fill();
+        } else {
+            imageCtx.fillStyle = isMidpoint ? '#FFA500' : '#FF0000'; // Orange for midpoints, red for others
+            imageCtx.beginPath();
+            imageCtx.arc(x, y, isMidpoint ? 8 : 6, 0, 2 * Math.PI);
+            imageCtx.fill();
+        }
+
+        let textY = y - 10;
 
             // Draw joint name
             if (showJointNumbersImage) {
@@ -1488,42 +1577,41 @@ function drawImagePose(landmarks, landmarks3D) {
                 textY -= 18;
             }
 
-            // Draw coordinates
-            if (showCoordinatesImage) {
-                let coordText;
+        // Draw coordinates
+        if (showCoordinatesImage) {
+            let coordText;
 
-                if (analysisModeImage === '3D' && landmarks3D && landmarks3D[index]) {
-                    // 3D world coordinates (meters)
-                    const lm3d = landmarks3D[index];
-                    // Negate Y to make positive direction upward (conventional)
-                    coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
-                } else if (analysisModeImage === '2D') {
-                    // 2D coordinates in pixels, divided by calibration distance
-                    const pixelX = landmark.x * width;
-                    const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
+            if (analysisModeImage === '3D' && extendedLandmarks3D && extendedLandmarks3D[index]) {
+                // 3D world coordinates (meters)
+                const lm3d = extendedLandmarks3D[index];
+                // Negate Y to make positive direction upward (conventional)
+                coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
+            } else if (analysisModeImage === '2D') {
+                // 2D coordinates in pixels, divided by calibration distance
+                const pixelX = landmark.x * width;
+                const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
 
-                    // Calculate calibration distance in pixels
-                    const p1x = calibrationPoint1Image.x * width;
-                    const p1y = calibrationPoint1Image.y * height;
-                    const p2x = calibrationPoint2Image.x * width;
-                    const p2y = calibrationPoint2Image.y * height;
-                    const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
+                // Calculate calibration distance in pixels
+                const p1x = calibrationPoint1Image.x * width;
+                const p1y = calibrationPoint1Image.y * height;
+                const p2x = calibrationPoint2Image.x * width;
+                const p2y = calibrationPoint2Image.y * height;
+                const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
 
-                    // Normalize by calibration distance
-                    const normalizedX = pixelX / calibDistance;
-                    const normalizedY = pixelY / calibDistance;
+                // Normalize by calibration distance
+                const normalizedX = pixelX / calibDistance;
+                const normalizedY = pixelY / calibDistance;
 
-                    coordText = `2D: (${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
-                }
+                coordText = `2D: (${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
+            }
 
-                if (coordText) {
-                    imageCtx.fillStyle = '#FFFF00';
-                    imageCtx.strokeStyle = '#000000';
-                    imageCtx.lineWidth = 3;
-                    imageCtx.font = 'bold 12px Arial';
-                    imageCtx.strokeText(coordText, x + 10, textY);
-                    imageCtx.fillText(coordText, x + 10, textY);
-                }
+            if (coordText) {
+                imageCtx.fillStyle = '#FFFF00';
+                imageCtx.strokeStyle = '#000000';
+                imageCtx.lineWidth = 3;
+                imageCtx.font = 'bold 12px Arial';
+                imageCtx.strokeText(coordText, x + 10, textY);
+                imageCtx.fillText(coordText, x + 10, textY);
             }
         }
     });
