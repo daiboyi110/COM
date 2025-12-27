@@ -21,6 +21,12 @@ let showJointNumbersImage = true;
 let showCoordinatesImage = false;
 let imagePoseData = null; // Store pose data for the image
 
+// Joint dragging variables
+let isDragging = false;
+let draggedJointIndex = null;
+let draggedJointFrame = null; // For video: which frame is being edited
+let isEditMode = false; // Toggle edit mode on/off
+
 // MediaPipe Pose landmark names (33 landmarks)
 const LANDMARK_NAMES = [
     'Nose',
@@ -94,6 +100,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const showJointNumbersImageCheckbox = document.getElementById('showJointNumbersImage');
     const showCoordinatesImageCheckbox = document.getElementById('showCoordinatesImage');
     const fullSizeImageCheckbox = document.getElementById('fullSizeImage');
+    const editModeImageCheckbox = document.getElementById('editModeImage');
+
+    // Video edit mode
+    const editModeVideoCheckbox = document.getElementById('editModeVideo');
 
     // Check if XLSX library is loaded
     if (typeof XLSX !== 'undefined') {
@@ -273,6 +283,45 @@ document.addEventListener('DOMContentLoaded', () => {
             redrawImagePose();
         }, 100);
     });
+
+    // Edit mode controls
+    editModeImageCheckbox.addEventListener('change', (e) => {
+        isEditMode = e.target.checked;
+        if (isEditMode) {
+            imageCanvas.classList.add('editable');
+            console.log('Edit mode enabled for image');
+        } else {
+            imageCanvas.classList.remove('editable');
+            isDragging = false;
+            draggedJointIndex = null;
+            console.log('Edit mode disabled for image');
+        }
+    });
+
+    editModeVideoCheckbox.addEventListener('change', (e) => {
+        isEditMode = e.target.checked;
+        if (isEditMode) {
+            canvas.classList.add('editable');
+            console.log('Edit mode enabled for video');
+        } else {
+            canvas.classList.remove('editable');
+            isDragging = false;
+            draggedJointIndex = null;
+            console.log('Edit mode disabled for video');
+        }
+    });
+
+    // Mouse events for image canvas
+    imageCanvas.addEventListener('mousedown', handleMouseDown);
+    imageCanvas.addEventListener('mousemove', handleMouseMove);
+    imageCanvas.addEventListener('mouseup', handleMouseUp);
+    imageCanvas.addEventListener('mouseleave', handleMouseUp);
+
+    // Mouse events for video canvas
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mouseleave', handleMouseUp);
 
     // Processing speed control
     processingSpeedSelect.addEventListener('change', (e) => {
@@ -542,11 +591,19 @@ function drawPose(landmarks, landmarks3D) {
             const x = landmark.x * width;
             const y = landmark.y * height;
 
-            // Draw joint circle
-            ctx.fillStyle = '#FF0000';
-            ctx.beginPath();
-            ctx.arc(x, y, 6, 0, 2 * Math.PI);
-            ctx.fill();
+            // Draw joint circle - highlight if being dragged
+            const isBeingDragged = isDragging && draggedJointIndex === index;
+            if (isBeingDragged) {
+                ctx.fillStyle = '#FF00FF'; // Magenta for dragged joint
+                ctx.beginPath();
+                ctx.arc(x, y, 10, 0, 2 * Math.PI);
+                ctx.fill();
+            } else {
+                ctx.fillStyle = '#FF0000';
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            }
 
             let textY = y - 10;
 
@@ -811,6 +868,152 @@ function downloadFile(content, filename, contentType) {
     URL.revokeObjectURL(url);
 }
 
+// ===== JOINT EDITING FUNCTIONS =====
+
+function handleMouseDown(e) {
+    if (!isEditMode) return;
+
+    const targetCanvas = e.target;
+    const rect = targetCanvas.getBoundingClientRect();
+    const scaleX = targetCanvas.width / rect.width;
+    const scaleY = targetCanvas.height / rect.height;
+    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseY = (e.clientY - rect.top) * scaleY;
+
+    // Determine which mode we're in (image or video)
+    const isImageMode = targetCanvas === imageCanvas;
+    const landmarks = isImageMode ?
+        (imagePoseData ? imagePoseData.landmarks2D : null) :
+        (poseDataArray.length > 0 ? getCurrentFramePoseData()?.landmarks2D : null);
+
+    if (!landmarks) return;
+
+    // Find the closest joint within 20 pixels
+    const CLICK_THRESHOLD = 20;
+    let closestJoint = null;
+    let closestDistance = CLICK_THRESHOLD;
+
+    landmarks.forEach((landmark, index) => {
+        if (landmark.visibility > 0.5) {
+            const jointX = landmark.x * targetCanvas.width;
+            const jointY = landmark.y * targetCanvas.height;
+            const distance = Math.sqrt(
+                Math.pow(mouseX - jointX, 2) +
+                Math.pow(mouseY - jointY, 2)
+            );
+
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestJoint = index;
+            }
+        }
+    });
+
+    if (closestJoint !== null) {
+        isDragging = true;
+        draggedJointIndex = closestJoint;
+        if (!isImageMode) {
+            draggedJointFrame = Math.floor(video.currentTime * fps);
+        }
+        targetCanvas.style.cursor = 'move';
+        console.log(`Started dragging joint ${draggedJointIndex} (${LANDMARK_NAMES[draggedJointIndex]})`);
+    }
+}
+
+function handleMouseMove(e) {
+    if (!isDragging || draggedJointIndex === null) return;
+
+    const targetCanvas = e.target;
+    const rect = targetCanvas.getBoundingClientRect();
+    const scaleX = targetCanvas.width / rect.width;
+    const scaleY = targetCanvas.height / rect.height;
+    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseY = (e.clientY - rect.top) * scaleY;
+
+    // Normalize coordinates (0 to 1)
+    const normalizedX = mouseX / targetCanvas.width;
+    const normalizedY = mouseY / targetCanvas.height;
+
+    // Clamp to valid range
+    const clampedX = Math.max(0, Math.min(1, normalizedX));
+    const clampedY = Math.max(0, Math.min(1, normalizedY));
+
+    // Update the landmark position
+    const isImageMode = targetCanvas === imageCanvas;
+
+    if (isImageMode && imagePoseData) {
+        // Update image pose data
+        const landmark2D = imagePoseData.landmarks2D[draggedJointIndex];
+        const landmark3D = imagePoseData.landmarks3D[draggedJointIndex];
+
+        // Calculate the delta in normalized coordinates
+        const deltaX = clampedX - landmark2D.x;
+        const deltaY = clampedY - landmark2D.y;
+
+        // Update 2D position
+        landmark2D.x = clampedX;
+        landmark2D.y = clampedY;
+
+        // Update 3D position (scale proportionally, keep Z the same)
+        if (landmark3D) {
+            // Estimate the change in world coordinates based on 2D movement
+            // This is approximate - we're scaling by typical human body dimensions
+            const SCALE_FACTOR = 2.0; // Approximate scaling from normalized to meters
+            landmark3D.x += deltaX * SCALE_FACTOR;
+            landmark3D.y -= deltaY * SCALE_FACTOR; // Negative because Y is flipped in display
+        }
+
+        redrawImagePose();
+    } else if (!isImageMode) {
+        // Update video pose data for current frame
+        const currentFrame = Math.floor(video.currentTime * fps);
+        const frameData = poseDataArray.find(d => d.frame === currentFrame);
+
+        if (frameData) {
+            const landmark2D = frameData.landmarks2D[draggedJointIndex];
+            const landmark3D = frameData.landmarks3D[draggedJointIndex];
+
+            const deltaX = clampedX - landmark2D.x;
+            const deltaY = clampedY - landmark2D.y;
+
+            landmark2D.x = clampedX;
+            landmark2D.y = clampedY;
+
+            if (landmark3D) {
+                const SCALE_FACTOR = 2.0;
+                landmark3D.x += deltaX * SCALE_FACTOR;
+                landmark3D.y -= deltaY * SCALE_FACTOR;
+            }
+
+            // Redraw the current frame
+            clearCanvas();
+            if (showPose && frameData.landmarks2D) {
+                drawPose(frameData.landmarks2D, frameData.landmarks3D);
+            }
+        }
+    }
+}
+
+function handleMouseUp(e) {
+    if (isDragging) {
+        console.log(`Finished dragging joint ${draggedJointIndex} (${LANDMARK_NAMES[draggedJointIndex]})`);
+        isDragging = false;
+        draggedJointIndex = null;
+        draggedJointFrame = null;
+        if (isEditMode) {
+            e.target.style.cursor = 'crosshair';
+        } else {
+            e.target.style.cursor = 'default';
+        }
+    }
+}
+
+function getCurrentFramePoseData() {
+    if (!video || poseDataArray.length === 0) return null;
+    const currentFrame = Math.floor(video.currentTime * fps);
+    return poseDataArray.find(d => d.frame === currentFrame) || null;
+}
+
 // ===== IMAGE POSE PROCESSING FUNCTIONS =====
 
 // Process pose estimation on uploaded image
@@ -883,11 +1086,19 @@ function drawImagePose(landmarks, landmarks3D) {
             const x = landmark.x * width;
             const y = landmark.y * height;
 
-            // Draw joint circle
-            imageCtx.fillStyle = '#FF0000';
-            imageCtx.beginPath();
-            imageCtx.arc(x, y, 6, 0, 2 * Math.PI);
-            imageCtx.fill();
+            // Draw joint circle - highlight if being dragged
+            const isBeingDragged = isDragging && draggedJointIndex === index;
+            if (isBeingDragged) {
+                imageCtx.fillStyle = '#FF00FF'; // Magenta for dragged joint
+                imageCtx.beginPath();
+                imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
+                imageCtx.fill();
+            } else {
+                imageCtx.fillStyle = '#FF0000';
+                imageCtx.beginPath();
+                imageCtx.arc(x, y, 6, 0, 2 * Math.PI);
+                imageCtx.fill();
+            }
 
             let textY = y - 10;
 

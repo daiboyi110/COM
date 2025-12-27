@@ -113,6 +113,11 @@ h1 {
     pointer-events: none;
 }
 
+#poseCanvas.editable, #imageCanvas.editable {
+    pointer-events: auto;
+    cursor: crosshair;
+}
+
 .controls {
     text-align: center;
     margin: 20px 0;
