@@ -123,24 +123,34 @@ document.addEventListener('DOMContentLoaded', () => {
     imageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            console.log('Image file selected:', file.name);
             const url = URL.createObjectURL(file);
             imageDisplay.src = url;
-            imageDisplay.style.display = 'block';
             videoSection.style.display = 'none';
             imageSection.style.display = 'block';
             imagePoseData = null;
 
             imageDisplay.onload = () => {
+                console.log('Image loaded:', imageDisplay.naturalWidth, 'x', imageDisplay.naturalHeight);
+
                 // Set canvas size to match image
                 imageCanvas.width = imageDisplay.naturalWidth;
                 imageCanvas.height = imageDisplay.naturalHeight;
+
+                console.log('Canvas size set to:', imageCanvas.width, 'x', imageCanvas.height);
 
                 // Update info
                 document.getElementById('imageInfo').textContent =
                     `${imageDisplay.naturalWidth} × ${imageDisplay.naturalHeight}`;
 
                 // Process pose estimation on the image
+                console.log('Processing pose estimation...');
                 processImagePose();
+            };
+
+            imageDisplay.onerror = (error) => {
+                console.error('Error loading image:', error);
+                alert('Failed to load image. Please try a different file.');
             };
         }
     });
@@ -388,6 +398,13 @@ function updateVideoInfo() {
     const info = document.getElementById('videoInfo');
     if (info) {
         info.textContent = `${video.videoWidth}x${video.videoHeight} @ ${fps} FPS`;
+    }
+}
+
+function resizeCanvas() {
+    if (video && video.videoWidth) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
     }
 }
 
