@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const showPoseCheckbox = document.getElementById('showPose');
     const showJointNumbersCheckbox = document.getElementById('showJointNumbers');
     const showCoordinatesCheckbox = document.getElementById('showCoordinates');
+    const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
     const processingSpeedSelect = document.getElementById('processingSpeed');
 
     // Check if XLSX library is loaded
@@ -173,6 +174,16 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             processPoseFrame();
         }
+    });
+
+    fullSizeVideoCheckbox.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            video.classList.add('full-size');
+        } else {
+            video.classList.remove('full-size');
+        }
+        // Resize canvas to match new video dimensions
+        resizeCanvas();
     });
 
     // Processing speed control

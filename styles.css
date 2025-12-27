@@ -53,6 +53,13 @@ h1 {
     object-fit: contain;
 }
 
+#video.full-size {
+    max-width: none;
+    max-height: none;
+    width: auto;
+    height: auto;
+}
+
 #poseCanvas {
     position: absolute;
     top: 0;
