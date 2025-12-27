@@ -64,6 +64,9 @@ const LANDMARK_NAMES = [
     'Right_Foot_Index'
 ];
 
+// Landmarks to exclude from display (0-6: Nose and eye landmarks)
+const EXCLUDED_LANDMARKS = [0, 1, 2, 3, 4, 5, 6];
+
 // MediaPipe Pose connections for drawing skeleton
 const POSE_CONNECTIONS = [
     [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
@@ -72,6 +75,11 @@ const POSE_CONNECTIONS = [
     [11, 23], [12, 24], [23, 24], [23, 25], [24, 26], [25, 27], [26, 28],
     [27, 29], [28, 30], [29, 31], [30, 32], [27, 31], [28, 32]
 ];
+
+// Filter connections to exclude those involving excluded landmarks
+const FILTERED_POSE_CONNECTIONS = POSE_CONNECTIONS.filter(([startIdx, endIdx]) => {
+    return !EXCLUDED_LANDMARKS.includes(startIdx) && !EXCLUDED_LANDMARKS.includes(endIdx);
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     video = document.getElementById('video');
@@ -650,7 +658,7 @@ function drawPose(landmarks, landmarks3D) {
     ctx.strokeStyle = '#00FF00';
     ctx.lineWidth = 4;
 
-    POSE_CONNECTIONS.forEach(([startIdx, endIdx]) => {
+    FILTERED_POSE_CONNECTIONS.forEach(([startIdx, endIdx]) => {
         const start = landmarks[startIdx];
         const end = landmarks[endIdx];
 
@@ -664,6 +672,11 @@ function drawPose(landmarks, landmarks3D) {
 
     // Draw landmarks (joints)
     landmarks.forEach((landmark, index) => {
+        // Skip excluded landmarks (nose and eyes)
+        if (EXCLUDED_LANDMARKS.includes(index)) {
+            return;
+        }
+
         if (landmark.visibility > 0.5) {
             const x = landmark.x * width;
             const y = landmark.y * height;
@@ -971,6 +984,11 @@ function handleMouseDown(e) {
     let closestDistance = CLICK_THRESHOLD;
 
     landmarks.forEach((landmark, index) => {
+        // Skip excluded landmarks (nose and eyes)
+        if (EXCLUDED_LANDMARKS.includes(index)) {
+            return;
+        }
+
         if (landmark.visibility > 0.5) {
             const jointX = landmark.x * targetCanvas.width;
             const jointY = landmark.y * targetCanvas.height;
@@ -1145,7 +1163,7 @@ function drawImagePose(landmarks, landmarks3D) {
     imageCtx.strokeStyle = '#00FF00';
     imageCtx.lineWidth = 4;
 
-    POSE_CONNECTIONS.forEach(([startIdx, endIdx]) => {
+    FILTERED_POSE_CONNECTIONS.forEach(([startIdx, endIdx]) => {
         const start = landmarks[startIdx];
         const end = landmarks[endIdx];
 
@@ -1159,6 +1177,11 @@ function drawImagePose(landmarks, landmarks3D) {
 
     // Draw landmarks (joints)
     landmarks.forEach((landmark, index) => {
+        // Skip excluded landmarks (nose and eyes)
+        if (EXCLUDED_LANDMARKS.includes(index)) {
+            return;
+        }
+
         if (landmark.visibility > 0.5) {
             const x = landmark.x * width;
             const y = landmark.y * height;
