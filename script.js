@@ -1488,31 +1488,67 @@ function exportAsJson() {
     console.log(`Exported ${poseDataArray.length} frames to JSON`);
 }
 
-// Export as CSV
+// Export as CSV (creates two files: 3D world coordinates and display coordinates)
 function exportAsCsv() {
     if (poseDataArray.length === 0) {
         alert('No pose data to export. Play or step through the video to capture pose data.');
         return;
     }
 
-    // Build header row with joint names (include display coordinates)
-    // Only include landmarks that are displayed (exclude EXCLUDED_LANDMARKS)
-    let header = 'Frame,Timestamp';
+    // ===== 3D World Coordinates CSV =====
+    // Build header row for 3D data
+    let header3D = 'Frame,Timestamp';
     LANDMARK_NAMES.forEach((name, index) => {
         // Skip excluded landmarks
         if (EXCLUDED_LANDMARKS.includes(index)) {
             return;
         }
-        header += `,${name}_X,${name}_Y,${name}_Z`;
+        header3D += `,${name}_X,${name}_Y,${name}_Z`;
+    });
+    let csv3D = header3D + '\n';
+
+    // Each row is one frame - 3D data
+    poseDataArray.forEach(frameData => {
+        let row = `${frameData.frame},${frameData.timestamp.toFixed(3)}`;
+
+        frameData.landmarks2D.forEach((lm2d, index) => {
+            // Skip excluded landmarks
+            if (EXCLUDED_LANDMARKS.includes(index)) {
+                return;
+            }
+
+            const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+
+            // Check if landmark is visible
+            if (lm2d.visibility > 0.5) {
+                // Negate Y to make positive direction upward (conventional)
+                row += `,${lm3d.x.toFixed(6)},${(-lm3d.y).toFixed(6)},${lm3d.z.toFixed(6)}`;
+            } else {
+                // Landmark not visible, use empty values
+                row += ',,,';
+            }
+        });
+
+        csv3D += row + '\n';
+    });
+
+    // ===== Display Coordinates CSV =====
+    // Build header row for display data
+    let headerDisplay = 'Frame,Timestamp';
+    LANDMARK_NAMES.forEach((name, index) => {
+        // Skip excluded landmarks
+        if (EXCLUDED_LANDMARKS.includes(index)) {
+            return;
+        }
         if (analysisModeVideo === '2D') {
-            header += `,${name}_Display_X,${name}_Display_Y`;
+            headerDisplay += `,${name}_Display_X,${name}_Display_Y`;
         } else {
-            header += `,${name}_Display_X,${name}_Display_Y,${name}_Display_Z`;
+            headerDisplay += `,${name}_Display_X,${name}_Display_Y,${name}_Display_Z`;
         }
     });
-    let csv = header + '\n';
+    let csvDisplay = headerDisplay + '\n';
 
-    // Each row is one frame
+    // Each row is one frame - display data
     poseDataArray.forEach(frameData => {
         let row = `${frameData.frame},${frameData.timestamp.toFixed(3)}`;
 
@@ -1527,23 +1563,16 @@ function exportAsCsv() {
             video.videoHeight
         );
 
-        // Add X, Y, Z and display coordinates for each landmark
-        // Only export landmarks that are displayed (exclude EXCLUDED_LANDMARKS and check visibility)
         frameData.landmarks2D.forEach((lm2d, index) => {
-            // Skip excluded landmarks (not displayed on screen)
+            // Skip excluded landmarks
             if (EXCLUDED_LANDMARKS.includes(index)) {
                 return;
             }
 
-            const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
             const displayCoord = displayCoords[index];
 
-            // Check if landmark is visible (same threshold as drawing)
+            // Check if landmark is visible
             if (lm2d.visibility > 0.5) {
-                // Use 3D coordinates (world coordinates in meters)
-                // Negate Y to make positive direction upward (conventional)
-                row += `,${lm3d.x.toFixed(6)},${(-lm3d.y).toFixed(6)},${lm3d.z.toFixed(6)}`;
-
                 // Add display coordinates
                 if (analysisModeVideo === '2D') {
                     row += `,${displayCoord.x.toFixed(6)},${displayCoord.y.toFixed(6)}`;
@@ -1553,18 +1582,20 @@ function exportAsCsv() {
             } else {
                 // Landmark not visible, use empty values
                 if (analysisModeVideo === '2D') {
-                    row += ',,,,,'; // X, Y, Z, Display_X, Display_Y
+                    row += ',,';
                 } else {
-                    row += ',,,,,,'; // X, Y, Z, Display_X, Display_Y, Display_Z
+                    row += ',,,';
                 }
             }
         });
 
-        csv += row + '\n';
+        csvDisplay += row + '\n';
     });
 
-    downloadFile(csv, 'pose_data.csv', 'text/csv');
-    console.log(`Exported ${poseDataArray.length} frames to CSV`);
+    // Download both CSV files
+    downloadFile(csv3D, 'pose_data_3d.csv', 'text/csv');
+    downloadFile(csvDisplay, 'pose_data_display.csv', 'text/csv');
+    console.log(`Exported ${poseDataArray.length} frames to 2 CSV files (3D and Display)`);
 }
 
 // Export as Excel
@@ -1602,25 +1633,69 @@ function exportAsExcel() {
         XLSX.utils.book_append_sheet(wb, metadataSheet, 'Metadata');
         console.log('Metadata sheet created');
 
-        // Pose data sheet - rows are frames, columns are joint coordinates
-        // Build header row (include display coordinates)
-        // Only include landmarks that are displayed (exclude EXCLUDED_LANDMARKS)
-        const header = ['Frame', 'Timestamp'];
+        // ===== 3D World Coordinates Sheet =====
+        const header3D = ['Frame', 'Timestamp'];
         LANDMARK_NAMES.forEach((name, index) => {
             // Skip excluded landmarks
             if (EXCLUDED_LANDMARKS.includes(index)) {
                 return;
             }
-            header.push(`${name}_X`, `${name}_Y`, `${name}_Z`);
+            header3D.push(`${name}_X`, `${name}_Y`, `${name}_Z`);
+        });
+        const data3DRows = [header3D];
+
+        // Each row is one frame - 3D data
+        poseDataArray.forEach(frameData => {
+            const row = [
+                frameData.frame,
+                parseFloat(frameData.timestamp.toFixed(3))
+            ];
+
+            frameData.landmarks2D.forEach((lm2d, index) => {
+                // Skip excluded landmarks
+                if (EXCLUDED_LANDMARKS.includes(index)) {
+                    return;
+                }
+
+                const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+
+                // Check if landmark is visible
+                if (lm2d.visibility > 0.5) {
+                    // Negate Y to make positive direction upward (conventional)
+                    row.push(
+                        parseFloat(lm3d.x.toFixed(6)),
+                        parseFloat((-lm3d.y).toFixed(6)),
+                        parseFloat(lm3d.z.toFixed(6))
+                    );
+                } else {
+                    // Landmark not visible, use empty values
+                    row.push('', '', '');
+                }
+            });
+
+            data3DRows.push(row);
+        });
+
+        const sheet3D = XLSX.utils.aoa_to_sheet(data3DRows);
+        XLSX.utils.book_append_sheet(wb, sheet3D, '3D World Coordinates');
+        console.log('3D World Coordinates sheet created with', data3DRows.length - 1, 'frames');
+
+        // ===== Display Coordinates Sheet =====
+        const headerDisplay = ['Frame', 'Timestamp'];
+        LANDMARK_NAMES.forEach((name, index) => {
+            // Skip excluded landmarks
+            if (EXCLUDED_LANDMARKS.includes(index)) {
+                return;
+            }
             if (analysisModeVideo === '2D') {
-                header.push(`${name}_Display_X`, `${name}_Display_Y`);
+                headerDisplay.push(`${name}_Display_X`, `${name}_Display_Y`);
             } else {
-                header.push(`${name}_Display_X`, `${name}_Display_Y`, `${name}_Display_Z`);
+                headerDisplay.push(`${name}_Display_X`, `${name}_Display_Y`, `${name}_Display_Z`);
             }
         });
-        const poseDataRows = [header];
+        const dataDisplayRows = [headerDisplay];
 
-        // Each row is one frame
+        // Each row is one frame - display data
         poseDataArray.forEach(frameData => {
             const row = [
                 frameData.frame,
@@ -1638,26 +1713,16 @@ function exportAsExcel() {
                 video.videoHeight
             );
 
-            // Add X, Y, Z and display coordinates for each landmark
-            // Only export landmarks that are displayed (exclude EXCLUDED_LANDMARKS and check visibility)
             frameData.landmarks2D.forEach((lm2d, index) => {
-                // Skip excluded landmarks (not displayed on screen)
+                // Skip excluded landmarks
                 if (EXCLUDED_LANDMARKS.includes(index)) {
                     return;
                 }
 
-                const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
                 const displayCoord = displayCoords[index];
 
-                // Check if landmark is visible (same threshold as drawing)
+                // Check if landmark is visible
                 if (lm2d.visibility > 0.5) {
-                    // Negate Y to make positive direction upward (conventional)
-                    row.push(
-                        parseFloat(lm3d.x.toFixed(6)),
-                        parseFloat((-lm3d.y).toFixed(6)),
-                        parseFloat(lm3d.z.toFixed(6))
-                    );
-
                     // Add display coordinates
                     if (analysisModeVideo === '2D') {
                         row.push(
@@ -1674,19 +1739,19 @@ function exportAsExcel() {
                 } else {
                     // Landmark not visible, use empty values
                     if (analysisModeVideo === '2D') {
-                        row.push('', '', '', '', ''); // X, Y, Z, Display_X, Display_Y
+                        row.push('', '');
                     } else {
-                        row.push('', '', '', '', '', ''); // X, Y, Z, Display_X, Display_Y, Display_Z
+                        row.push('', '', '');
                     }
                 }
             });
 
-            poseDataRows.push(row);
+            dataDisplayRows.push(row);
         });
 
-        const poseSheet = XLSX.utils.aoa_to_sheet(poseDataRows);
-        XLSX.utils.book_append_sheet(wb, poseSheet, 'Pose Data');
-        console.log('Pose Data sheet created with', poseDataRows.length - 1, 'frames');
+        const sheetDisplay = XLSX.utils.aoa_to_sheet(dataDisplayRows);
+        XLSX.utils.book_append_sheet(wb, sheetDisplay, 'Display Coordinates');
+        console.log('Display Coordinates sheet created with', dataDisplayRows.length - 1, 'frames');
 
         // Summary by frame sheet
         const summaryRows = [['Frame', 'Timestamp', 'Detected_Joints', 'Avg_Visibility']];
@@ -2285,7 +2350,7 @@ function exportImageAsJson() {
     console.log('Exported image pose data to JSON');
 }
 
-// Export image pose data as CSV
+// Export image pose data as CSV (creates two files: 3D world coordinates and display coordinates)
 function exportImageAsCsv() {
     if (!imagePoseData) {
         alert('No pose data to export. Please upload an image first.');
@@ -2303,28 +2368,47 @@ function exportImageAsCsv() {
         imageDisplay.naturalHeight
     );
 
-    // Build header row with joint names (include display coordinates)
-    let header = 'Joint_Index,Joint_Name,X,Y,Z,Visibility';
-    if (analysisModeImage === '2D') {
-        header += ',Display_X,Display_Y';
-    } else {
-        header += ',Display_X,Display_Y,Display_Z';
-    }
-    let csv = header + '\n';
+    // ===== 3D World Coordinates CSV =====
+    let header3D = 'Joint_Index,Joint_Name,X,Y,Z,Visibility';
+    let csv3D = header3D + '\n';
 
-    // Each row is one joint - only include visible landmarks that are displayed
+    // Each row is one joint - 3D data
     imagePoseData.landmarks2D.forEach((lm2d, index) => {
-        // Skip excluded landmarks (not displayed on screen)
+        // Skip excluded landmarks
         if (EXCLUDED_LANDMARKS.includes(index)) {
             return;
         }
         // Only export landmarks that are visible
         if (lm2d.visibility > 0.5) {
             const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-            const displayCoord = displayCoords[index];
 
             // Negate Y to make positive direction upward (conventional)
             let row = `${index},${LANDMARK_NAMES[index]},${lm3d.x.toFixed(6)},${(-lm3d.y).toFixed(6)},${lm3d.z.toFixed(6)},${lm2d.visibility.toFixed(3)}`;
+            csv3D += row + '\n';
+        }
+    });
+
+    // ===== Display Coordinates CSV =====
+    let headerDisplay = 'Joint_Index,Joint_Name';
+    if (analysisModeImage === '2D') {
+        headerDisplay += ',Display_X,Display_Y';
+    } else {
+        headerDisplay += ',Display_X,Display_Y,Display_Z';
+    }
+    headerDisplay += ',Visibility';
+    let csvDisplay = headerDisplay + '\n';
+
+    // Each row is one joint - display data
+    imagePoseData.landmarks2D.forEach((lm2d, index) => {
+        // Skip excluded landmarks
+        if (EXCLUDED_LANDMARKS.includes(index)) {
+            return;
+        }
+        // Only export landmarks that are visible
+        if (lm2d.visibility > 0.5) {
+            const displayCoord = displayCoords[index];
+
+            let row = `${index},${LANDMARK_NAMES[index]}`;
 
             // Add display coordinates
             if (analysisModeImage === '2D') {
@@ -2333,12 +2417,15 @@ function exportImageAsCsv() {
                 row += `,${displayCoord.x.toFixed(6)},${displayCoord.y.toFixed(6)},${displayCoord.z.toFixed(6)}`;
             }
 
-            csv += row + '\n';
+            row += `,${lm2d.visibility.toFixed(3)}`;
+            csvDisplay += row + '\n';
         }
     });
 
-    downloadFile(csv, 'image_pose_data.csv', 'text/csv');
-    console.log('Exported image pose data to CSV');
+    // Download both CSV files
+    downloadFile(csv3D, 'image_pose_data_3d.csv', 'text/csv');
+    downloadFile(csvDisplay, 'image_pose_data_display.csv', 'text/csv');
+    console.log('Exported image pose data to 2 CSV files (3D and Display)');
 }
 
 // Export image pose data as Excel
@@ -2384,14 +2471,9 @@ function exportImageAsExcel() {
             imageDisplay.naturalHeight
         );
 
-        // Pose data sheet - each row is a joint (include display coordinates)
-        const header = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Z', 'Visibility'];
-        if (analysisModeImage === '2D') {
-            header.push('Display_X', 'Display_Y');
-        } else {
-            header.push('Display_X', 'Display_Y', 'Display_Z');
-        }
-        const poseDataRows = [header];
+        // ===== 3D World Coordinates Sheet =====
+        const header3D = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Z', 'Visibility'];
+        const poseDataRows3D = [header3D];
 
         // Only include visible landmarks that are displayed (exclude EXCLUDED_LANDMARKS)
         imagePoseData.landmarks2D.forEach((lm2d, index) => {
@@ -2402,7 +2484,6 @@ function exportImageAsExcel() {
             // Only include landmarks with sufficient visibility
             if (lm2d.visibility > 0.5) {
                 const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-                const displayCoord = displayCoords[index];
 
                 // Negate Y to make positive direction upward (conventional)
                 const row = [
@@ -2412,6 +2493,39 @@ function exportImageAsExcel() {
                     parseFloat((-lm3d.y).toFixed(6)),
                     parseFloat(lm3d.z.toFixed(6)),
                     parseFloat(lm2d.visibility.toFixed(3))
+                ];
+
+                poseDataRows3D.push(row);
+            }
+        });
+
+        const poseSheet3D = XLSX.utils.aoa_to_sheet(poseDataRows3D);
+        XLSX.utils.book_append_sheet(wb, poseSheet3D, '3D World Coordinates');
+        console.log('3D World Coordinates sheet created with', poseDataRows3D.length - 1, 'joints');
+
+        // ===== Display Coordinates Sheet =====
+        const headerDisplay = ['Joint_Index', 'Joint_Name'];
+        if (analysisModeImage === '2D') {
+            headerDisplay.push('Display_X', 'Display_Y');
+        } else {
+            headerDisplay.push('Display_X', 'Display_Y', 'Display_Z');
+        }
+        headerDisplay.push('Visibility');
+        const poseDataRowsDisplay = [headerDisplay];
+
+        // Only include visible landmarks that are displayed (exclude EXCLUDED_LANDMARKS)
+        imagePoseData.landmarks2D.forEach((lm2d, index) => {
+            // Skip excluded landmarks (not displayed on screen)
+            if (EXCLUDED_LANDMARKS.includes(index)) {
+                return;
+            }
+            // Only include landmarks with sufficient visibility
+            if (lm2d.visibility > 0.5) {
+                const displayCoord = displayCoords[index];
+
+                const row = [
+                    index,
+                    LANDMARK_NAMES[index]
                 ];
 
                 // Add display coordinates
@@ -2428,13 +2542,15 @@ function exportImageAsExcel() {
                     );
                 }
 
-                poseDataRows.push(row);
+                row.push(parseFloat(lm2d.visibility.toFixed(3)));
+
+                poseDataRowsDisplay.push(row);
             }
         });
 
-        const poseSheet = XLSX.utils.aoa_to_sheet(poseDataRows);
-        XLSX.utils.book_append_sheet(wb, poseSheet, 'Pose Data');
-        console.log('Pose Data sheet created with', poseDataRows.length - 1, 'joints');
+        const poseSheetDisplay = XLSX.utils.aoa_to_sheet(poseDataRowsDisplay);
+        XLSX.utils.book_append_sheet(wb, poseSheetDisplay, 'Display Coordinates');
+        console.log('Display Coordinates sheet created with', poseDataRowsDisplay.length - 1, 'joints');
 
         // Download the file
         console.log('Attempting to write Excel file...');
