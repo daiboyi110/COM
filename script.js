@@ -702,14 +702,15 @@ function drawPose(landmarks, landmarks3D) {
 
             let textY = y - 10;
 
-            // Draw joint number
+            // Draw joint name
             if (showJointNumbers) {
                 ctx.fillStyle = '#FFFFFF';
                 ctx.strokeStyle = '#000000';
                 ctx.lineWidth = 3;
                 ctx.font = 'bold 14px Arial';
-                ctx.strokeText(index.toString(), x + 10, textY);
-                ctx.fillText(index.toString(), x + 10, textY);
+                const jointName = LANDMARK_NAMES[index];
+                ctx.strokeText(jointName, x + 10, textY);
+                ctx.fillText(jointName, x + 10, textY);
                 textY -= 18;
             }
 
@@ -1207,14 +1208,15 @@ function drawImagePose(landmarks, landmarks3D) {
 
             let textY = y - 10;
 
-            // Draw joint number
+            // Draw joint name
             if (showJointNumbersImage) {
                 imageCtx.fillStyle = '#FFFFFF';
                 imageCtx.strokeStyle = '#000000';
                 imageCtx.lineWidth = 3;
                 imageCtx.font = 'bold 14px Arial';
-                imageCtx.strokeText(index.toString(), x + 10, textY);
-                imageCtx.fillText(index.toString(), x + 10, textY);
+                const jointName = LANDMARK_NAMES[index];
+                imageCtx.strokeText(jointName, x + 10, textY);
+                imageCtx.fillText(jointName, x + 10, textY);
                 textY -= 18;
             }
 
