@@ -1331,7 +1331,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.fillStyle = '#FF00FF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
-    context.font = 'bold 16px Arial';
+    context.font = 'bold 28px Arial';
     context.strokeText(scaleText, midX, midY - 20);
     context.fillText(scaleText, midX, midY - 20);
 }
