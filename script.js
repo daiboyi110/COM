@@ -1265,8 +1265,8 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     const y2 = point2.y * height;
 
     // Draw line connecting the two points
-    context.strokeStyle = '#FF00FF'; // Magenta
-    context.lineWidth = 3;
+    context.strokeStyle = '#FFFFFF'; // White
+    context.lineWidth = 6;
     context.setLineDash([10, 5]); // Dashed line
     context.beginPath();
     context.moveTo(x1, y1);
