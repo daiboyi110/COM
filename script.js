@@ -1427,6 +1427,7 @@ function exportAsJson() {
     }
 
     // Transform pose data to use conventional Y direction (positive upward) and add display coordinates
+    // Only include landmarks that are visible (visibility > 0.5)
     const transformedPoseData = poseDataArray.map(frameData => {
         const displayCoords = calculateDisplayCoordinates(
             frameData.landmarks2D,
@@ -1438,13 +1439,28 @@ function exportAsJson() {
             video.videoHeight
         );
 
+        // Filter to only include visible landmarks
+        const visibleLandmarks = [];
+        frameData.landmarks2D.forEach((lm2d, index) => {
+            if (lm2d.visibility > 0.5) {
+                const lm3d = frameData.landmarks3D[index];
+                visibleLandmarks.push({
+                    index: index,
+                    name: LANDMARK_NAMES[index],
+                    landmark2D: lm2d,
+                    landmark3D: {
+                        ...lm3d,
+                        y: -lm3d.y  // Negate Y to make positive direction upward
+                    },
+                    displayCoordinate: displayCoords[index]
+                });
+            }
+        });
+
         return {
-            ...frameData,
-            landmarks3D: frameData.landmarks3D.map(lm => ({
-                ...lm,
-                y: -lm.y  // Negate Y to make positive direction upward
-            })),
-            displayCoordinates: displayCoords
+            frame: frameData.frame,
+            timestamp: frameData.timestamp,
+            visibleLandmarks: visibleLandmarks
         };
     });
 
@@ -1502,19 +1518,30 @@ function exportAsCsv() {
         );
 
         // Add X, Y, Z and display coordinates for each landmark
+        // Only export landmarks that are visible (visibility > 0.5)
         frameData.landmarks2D.forEach((lm2d, index) => {
             const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
             const displayCoord = displayCoords[index];
 
-            // Use 3D coordinates (world coordinates in meters)
-            // Negate Y to make positive direction upward (conventional)
-            row += `,${lm3d.x.toFixed(6)},${(-lm3d.y).toFixed(6)},${lm3d.z.toFixed(6)}`;
+            // Check if landmark is visible (same threshold as drawing)
+            if (lm2d.visibility > 0.5) {
+                // Use 3D coordinates (world coordinates in meters)
+                // Negate Y to make positive direction upward (conventional)
+                row += `,${lm3d.x.toFixed(6)},${(-lm3d.y).toFixed(6)},${lm3d.z.toFixed(6)}`;
 
-            // Add display coordinates
-            if (analysisModeVideo === '2D') {
-                row += `,${displayCoord.x.toFixed(6)},${displayCoord.y.toFixed(6)}`;
+                // Add display coordinates
+                if (analysisModeVideo === '2D') {
+                    row += `,${displayCoord.x.toFixed(6)},${displayCoord.y.toFixed(6)}`;
+                } else {
+                    row += `,${displayCoord.x.toFixed(6)},${displayCoord.y.toFixed(6)},${displayCoord.z.toFixed(6)}`;
+                }
             } else {
-                row += `,${displayCoord.x.toFixed(6)},${displayCoord.y.toFixed(6)},${displayCoord.z.toFixed(6)}`;
+                // Landmark not visible, use empty values
+                if (analysisModeVideo === '2D') {
+                    row += ',,,,,'; // X, Y, Z, Display_X, Display_Y
+                } else {
+                    row += ',,,,,,'; // X, Y, Z, Display_X, Display_Y, Display_Z
+                }
             }
         });
 
@@ -1592,29 +1619,40 @@ function exportAsExcel() {
             );
 
             // Add X, Y, Z and display coordinates for each landmark
+            // Only export landmarks that are visible (visibility > 0.5)
             frameData.landmarks2D.forEach((lm2d, index) => {
                 const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
                 const displayCoord = displayCoords[index];
 
-                // Negate Y to make positive direction upward (conventional)
-                row.push(
-                    parseFloat(lm3d.x.toFixed(6)),
-                    parseFloat((-lm3d.y).toFixed(6)),
-                    parseFloat(lm3d.z.toFixed(6))
-                );
+                // Check if landmark is visible (same threshold as drawing)
+                if (lm2d.visibility > 0.5) {
+                    // Negate Y to make positive direction upward (conventional)
+                    row.push(
+                        parseFloat(lm3d.x.toFixed(6)),
+                        parseFloat((-lm3d.y).toFixed(6)),
+                        parseFloat(lm3d.z.toFixed(6))
+                    );
 
-                // Add display coordinates
-                if (analysisModeVideo === '2D') {
-                    row.push(
-                        parseFloat(displayCoord.x.toFixed(6)),
-                        parseFloat(displayCoord.y.toFixed(6))
-                    );
+                    // Add display coordinates
+                    if (analysisModeVideo === '2D') {
+                        row.push(
+                            parseFloat(displayCoord.x.toFixed(6)),
+                            parseFloat(displayCoord.y.toFixed(6))
+                        );
+                    } else {
+                        row.push(
+                            parseFloat(displayCoord.x.toFixed(6)),
+                            parseFloat(displayCoord.y.toFixed(6)),
+                            parseFloat(displayCoord.z.toFixed(6))
+                        );
+                    }
                 } else {
-                    row.push(
-                        parseFloat(displayCoord.x.toFixed(6)),
-                        parseFloat(displayCoord.y.toFixed(6)),
-                        parseFloat(displayCoord.z.toFixed(6))
-                    );
+                    // Landmark not visible, use empty values
+                    if (analysisModeVideo === '2D') {
+                        row.push('', '', '', '', ''); // X, Y, Z, Display_X, Display_Y
+                    } else {
+                        row.push('', '', '', '', '', ''); // X, Y, Z, Display_X, Display_Y, Display_Z
+                    }
                 }
             });
 
@@ -2171,12 +2209,6 @@ function exportImageAsJson() {
         return;
     }
 
-    // Transform pose data to use conventional Y direction (positive upward)
-    const transformedLandmarks3D = imagePoseData.landmarks3D.map(lm => ({
-        ...lm,
-        y: -lm.y  // Negate Y to make positive direction upward
-    }));
-
     // Calculate display coordinates
     const displayCoords = calculateDisplayCoordinates(
         imagePoseData.landmarks2D,
@@ -2188,6 +2220,24 @@ function exportImageAsJson() {
         imageDisplay.naturalHeight
     );
 
+    // Filter to only include visible landmarks (visibility > 0.5)
+    const visibleLandmarks = [];
+    imagePoseData.landmarks2D.forEach((lm2d, index) => {
+        if (lm2d.visibility > 0.5) {
+            const lm3d = imagePoseData.landmarks3D[index];
+            visibleLandmarks.push({
+                index: index,
+                name: LANDMARK_NAMES[index],
+                landmark2D: lm2d,
+                landmark3D: {
+                    ...lm3d,
+                    y: -lm3d.y  // Negate Y to make positive direction upward
+                },
+                displayCoordinate: displayCoords[index]
+            });
+        }
+    });
+
     const exportData = {
         metadata: {
             imageWidth: imageDisplay.naturalWidth,
@@ -2196,9 +2246,7 @@ function exportImageAsJson() {
             exportDate: new Date().toISOString()
         },
         poseData: {
-            landmarks2D: imagePoseData.landmarks2D,
-            landmarks3D: transformedLandmarks3D,
-            displayCoordinates: displayCoords
+            visibleLandmarks: visibleLandmarks
         }
     };
 
@@ -2234,22 +2282,25 @@ function exportImageAsCsv() {
     }
     let csv = header + '\n';
 
-    // Each row is one joint
+    // Each row is one joint - only include visible landmarks (visibility > 0.5)
     imagePoseData.landmarks2D.forEach((lm2d, index) => {
-        const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-        const displayCoord = displayCoords[index];
+        // Only export landmarks that are visible
+        if (lm2d.visibility > 0.5) {
+            const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+            const displayCoord = displayCoords[index];
 
-        // Negate Y to make positive direction upward (conventional)
-        let row = `${index},${LANDMARK_NAMES[index]},${lm3d.x.toFixed(6)},${(-lm3d.y).toFixed(6)},${lm3d.z.toFixed(6)},${lm2d.visibility.toFixed(3)}`;
+            // Negate Y to make positive direction upward (conventional)
+            let row = `${index},${LANDMARK_NAMES[index]},${lm3d.x.toFixed(6)},${(-lm3d.y).toFixed(6)},${lm3d.z.toFixed(6)},${lm2d.visibility.toFixed(3)}`;
 
-        // Add display coordinates
-        if (analysisModeImage === '2D') {
-            row += `,${displayCoord.x.toFixed(6)},${displayCoord.y.toFixed(6)}`;
-        } else {
-            row += `,${displayCoord.x.toFixed(6)},${displayCoord.y.toFixed(6)},${displayCoord.z.toFixed(6)}`;
+            // Add display coordinates
+            if (analysisModeImage === '2D') {
+                row += `,${displayCoord.x.toFixed(6)},${displayCoord.y.toFixed(6)}`;
+            } else {
+                row += `,${displayCoord.x.toFixed(6)},${displayCoord.y.toFixed(6)},${displayCoord.z.toFixed(6)}`;
+            }
+
+            csv += row + '\n';
         }
-
-        csv += row + '\n';
     });
 
     downloadFile(csv, 'image_pose_data.csv', 'text/csv');
@@ -2308,35 +2359,38 @@ function exportImageAsExcel() {
         }
         const poseDataRows = [header];
 
+        // Only include visible landmarks (visibility > 0.5)
         imagePoseData.landmarks2D.forEach((lm2d, index) => {
-            const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-            const displayCoord = displayCoords[index];
+            if (lm2d.visibility > 0.5) {
+                const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+                const displayCoord = displayCoords[index];
 
-            // Negate Y to make positive direction upward (conventional)
-            const row = [
-                index,
-                LANDMARK_NAMES[index],
-                parseFloat(lm3d.x.toFixed(6)),
-                parseFloat((-lm3d.y).toFixed(6)),
-                parseFloat(lm3d.z.toFixed(6)),
-                parseFloat(lm2d.visibility.toFixed(3))
-            ];
+                // Negate Y to make positive direction upward (conventional)
+                const row = [
+                    index,
+                    LANDMARK_NAMES[index],
+                    parseFloat(lm3d.x.toFixed(6)),
+                    parseFloat((-lm3d.y).toFixed(6)),
+                    parseFloat(lm3d.z.toFixed(6)),
+                    parseFloat(lm2d.visibility.toFixed(3))
+                ];
 
-            // Add display coordinates
-            if (analysisModeImage === '2D') {
-                row.push(
-                    parseFloat(displayCoord.x.toFixed(6)),
-                    parseFloat(displayCoord.y.toFixed(6))
-                );
-            } else {
-                row.push(
-                    parseFloat(displayCoord.x.toFixed(6)),
-                    parseFloat(displayCoord.y.toFixed(6)),
-                    parseFloat(displayCoord.z.toFixed(6))
-                );
+                // Add display coordinates
+                if (analysisModeImage === '2D') {
+                    row.push(
+                        parseFloat(displayCoord.x.toFixed(6)),
+                        parseFloat(displayCoord.y.toFixed(6))
+                    );
+                } else {
+                    row.push(
+                        parseFloat(displayCoord.x.toFixed(6)),
+                        parseFloat(displayCoord.y.toFixed(6)),
+                        parseFloat(displayCoord.z.toFixed(6))
+                    );
+                }
+
+                poseDataRows.push(row);
             }
-
-            poseDataRows.push(row);
         });
 
         const poseSheet = XLSX.utils.aoa_to_sheet(poseDataRows);
