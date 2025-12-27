@@ -31,6 +31,15 @@ let draggedJointIndex = null;
 let draggedJointFrame = null; // For video: which frame is being edited
 let isEditMode = false; // Toggle edit mode on/off
 
+// Calibration points for 2D analysis (normalized coordinates 0-1)
+let calibrationPoint1Video = { x: 0.3, y: 0.5 }; // Point 1 for video
+let calibrationPoint2Video = { x: 0.7, y: 0.5 }; // Point 2 for video
+let calibrationPoint1Image = { x: 0.3, y: 0.5 }; // Point 1 for image
+let calibrationPoint2Image = { x: 0.7, y: 0.5 }; // Point 2 for image
+let draggedCalibrationPoint = null; // Which calibration point is being dragged ('point1' or 'point2')
+let calibrationScaleVideo = 1.0; // Scale length in meters for video
+let calibrationScaleImage = 1.0; // Scale length in meters for image
+
 // MediaPipe Pose landmark names (33 landmarks)
 const LANDMARK_NAMES = [
     'Nose',
@@ -493,6 +502,26 @@ document.addEventListener('DOMContentLoaded', () => {
             redrawImagePose();
         });
     });
+
+    // Calibration scale input handlers
+    const calibrationScaleVideoInput = document.getElementById('calibrationScaleVideo');
+    const calibrationScaleImageInput = document.getElementById('calibrationScaleImage');
+
+    calibrationScaleVideoInput.addEventListener('change', (e) => {
+        calibrationScaleVideo = parseFloat(e.target.value) || 1.0;
+        console.log(`Video calibration scale set to: ${calibrationScaleVideo}m`);
+        if (!video.paused) {
+            clearCanvas();
+        } else {
+            processPoseFrame();
+        }
+    });
+
+    calibrationScaleImageInput.addEventListener('change', (e) => {
+        calibrationScaleImage = parseFloat(e.target.value) || 1.0;
+        console.log(`Image calibration scale set to: ${calibrationScaleImage}m`);
+        redrawImagePose();
+    });
 });
 
 function updateTimeDisplay() {
@@ -671,6 +700,10 @@ function onPoseResults(results) {
 
     if (!showPose || !results.poseLandmarks) {
         document.getElementById('jointCount').textContent = '0';
+        // Still draw calibration points in 2D mode even without pose
+        if (analysisModeVideo === '2D') {
+            drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo);
+        }
         return;
     }
 
@@ -767,6 +800,78 @@ function drawPose(landmarks, landmarks3D) {
             }
         }
     });
+
+    // Draw calibration points in 2D mode
+    if (analysisModeVideo === '2D') {
+        drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo);
+    }
+}
+
+// Draw calibration points for 2D analysis
+function drawCalibrationPoints(context, width, height, point1, point2, scaleLength) {
+    const x1 = point1.x * width;
+    const y1 = point1.y * height;
+    const x2 = point2.x * width;
+    const y2 = point2.y * height;
+
+    // Draw line connecting the two points
+    context.strokeStyle = '#FF00FF'; // Magenta
+    context.lineWidth = 3;
+    context.setLineDash([10, 5]); // Dashed line
+    context.beginPath();
+    context.moveTo(x1, y1);
+    context.lineTo(x2, y2);
+    context.stroke();
+    context.setLineDash([]); // Reset to solid line
+
+    // Draw Point 1
+    const isDraggingPoint1 = draggedCalibrationPoint === 'point1';
+    context.fillStyle = isDraggingPoint1 ? '#FFFF00' : '#00FFFF'; // Yellow if dragging, cyan otherwise
+    context.beginPath();
+    context.arc(x1, y1, isDraggingPoint1 ? 12 : 8, 0, 2 * Math.PI);
+    context.fill();
+    context.strokeStyle = '#000000';
+    context.lineWidth = 2;
+    context.stroke();
+
+    // Draw Point 2
+    const isDraggingPoint2 = draggedCalibrationPoint === 'point2';
+    context.fillStyle = isDraggingPoint2 ? '#FFFF00' : '#00FFFF'; // Yellow if dragging, cyan otherwise
+    context.beginPath();
+    context.arc(x2, y2, isDraggingPoint2 ? 12 : 8, 0, 2 * Math.PI);
+    context.fill();
+    context.strokeStyle = '#000000';
+    context.lineWidth = 2;
+    context.stroke();
+
+    // Display coordinates for Point 1 (transform Y to make upward positive)
+    const coordText1 = `P1: (${point1.x.toFixed(3)}, ${(1 - point1.y).toFixed(3)})`;
+    context.fillStyle = '#00FFFF';
+    context.strokeStyle = '#000000';
+    context.lineWidth = 3;
+    context.font = 'bold 14px Arial';
+    context.strokeText(coordText1, x1 + 15, y1 - 10);
+    context.fillText(coordText1, x1 + 15, y1 - 10);
+
+    // Display coordinates for Point 2 (transform Y to make upward positive)
+    const coordText2 = `P2: (${point2.x.toFixed(3)}, ${(1 - point2.y).toFixed(3)})`;
+    context.fillStyle = '#00FFFF';
+    context.strokeStyle = '#000000';
+    context.lineWidth = 3;
+    context.font = 'bold 14px Arial';
+    context.strokeText(coordText2, x2 + 15, y2 - 10);
+    context.fillText(coordText2, x2 + 15, y2 - 10);
+
+    // Display scale length at midpoint
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    const scaleText = `Scale: ${scaleLength.toFixed(2)}m`;
+    context.fillStyle = '#FF00FF';
+    context.strokeStyle = '#000000';
+    context.lineWidth = 3;
+    context.font = 'bold 16px Arial';
+    context.strokeText(scaleText, midX, midY - 20);
+    context.fillText(scaleText, midX, midY - 20);
 }
 
 // Clear the canvas
@@ -1005,8 +1110,6 @@ function downloadFile(content, filename, contentType) {
 // ===== JOINT EDITING FUNCTIONS =====
 
 function handleMouseDown(e) {
-    if (!isEditMode) return;
-
     const targetCanvas = e.target;
     const rect = targetCanvas.getBoundingClientRect();
     const scaleX = targetCanvas.width / rect.width;
@@ -1016,6 +1119,40 @@ function handleMouseDown(e) {
 
     // Determine which mode we're in (image or video)
     const isImageMode = targetCanvas === imageCanvas;
+    const analysisMode = isImageMode ? analysisModeImage : analysisModeVideo;
+
+    // In 2D mode, always check for calibration points first (they're always draggable)
+    if (analysisMode === '2D') {
+        const CLICK_THRESHOLD = 20;
+        const point1 = isImageMode ? calibrationPoint1Image : calibrationPoint1Video;
+        const point2 = isImageMode ? calibrationPoint2Image : calibrationPoint2Video;
+
+        const p1x = point1.x * targetCanvas.width;
+        const p1y = point1.y * targetCanvas.height;
+        const p2x = point2.x * targetCanvas.width;
+        const p2y = point2.y * targetCanvas.height;
+
+        const dist1 = Math.sqrt(Math.pow(mouseX - p1x, 2) + Math.pow(mouseY - p1y, 2));
+        const dist2 = Math.sqrt(Math.pow(mouseX - p2x, 2) + Math.pow(mouseY - p2y, 2));
+
+        if (dist1 < CLICK_THRESHOLD) {
+            isDragging = true;
+            draggedCalibrationPoint = 'point1';
+            targetCanvas.style.cursor = 'move';
+            console.log('Started dragging calibration point 1');
+            return;
+        } else if (dist2 < CLICK_THRESHOLD) {
+            isDragging = true;
+            draggedCalibrationPoint = 'point2';
+            targetCanvas.style.cursor = 'move';
+            console.log('Started dragging calibration point 2');
+            return;
+        }
+    }
+
+    // Only check pose landmarks if in edit mode
+    if (!isEditMode) return;
+
     const landmarks = isImageMode ?
         (imagePoseData ? imagePoseData.landmarks2D : null) :
         (poseDataArray.length > 0 ? getCurrentFramePoseData()?.landmarks2D : null);
@@ -1060,7 +1197,7 @@ function handleMouseDown(e) {
 }
 
 function handleMouseMove(e) {
-    if (!isDragging || draggedJointIndex === null) return;
+    if (!isDragging) return;
 
     const targetCanvas = e.target;
     const rect = targetCanvas.getBoundingClientRect();
@@ -1077,8 +1214,38 @@ function handleMouseMove(e) {
     const clampedX = Math.max(0, Math.min(1, normalizedX));
     const clampedY = Math.max(0, Math.min(1, normalizedY));
 
-    // Update the landmark position
     const isImageMode = targetCanvas === imageCanvas;
+
+    // Handle calibration point dragging
+    if (draggedCalibrationPoint !== null) {
+        if (isImageMode) {
+            if (draggedCalibrationPoint === 'point1') {
+                calibrationPoint1Image.x = clampedX;
+                calibrationPoint1Image.y = clampedY;
+            } else if (draggedCalibrationPoint === 'point2') {
+                calibrationPoint2Image.x = clampedX;
+                calibrationPoint2Image.y = clampedY;
+            }
+            redrawImagePose();
+        } else {
+            if (draggedCalibrationPoint === 'point1') {
+                calibrationPoint1Video.x = clampedX;
+                calibrationPoint1Video.y = clampedY;
+            } else if (draggedCalibrationPoint === 'point2') {
+                calibrationPoint2Video.x = clampedX;
+                calibrationPoint2Video.y = clampedY;
+            }
+            clearCanvas();
+            const frameData = getCurrentFramePoseData();
+            if (showPose && frameData && frameData.landmarks2D) {
+                drawPose(frameData.landmarks2D, frameData.landmarks3D);
+            }
+        }
+        return;
+    }
+
+    // Handle pose landmark dragging
+    if (draggedJointIndex === null) return;
 
     if (isImageMode && imagePoseData) {
         // Update image pose data
@@ -1135,10 +1302,15 @@ function handleMouseMove(e) {
 
 function handleMouseUp(e) {
     if (isDragging) {
-        console.log(`Finished dragging joint ${draggedJointIndex} (${LANDMARK_NAMES[draggedJointIndex]})`);
+        if (draggedCalibrationPoint !== null) {
+            console.log(`Finished dragging calibration ${draggedCalibrationPoint}`);
+            draggedCalibrationPoint = null;
+        } else if (draggedJointIndex !== null) {
+            console.log(`Finished dragging joint ${draggedJointIndex} (${LANDMARK_NAMES[draggedJointIndex]})`);
+            draggedJointIndex = null;
+            draggedJointFrame = null;
+        }
         isDragging = false;
-        draggedJointIndex = null;
-        draggedJointFrame = null;
         if (isEditMode) {
             e.target.style.cursor = 'crosshair';
         } else {
@@ -1170,6 +1342,8 @@ async function processImagePose() {
 function onImagePoseResults(results) {
     if (!results.poseLandmarks) {
         document.getElementById('jointCountImage').textContent = '0';
+        // Still redraw to show calibration points in 2D mode
+        redrawImagePose();
         return;
     }
 
@@ -1187,11 +1361,16 @@ function onImagePoseResults(results) {
 
 // Redraw pose overlay on image
 function redrawImagePose() {
-    if (!imagePoseData) return;
-
     // Clear canvas
     imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
 
+    // Draw calibration points in 2D mode (always visible)
+    if (analysisModeImage === '2D') {
+        drawCalibrationPoints(imageCtx, imageCanvas.width, imageCanvas.height, calibrationPoint1Image, calibrationPoint2Image, calibrationScaleImage);
+    }
+
+    // Draw pose if available and enabled
+    if (!imagePoseData) return;
     if (!showPoseImage) return;
 
     // Draw pose
@@ -1284,6 +1463,11 @@ function drawImagePose(landmarks, landmarks3D) {
             }
         }
     });
+
+    // Draw calibration points in 2D mode
+    if (analysisModeImage === '2D') {
+        drawCalibrationPoints(imageCtx, imageCanvas.width, imageCanvas.height, calibrationPoint1Image, calibrationPoint2Image, calibrationScaleImage);
+    }
 }
 
 // Export image pose data as JSON
