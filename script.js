@@ -1439,9 +1439,14 @@ function exportAsJson() {
             video.videoHeight
         );
 
-        // Filter to only include visible landmarks
+        // Filter to only include visible landmarks that are displayed (exclude EXCLUDED_LANDMARKS)
         const visibleLandmarks = [];
         frameData.landmarks2D.forEach((lm2d, index) => {
+            // Skip excluded landmarks (not displayed on screen)
+            if (EXCLUDED_LANDMARKS.includes(index)) {
+                return;
+            }
+            // Only include landmarks with sufficient visibility
             if (lm2d.visibility > 0.5) {
                 const lm3d = frameData.landmarks3D[index];
                 visibleLandmarks.push({
@@ -1518,10 +1523,20 @@ function exportAsCsv() {
         );
 
         // Add X, Y, Z and display coordinates for each landmark
-        // Only export landmarks that are visible (visibility > 0.5)
+        // Only export landmarks that are displayed (exclude EXCLUDED_LANDMARKS and check visibility)
         frameData.landmarks2D.forEach((lm2d, index) => {
             const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
             const displayCoord = displayCoords[index];
+
+            // Skip excluded landmarks (not displayed on screen)
+            if (EXCLUDED_LANDMARKS.includes(index)) {
+                if (analysisModeVideo === '2D') {
+                    row += ',,,,,'; // X, Y, Z, Display_X, Display_Y
+                } else {
+                    row += ',,,,,,'; // X, Y, Z, Display_X, Display_Y, Display_Z
+                }
+                return;
+            }
 
             // Check if landmark is visible (same threshold as drawing)
             if (lm2d.visibility > 0.5) {
@@ -1619,10 +1634,20 @@ function exportAsExcel() {
             );
 
             // Add X, Y, Z and display coordinates for each landmark
-            // Only export landmarks that are visible (visibility > 0.5)
+            // Only export landmarks that are displayed (exclude EXCLUDED_LANDMARKS and check visibility)
             frameData.landmarks2D.forEach((lm2d, index) => {
                 const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
                 const displayCoord = displayCoords[index];
+
+                // Skip excluded landmarks (not displayed on screen)
+                if (EXCLUDED_LANDMARKS.includes(index)) {
+                    if (analysisModeVideo === '2D') {
+                        row.push('', '', '', '', ''); // X, Y, Z, Display_X, Display_Y
+                    } else {
+                        row.push('', '', '', '', '', ''); // X, Y, Z, Display_X, Display_Y, Display_Z
+                    }
+                    return;
+                }
 
                 // Check if landmark is visible (same threshold as drawing)
                 if (lm2d.visibility > 0.5) {
@@ -2220,9 +2245,14 @@ function exportImageAsJson() {
         imageDisplay.naturalHeight
     );
 
-    // Filter to only include visible landmarks (visibility > 0.5)
+    // Filter to only include visible landmarks that are displayed (exclude EXCLUDED_LANDMARKS)
     const visibleLandmarks = [];
     imagePoseData.landmarks2D.forEach((lm2d, index) => {
+        // Skip excluded landmarks (not displayed on screen)
+        if (EXCLUDED_LANDMARKS.includes(index)) {
+            return;
+        }
+        // Only include landmarks with sufficient visibility
         if (lm2d.visibility > 0.5) {
             const lm3d = imagePoseData.landmarks3D[index];
             visibleLandmarks.push({
@@ -2282,8 +2312,12 @@ function exportImageAsCsv() {
     }
     let csv = header + '\n';
 
-    // Each row is one joint - only include visible landmarks (visibility > 0.5)
+    // Each row is one joint - only include visible landmarks that are displayed
     imagePoseData.landmarks2D.forEach((lm2d, index) => {
+        // Skip excluded landmarks (not displayed on screen)
+        if (EXCLUDED_LANDMARKS.includes(index)) {
+            return;
+        }
         // Only export landmarks that are visible
         if (lm2d.visibility > 0.5) {
             const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
@@ -2359,8 +2393,13 @@ function exportImageAsExcel() {
         }
         const poseDataRows = [header];
 
-        // Only include visible landmarks (visibility > 0.5)
+        // Only include visible landmarks that are displayed (exclude EXCLUDED_LANDMARKS)
         imagePoseData.landmarks2D.forEach((lm2d, index) => {
+            // Skip excluded landmarks (not displayed on screen)
+            if (EXCLUDED_LANDMARKS.includes(index)) {
+                return;
+            }
+            // Only include landmarks with sufficient visibility
             if (lm2d.visibility > 0.5) {
                 const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
                 const displayCoord = displayCoords[index];
