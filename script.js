@@ -22,8 +22,8 @@ let showCoordinatesImage = false;
 let imagePoseData = null; // Store pose data for the image
 
 // Analysis mode variables
-let analysisModeVideo = '3D'; // '2D' or '3D'
-let analysisModeImage = '3D'; // '2D' or '3D'
+let analysisModeVideo = '2D'; // '2D' or '3D'
+let analysisModeImage = '2D'; // '2D' or '3D'
 
 // Joint dragging variables
 let isDragging = false;
