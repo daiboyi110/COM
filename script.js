@@ -899,14 +899,13 @@ function drawPose(landmarks, landmarks3D) {
                 coordText = `2D: (${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
             }
 
-                if (coordText) {
-                    ctx.fillStyle = '#FFFF00';
-                    ctx.strokeStyle = '#000000';
-                    ctx.lineWidth = 3;
-                    ctx.font = 'bold 12px Arial';
-                    ctx.strokeText(coordText, x + 10, textY);
-                    ctx.fillText(coordText, x + 10, textY);
-                }
+            if (coordText) {
+                ctx.fillStyle = '#FFFF00';
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 3;
+                ctx.font = 'bold 12px Arial';
+                ctx.strokeText(coordText, x + 10, textY);
+                ctx.fillText(coordText, x + 10, textY);
             }
         }
     });
@@ -1565,17 +1564,17 @@ function drawImagePose(landmarks, landmarks3D) {
 
         let textY = y - 10;
 
-            // Draw joint name
-            if (showJointNumbersImage) {
-                imageCtx.fillStyle = '#FFFFFF';
-                imageCtx.strokeStyle = '#000000';
-                imageCtx.lineWidth = 3;
-                imageCtx.font = 'bold 14px Arial';
-                const jointName = LANDMARK_NAMES[index];
-                imageCtx.strokeText(jointName, x + 10, textY);
-                imageCtx.fillText(jointName, x + 10, textY);
-                textY -= 18;
-            }
+        // Draw joint name
+        if (showJointNumbersImage) {
+            imageCtx.fillStyle = '#FFFFFF';
+            imageCtx.strokeStyle = '#000000';
+            imageCtx.lineWidth = 3;
+            imageCtx.font = 'bold 14px Arial';
+            const jointName = LANDMARK_NAMES[index];
+            imageCtx.strokeText(jointName, x + 10, textY);
+            imageCtx.fillText(jointName, x + 10, textY);
+            textY -= 18;
+        }
 
         // Draw coordinates
         if (showCoordinatesImage) {
