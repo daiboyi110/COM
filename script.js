@@ -1058,7 +1058,7 @@ function drawPose(landmarks, landmarks3D) {
             ctx.arc(x, y, 10, 0, 2 * Math.PI);
             ctx.fill();
         } else if (isTotalBodyCOM) {
-            ctx.fillStyle = '#00FFFF'; // Cyan for Total Body COM
+            ctx.fillStyle = '#FF0000'; // Red for Total Body COM
             ctx.beginPath();
             ctx.arc(x, y, 10, 0, 2 * Math.PI);
             ctx.fill();
@@ -1069,12 +1069,12 @@ function drawPose(landmarks, landmarks3D) {
             ctx.arc(x, y, 10, 0, 2 * Math.PI);
             ctx.stroke();
         } else if (isSegmentCOM) {
-            ctx.fillStyle = '#9D00FF'; // Purple for segment COMs
+            ctx.fillStyle = '#FFD700'; // Gold for segment COMs
             ctx.beginPath();
             ctx.arc(x, y, 7, 0, 2 * Math.PI);
             ctx.fill();
         } else {
-            ctx.fillStyle = isMidpoint ? '#FFA500' : '#FF0000'; // Orange for midpoints, red for others
+            ctx.fillStyle = isMidpoint ? '#0000FF' : '#00FF00'; // Blue for midpoints, green for regular joints
             ctx.beginPath();
             ctx.arc(x, y, isMidpoint ? 8 : 6, 0, 2 * Math.PI);
             ctx.fill();
@@ -1797,7 +1797,7 @@ function drawImagePose(landmarks, landmarks3D) {
             imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
             imageCtx.fill();
         } else if (isTotalBodyCOM) {
-            imageCtx.fillStyle = '#00FFFF'; // Cyan for Total Body COM
+            imageCtx.fillStyle = '#FF0000'; // Red for Total Body COM
             imageCtx.beginPath();
             imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
             imageCtx.fill();
@@ -1808,12 +1808,12 @@ function drawImagePose(landmarks, landmarks3D) {
             imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
             imageCtx.stroke();
         } else if (isSegmentCOM) {
-            imageCtx.fillStyle = '#9D00FF'; // Purple for segment COMs
+            imageCtx.fillStyle = '#FFD700'; // Gold for segment COMs
             imageCtx.beginPath();
             imageCtx.arc(x, y, 7, 0, 2 * Math.PI);
             imageCtx.fill();
         } else {
-            imageCtx.fillStyle = isMidpoint ? '#FFA500' : '#FF0000'; // Orange for midpoints, red for others
+            imageCtx.fillStyle = isMidpoint ? '#0000FF' : '#00FF00'; // Blue for midpoints, green for regular joints
             imageCtx.beginPath();
             imageCtx.arc(x, y, isMidpoint ? 8 : 6, 0, 2 * Math.PI);
             imageCtx.fill();
