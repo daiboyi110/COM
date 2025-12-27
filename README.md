@@ -71,8 +71,20 @@ The app tracks 33 body landmarks:
 }
 ```
 
-**CSV Export**:
-Each row contains: Frame, Timestamp, Landmark_ID, X_2D, Y_2D, Z_2D, X_3D, Y_3D, Z_3D, Visibility
+**CSV/Excel Export**:
+- Each **row** represents one frame of video
+- Each **column** represents X, Y, Z coordinates for a specific joint
+- Format: `Frame, Timestamp, Nose_X, Nose_Y, Nose_Z, Left_Shoulder_X, Left_Shoulder_Y, Left_Shoulder_Z, ...`
+- 33 joints × 3 coordinates = 99 data columns + Frame + Timestamp
+- Coordinates are 3D world coordinates in meters (centered at hip)
+
+Example columns:
+```
+Frame, Timestamp, Nose_X, Nose_Y, Nose_Z, Left_Eye_Inner_X, Left_Eye_Inner_Y, Left_Eye_Inner_Z,
+Left_Eye_X, Left_Eye_Y, Left_Eye_Z, Left_Shoulder_X, Left_Shoulder_Y, Left_Shoulder_Z,
+Right_Shoulder_X, Right_Shoulder_Y, Right_Shoulder_Z, Left_Elbow_X, Left_Elbow_Y, Left_Elbow_Z,
+Right_Elbow_X, Right_Elbow_Y, Right_Elbow_Z, Left_Wrist_X, Left_Wrist_Y, Left_Wrist_Z, ...
+```
 
 ## Technical Details
 

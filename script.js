@@ -11,6 +11,43 @@ let processingInterval = 1000 / 5; // Default 5 FPS (200ms) - video plays at ful
 let processingTimer = null;
 let poseDataArray = []; // Store all captured pose data
 
+// MediaPipe Pose landmark names (33 landmarks)
+const LANDMARK_NAMES = [
+    'Nose',
+    'Left_Eye_Inner',
+    'Left_Eye',
+    'Left_Eye_Outer',
+    'Right_Eye_Inner',
+    'Right_Eye',
+    'Right_Eye_Outer',
+    'Left_Ear',
+    'Right_Ear',
+    'Mouth_Left',
+    'Mouth_Right',
+    'Left_Shoulder',
+    'Right_Shoulder',
+    'Left_Elbow',
+    'Right_Elbow',
+    'Left_Wrist',
+    'Right_Wrist',
+    'Left_Pinky',
+    'Right_Pinky',
+    'Left_Index',
+    'Right_Index',
+    'Left_Thumb',
+    'Right_Thumb',
+    'Left_Hip',
+    'Right_Hip',
+    'Left_Knee',
+    'Right_Knee',
+    'Left_Ankle',
+    'Right_Ankle',
+    'Left_Heel',
+    'Right_Heel',
+    'Left_Foot_Index',
+    'Right_Foot_Index'
+];
+
 // MediaPipe Pose connections for drawing skeleton
 const POSE_CONNECTIONS = [
     [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
@@ -468,13 +505,25 @@ function exportAsCsv() {
         return;
     }
 
-    let csv = 'Frame,Timestamp,Landmark_ID,X_2D,Y_2D,Z_2D,Visibility,X_3D,Y_3D,Z_3D\n';
+    // Build header row with joint names
+    let header = 'Frame,Timestamp';
+    LANDMARK_NAMES.forEach(name => {
+        header += `,${name}_X,${name}_Y,${name}_Z`;
+    });
+    let csv = header + '\n';
 
+    // Each row is one frame
     poseDataArray.forEach(frameData => {
+        let row = `${frameData.frame},${frameData.timestamp.toFixed(3)}`;
+
+        // Add X, Y, Z for each landmark
         frameData.landmarks2D.forEach((lm2d, index) => {
             const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-            csv += `${frameData.frame},${frameData.timestamp.toFixed(3)},${lm2d.id},${lm2d.x.toFixed(6)},${lm2d.y.toFixed(6)},${lm2d.z.toFixed(6)},${lm2d.visibility.toFixed(3)},${lm3d.x.toFixed(6)},${lm3d.y.toFixed(6)},${lm3d.z.toFixed(6)}\n`;
+            // Use 3D coordinates (world coordinates in meters)
+            row += `,${lm3d.x.toFixed(6)},${lm3d.y.toFixed(6)},${lm3d.z.toFixed(6)}`;
         });
+
+        csv += row + '\n';
     });
 
     downloadFile(csv, 'pose_data.csv', 'text/csv');
@@ -515,30 +564,37 @@ function exportAsExcel() {
         XLSX.utils.book_append_sheet(wb, metadataSheet, 'Metadata');
         console.log('Metadata sheet created');
 
-        // Pose data sheet
-        const poseDataRows = [['Frame', 'Timestamp', 'Landmark_ID', 'X_2D', 'Y_2D', 'Z_2D', 'Visibility', 'X_3D', 'Y_3D', 'Z_3D']];
+        // Pose data sheet - rows are frames, columns are joint coordinates
+        // Build header row
+        const header = ['Frame', 'Timestamp'];
+        LANDMARK_NAMES.forEach(name => {
+            header.push(`${name}_X`, `${name}_Y`, `${name}_Z`);
+        });
+        const poseDataRows = [header];
 
+        // Each row is one frame
         poseDataArray.forEach(frameData => {
+            const row = [
+                frameData.frame,
+                parseFloat(frameData.timestamp.toFixed(3))
+            ];
+
+            // Add X, Y, Z for each landmark (using 3D world coordinates)
             frameData.landmarks2D.forEach((lm2d, index) => {
                 const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-                poseDataRows.push([
-                    frameData.frame,
-                    parseFloat(frameData.timestamp.toFixed(3)),
-                    lm2d.id,
-                    parseFloat(lm2d.x.toFixed(6)),
-                    parseFloat(lm2d.y.toFixed(6)),
-                    parseFloat(lm2d.z.toFixed(6)),
-                    parseFloat(lm2d.visibility.toFixed(3)),
+                row.push(
                     parseFloat(lm3d.x.toFixed(6)),
                     parseFloat(lm3d.y.toFixed(6)),
                     parseFloat(lm3d.z.toFixed(6))
-                ]);
+                );
             });
+
+            poseDataRows.push(row);
         });
 
         const poseSheet = XLSX.utils.aoa_to_sheet(poseDataRows);
         XLSX.utils.book_append_sheet(wb, poseSheet, 'Pose Data');
-        console.log('Pose Data sheet created with', poseDataRows.length - 1, 'rows');
+        console.log('Pose Data sheet created with', poseDataRows.length - 1, 'frames');
 
         // Summary by frame sheet
         const summaryRows = [['Frame', 'Timestamp', 'Detected_Joints', 'Avg_Visibility']];
