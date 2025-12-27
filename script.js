@@ -792,16 +792,10 @@ function drawPose(landmarks, landmarks3D) {
                     // Negate Y to make positive direction upward (conventional)
                     coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
                 } else if (analysisModeVideo === '2D') {
-                    // 2D normalized coordinates divided by calibration distance
-                    // Calculate calibration distance
-                    const calibDist = Math.sqrt(
-                        Math.pow(calibrationPoint2Video.x - calibrationPoint1Video.x, 2) +
-                        Math.pow(calibrationPoint2Video.y - calibrationPoint1Video.y, 2)
-                    );
-                    // Transform Y: (1 - y) to make positive direction upward, then divide by distance
-                    const normalizedX = landmark.x / calibDist;
-                    const normalizedY = (1 - landmark.y) / calibDist;
-                    coordText = `2D: (${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
+                    // 2D coordinates in pixels
+                    const pixelX = landmark.x * width;
+                    const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
+                    coordText = `2D: (${pixelX.toFixed(1)}, ${pixelY.toFixed(1)}) px`;
                 }
 
                 if (coordText) {
@@ -859,13 +853,13 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.lineWidth = 2;
     context.stroke();
 
-    // Calculate distance between the two points in normalized coordinates
-    const distance = Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+    // Calculate distance between the two points in pixels
+    const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 
-    // Display coordinates for Point 1 (transform Y to make upward positive, divide by distance)
-    const p1x_normalized = point1.x / distance;
-    const p1y_normalized = (1 - point1.y) / distance;
-    const coordText1 = `P1: (${p1x_normalized.toFixed(3)}, ${p1y_normalized.toFixed(3)})`;
+    // Display coordinates for Point 1 in pixels (transform Y to make upward positive)
+    const p1x_pixels = point1.x * width;
+    const p1y_pixels = (1 - point1.y) * height;
+    const coordText1 = `P1: (${p1x_pixels.toFixed(1)}, ${p1y_pixels.toFixed(1)}) px`;
     context.fillStyle = '#00FFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
@@ -873,10 +867,10 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.strokeText(coordText1, x1 + 15, y1 - 10);
     context.fillText(coordText1, x1 + 15, y1 - 10);
 
-    // Display coordinates for Point 2 (transform Y to make upward positive, divide by distance)
-    const p2x_normalized = point2.x / distance;
-    const p2y_normalized = (1 - point2.y) / distance;
-    const coordText2 = `P2: (${p2x_normalized.toFixed(3)}, ${p2y_normalized.toFixed(3)})`;
+    // Display coordinates for Point 2 in pixels (transform Y to make upward positive)
+    const p2x_pixels = point2.x * width;
+    const p2y_pixels = (1 - point2.y) * height;
+    const coordText2 = `P2: (${p2x_pixels.toFixed(1)}, ${p2y_pixels.toFixed(1)}) px`;
     context.fillStyle = '#00FFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
@@ -888,7 +882,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
 
-    const scaleText = `Scale: ${scaleLength.toFixed(2)}m (${distance.toFixed(3)})`;
+    const scaleText = `Scale: ${scaleLength.toFixed(2)}m (${distance.toFixed(1)} px)`;
     context.fillStyle = '#FF00FF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
@@ -1470,16 +1464,10 @@ function drawImagePose(landmarks, landmarks3D) {
                     // Negate Y to make positive direction upward (conventional)
                     coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
                 } else if (analysisModeImage === '2D') {
-                    // 2D normalized coordinates divided by calibration distance
-                    // Calculate calibration distance
-                    const calibDist = Math.sqrt(
-                        Math.pow(calibrationPoint2Image.x - calibrationPoint1Image.x, 2) +
-                        Math.pow(calibrationPoint2Image.y - calibrationPoint1Image.y, 2)
-                    );
-                    // Transform Y: (1 - y) to make positive direction upward, then divide by distance
-                    const normalizedX = landmark.x / calibDist;
-                    const normalizedY = (1 - landmark.y) / calibDist;
-                    coordText = `2D: (${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
+                    // 2D coordinates in pixels
+                    const pixelX = landmark.x * width;
+                    const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
+                    coordText = `2D: (${pixelX.toFixed(1)}, ${pixelY.toFixed(1)}) px`;
                 }
 
                 if (coordText) {
