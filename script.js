@@ -1244,7 +1244,7 @@ function drawPose(landmarks, landmarks3D) {
                 ctx.fillStyle = coordColor;
                 ctx.strokeStyle = '#000000';
                 ctx.lineWidth = 3;
-                ctx.font = 'bold 48px Arial';
+                ctx.font = 'bold 28px Arial';
                 ctx.strokeText(coordText, x + 10, textY);
                 ctx.fillText(coordText, x + 10, textY);
             }
@@ -2039,7 +2039,7 @@ function drawImagePose(landmarks, landmarks3D) {
                 imageCtx.fillStyle = coordColor;
                 imageCtx.strokeStyle = '#000000';
                 imageCtx.lineWidth = 3;
-                imageCtx.font = 'bold 48px Arial';
+                imageCtx.font = 'bold 28px Arial';
                 imageCtx.strokeText(coordText, x + 10, textY);
                 imageCtx.fillText(coordText, x + 10, textY);
             }
