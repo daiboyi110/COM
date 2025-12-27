@@ -1030,6 +1030,21 @@ function drawPose(landmarks, landmarks3D) {
         }
     });
 
+    // Draw connection between Mid-Shoulder (33) and Mid-Hip (34)
+    if (extendedLandmarks2D[33] && extendedLandmarks2D[34]) {
+        const midShoulder = extendedLandmarks2D[33];
+        const midHip = extendedLandmarks2D[34];
+
+        if (midShoulder.visibility > 0.5 && midHip.visibility > 0.5) {
+            ctx.strokeStyle = '#00FF00';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(midShoulder.x * width, midShoulder.y * height);
+            ctx.lineTo(midHip.x * width, midHip.y * height);
+            ctx.stroke();
+        }
+    }
+
     // Calculate base size relative to canvas resolution for better visibility
     const baseSize = Math.max(width, height) * 0.003; // Base size for regular joints (~3px for 1000px resolution)
 
@@ -1061,32 +1076,40 @@ function drawPose(landmarks, landmarks3D) {
         const segmentCOMSize = baseSize * 2; // 2x the size of regular joints
         const totalBodyCOMSize = baseSize * 4; // 4x the size of regular joints
 
+        // Determine size and color based on landmark type
+        let pointSize, pointColor;
+        if (isTotalBodyCOM) {
+            pointSize = totalBodyCOMSize;
+            pointColor = '#FF0000'; // Red for Total Body COM
+        } else if (isSegmentCOM) {
+            pointSize = segmentCOMSize;
+            pointColor = '#FFD700'; // Gold for segment COMs
+        } else if (isMidpoint) {
+            pointSize = midpointSize;
+            pointColor = '#0000FF'; // Blue for midpoints
+        } else {
+            pointSize = regularJointSize;
+            pointColor = '#00FF00'; // Green for regular joints
+        }
+
+        // Override color if being dragged
         if (isBeingDragged) {
-            ctx.fillStyle = '#FF00FF'; // Magenta for dragged joint
-            ctx.beginPath();
-            ctx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
-            ctx.fill();
-        } else if (isTotalBodyCOM) {
-            ctx.fillStyle = '#FF0000'; // Red for Total Body COM
-            ctx.beginPath();
-            ctx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
-            ctx.fill();
-            // Add outer ring for emphasis
+            pointColor = '#FF00FF'; // Magenta for dragged joint
+        }
+
+        // Draw the point
+        ctx.fillStyle = pointColor;
+        ctx.beginPath();
+        ctx.arc(x, y, pointSize, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Add outer ring for Total Body COM
+        if (isTotalBodyCOM && !isBeingDragged) {
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
+            ctx.arc(x, y, pointSize, 0, 2 * Math.PI);
             ctx.stroke();
-        } else if (isSegmentCOM) {
-            ctx.fillStyle = '#FFD700'; // Gold for segment COMs
-            ctx.beginPath();
-            ctx.arc(x, y, segmentCOMSize, 0, 2 * Math.PI);
-            ctx.fill();
-        } else {
-            ctx.fillStyle = isMidpoint ? '#0000FF' : '#00FF00'; // Blue for midpoints, green for regular joints
-            ctx.beginPath();
-            ctx.arc(x, y, isMidpoint ? midpointSize : regularJointSize, 0, 2 * Math.PI);
-            ctx.fill();
         }
 
         let textY = y - 10;
@@ -1135,7 +1158,7 @@ function drawPose(landmarks, landmarks3D) {
                 ctx.fillStyle = '#FFFF00';
                 ctx.strokeStyle = '#000000';
                 ctx.lineWidth = 3;
-                ctx.font = 'bold 24px Arial';
+                ctx.font = 'bold 48px Arial';
                 ctx.strokeText(coordText, x + 10, textY);
                 ctx.fillText(coordText, x + 10, textY);
             }
@@ -1193,7 +1216,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     const p1y_pixels = (1 - point1.y) * height;
     const p1x_normalized = p1x_pixels / distance;
     const p1y_normalized = p1y_pixels / distance;
-    const coordText1 = `P1: (${p1x_normalized.toFixed(3)}, ${p1y_normalized.toFixed(3)})`;
+    const coordText1 = `Calibration Point 1: (${p1x_normalized.toFixed(3)}, ${p1y_normalized.toFixed(3)})`;
     context.fillStyle = '#00FFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
@@ -1206,7 +1229,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     const p2y_pixels = (1 - point2.y) * height;
     const p2x_normalized = p2x_pixels / distance;
     const p2y_normalized = p2y_pixels / distance;
-    const coordText2 = `P2: (${p2x_normalized.toFixed(3)}, ${p2y_normalized.toFixed(3)})`;
+    const coordText2 = `Calibration Point 2: (${p2x_normalized.toFixed(3)}, ${p2y_normalized.toFixed(3)})`;
     context.fillStyle = '#00FFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
@@ -1778,6 +1801,21 @@ function drawImagePose(landmarks, landmarks3D) {
         }
     });
 
+    // Draw connection between Mid-Shoulder (33) and Mid-Hip (34)
+    if (extendedLandmarks2D[33] && extendedLandmarks2D[34]) {
+        const midShoulder = extendedLandmarks2D[33];
+        const midHip = extendedLandmarks2D[34];
+
+        if (midShoulder.visibility > 0.5 && midHip.visibility > 0.5) {
+            imageCtx.strokeStyle = '#00FF00';
+            imageCtx.lineWidth = 4;
+            imageCtx.beginPath();
+            imageCtx.moveTo(midShoulder.x * width, midShoulder.y * height);
+            imageCtx.lineTo(midHip.x * width, midHip.y * height);
+            imageCtx.stroke();
+        }
+    }
+
     // Calculate base size relative to canvas resolution for better visibility
     const baseSize = Math.max(width, height) * 0.003; // Base size for regular joints (~3px for 1000px resolution)
 
@@ -1809,32 +1847,40 @@ function drawImagePose(landmarks, landmarks3D) {
         const segmentCOMSize = baseSize * 2; // 2x the size of regular joints
         const totalBodyCOMSize = baseSize * 4; // 4x the size of regular joints
 
+        // Determine size and color based on landmark type
+        let pointSize, pointColor;
+        if (isTotalBodyCOM) {
+            pointSize = totalBodyCOMSize;
+            pointColor = '#FF0000'; // Red for Total Body COM
+        } else if (isSegmentCOM) {
+            pointSize = segmentCOMSize;
+            pointColor = '#FFD700'; // Gold for segment COMs
+        } else if (isMidpoint) {
+            pointSize = midpointSize;
+            pointColor = '#0000FF'; // Blue for midpoints
+        } else {
+            pointSize = regularJointSize;
+            pointColor = '#00FF00'; // Green for regular joints
+        }
+
+        // Override color if being dragged
         if (isBeingDragged) {
-            imageCtx.fillStyle = '#FF00FF'; // Magenta for dragged joint
-            imageCtx.beginPath();
-            imageCtx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
-            imageCtx.fill();
-        } else if (isTotalBodyCOM) {
-            imageCtx.fillStyle = '#FF0000'; // Red for Total Body COM
-            imageCtx.beginPath();
-            imageCtx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
-            imageCtx.fill();
-            // Add outer ring for emphasis
+            pointColor = '#FF00FF'; // Magenta for dragged joint
+        }
+
+        // Draw the point
+        imageCtx.fillStyle = pointColor;
+        imageCtx.beginPath();
+        imageCtx.arc(x, y, pointSize, 0, 2 * Math.PI);
+        imageCtx.fill();
+
+        // Add outer ring for Total Body COM
+        if (isTotalBodyCOM && !isBeingDragged) {
             imageCtx.strokeStyle = '#FFFFFF';
             imageCtx.lineWidth = 2;
             imageCtx.beginPath();
-            imageCtx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
+            imageCtx.arc(x, y, pointSize, 0, 2 * Math.PI);
             imageCtx.stroke();
-        } else if (isSegmentCOM) {
-            imageCtx.fillStyle = '#FFD700'; // Gold for segment COMs
-            imageCtx.beginPath();
-            imageCtx.arc(x, y, segmentCOMSize, 0, 2 * Math.PI);
-            imageCtx.fill();
-        } else {
-            imageCtx.fillStyle = isMidpoint ? '#0000FF' : '#00FF00'; // Blue for midpoints, green for regular joints
-            imageCtx.beginPath();
-            imageCtx.arc(x, y, isMidpoint ? midpointSize : regularJointSize, 0, 2 * Math.PI);
-            imageCtx.fill();
         }
 
         let textY = y - 10;
@@ -1883,7 +1929,7 @@ function drawImagePose(landmarks, landmarks3D) {
                 imageCtx.fillStyle = '#FFFF00';
                 imageCtx.strokeStyle = '#000000';
                 imageCtx.lineWidth = 3;
-                imageCtx.font = 'bold 24px Arial';
+                imageCtx.font = 'bold 48px Arial';
                 imageCtx.strokeText(coordText, x + 10, textY);
                 imageCtx.fillText(coordText, x + 10, textY);
             }
