@@ -455,7 +455,8 @@ function drawPose(landmarks, landmarks3D) {
             // Draw coordinates
             if (showCoordinates && landmarks3D && landmarks3D[index]) {
                 const lm3d = landmarks3D[index];
-                const coordText = `(${lm3d.x.toFixed(3)}, ${lm3d.y.toFixed(3)}, ${lm3d.z.toFixed(3)})`;
+                // Negate Y to make positive direction upward (conventional)
+                const coordText = `(${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
 
                 ctx.fillStyle = '#FFFF00';
                 ctx.strokeStyle = '#000000';
@@ -518,6 +519,15 @@ function exportAsJson() {
         return;
     }
 
+    // Transform pose data to use conventional Y direction (positive upward)
+    const transformedPoseData = poseDataArray.map(frameData => ({
+        ...frameData,
+        landmarks3D: frameData.landmarks3D.map(lm => ({
+            ...lm,
+            y: -lm.y  // Negate Y to make positive direction upward
+        }))
+    }));
+
     const exportData = {
         metadata: {
             totalFrames: frameCount,
@@ -528,7 +538,7 @@ function exportAsJson() {
             videoHeight: video.videoHeight,
             exportDate: new Date().toISOString()
         },
-        poseData: poseDataArray
+        poseData: transformedPoseData
     };
 
     const dataStr = JSON.stringify(exportData, null, 2);
@@ -558,7 +568,8 @@ function exportAsCsv() {
         frameData.landmarks2D.forEach((lm2d, index) => {
             const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
             // Use 3D coordinates (world coordinates in meters)
-            row += `,${lm3d.x.toFixed(6)},${lm3d.y.toFixed(6)},${lm3d.z.toFixed(6)}`;
+            // Negate Y to make positive direction upward (conventional)
+            row += `,${lm3d.x.toFixed(6)},${(-lm3d.y).toFixed(6)},${lm3d.z.toFixed(6)}`;
         });
 
         csv += row + '\n';
@@ -620,9 +631,10 @@ function exportAsExcel() {
             // Add X, Y, Z for each landmark (using 3D world coordinates)
             frameData.landmarks2D.forEach((lm2d, index) => {
                 const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+                // Negate Y to make positive direction upward (conventional)
                 row.push(
                     parseFloat(lm3d.x.toFixed(6)),
-                    parseFloat(lm3d.y.toFixed(6)),
+                    parseFloat((-lm3d.y).toFixed(6)),
                     parseFloat(lm3d.z.toFixed(6))
                 );
             });
