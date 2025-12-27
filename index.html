@@ -15,10 +15,53 @@
 </head>
 <body>
     <div class="container">
-        <h1>Video Player</h1>
+        <h1>Video & Image Pose Estimation</h1>
 
         <div class="upload-section">
-            <input type="file" id="videoInput" accept="video/*">
+            <label class="upload-btn">
+                📹 Upload Video
+                <input type="file" id="videoInput" accept="video/*" style="display: none;">
+            </label>
+            <label class="upload-btn">
+                🖼️ Upload Image
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            </label>
+        </div>
+
+        <div id="imageSection" style="display: none;">
+            <div class="video-wrapper">
+                <img id="imageDisplay" style="display: none;">
+                <canvas id="imageCanvas"></canvas>
+            </div>
+
+            <div class="pose-controls">
+                <label>
+                    <input type="checkbox" id="showPoseImage" checked> Show Pose Estimation
+                </label>
+                <label>
+                    <input type="checkbox" id="showJointNumbersImage" checked> Show Joint Numbers
+                </label>
+                <label>
+                    <input type="checkbox" id="showCoordinatesImage"> Show Coordinates
+                </label>
+                <label>
+                    <input type="checkbox" id="fullSizeImage"> Full Size Image
+                </label>
+            </div>
+
+            <div class="info">
+                <p><strong>Image:</strong> <span id="imageInfo">Loading...</span></p>
+                <p><strong>Detected Joints:</strong> <span id="jointCountImage">0</span></p>
+            </div>
+
+            <div class="export-section">
+                <h3>Export Pose Data</h3>
+                <div class="export-buttons">
+                    <button id="exportJsonBtnImage" class="btn-export">📄 Export JSON</button>
+                    <button id="exportCsvBtnImage" class="btn-export">📊 Export CSV</button>
+                    <button id="exportExcelBtnImage" class="btn-export">📗 Export Excel</button>
+                </div>
+            </div>
         </div>
 
         <div id="videoSection" style="display: none;">

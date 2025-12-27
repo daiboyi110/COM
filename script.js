@@ -1,6 +1,9 @@
 let video;
 let canvas;
 let ctx;
+let imageDisplay;
+let imageCanvas;
+let imageCtx;
 let pose;
 let fps = 30; // Default, will be detected
 let frameCount = 0;
@@ -11,6 +14,12 @@ let showCoordinates = false;
 let processingInterval = 1000 / 5; // Default 5 FPS (200ms) - video plays at full speed
 let processingTimer = null;
 let poseDataArray = []; // Store all captured pose data
+
+// Image mode variables
+let showPoseImage = true;
+let showJointNumbersImage = true;
+let showCoordinatesImage = false;
+let imagePoseData = null; // Store pose data for the image
 
 // MediaPipe Pose landmark names (33 landmarks)
 const LANDMARK_NAMES = [
@@ -62,8 +71,14 @@ document.addEventListener('DOMContentLoaded', () => {
     video = document.getElementById('video');
     canvas = document.getElementById('poseCanvas');
     ctx = canvas.getContext('2d');
+    imageDisplay = document.getElementById('imageDisplay');
+    imageCanvas = document.getElementById('imageCanvas');
+    imageCtx = imageCanvas.getContext('2d');
+
     const videoInput = document.getElementById('videoInput');
+    const imageInput = document.getElementById('imageInput');
     const videoSection = document.getElementById('videoSection');
+    const imageSection = document.getElementById('imageSection');
     const playBtn = document.getElementById('playBtn');
     const pauseBtn = document.getElementById('pauseBtn');
     const prevFrameBtn = document.getElementById('prevFrameBtn');
@@ -73,6 +88,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const showCoordinatesCheckbox = document.getElementById('showCoordinates');
     const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
     const processingSpeedSelect = document.getElementById('processingSpeed');
+
+    // Image controls
+    const showPoseImageCheckbox = document.getElementById('showPoseImage');
+    const showJointNumbersImageCheckbox = document.getElementById('showJointNumbersImage');
+    const showCoordinatesImageCheckbox = document.getElementById('showCoordinatesImage');
+    const fullSizeImageCheckbox = document.getElementById('fullSizeImage');
 
     // Check if XLSX library is loaded
     if (typeof XLSX !== 'undefined') {
@@ -91,9 +112,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = URL.createObjectURL(file);
             video.src = url;
             videoSection.style.display = 'block';
+            imageSection.style.display = 'none';
             // Clear previous pose data
             poseDataArray = [];
             document.getElementById('capturedFrames').textContent = '0';
+        }
+    });
+
+    // Handle image upload
+    imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            imageDisplay.src = url;
+            imageDisplay.style.display = 'block';
+            videoSection.style.display = 'none';
+            imageSection.style.display = 'block';
+            imagePoseData = null;
+
+            imageDisplay.onload = () => {
+                // Set canvas size to match image
+                imageCanvas.width = imageDisplay.naturalWidth;
+                imageCanvas.height = imageDisplay.naturalHeight;
+
+                // Update info
+                document.getElementById('imageInfo').textContent =
+                    `${imageDisplay.naturalWidth} × ${imageDisplay.naturalHeight}`;
+
+                // Process pose estimation on the image
+                processImagePose();
+            };
         }
     });
 
@@ -186,6 +234,36 @@ document.addEventListener('DOMContentLoaded', () => {
         resizeCanvas();
     });
 
+    // Image checkbox controls
+    showPoseImageCheckbox.addEventListener('change', (e) => {
+        showPoseImage = e.target.checked;
+        redrawImagePose();
+    });
+
+    showJointNumbersImageCheckbox.addEventListener('change', (e) => {
+        showJointNumbersImage = e.target.checked;
+        redrawImagePose();
+    });
+
+    showCoordinatesImageCheckbox.addEventListener('change', (e) => {
+        showCoordinatesImage = e.target.checked;
+        redrawImagePose();
+    });
+
+    fullSizeImageCheckbox.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            imageDisplay.classList.add('full-size');
+        } else {
+            imageDisplay.classList.remove('full-size');
+        }
+        // Resize canvas to match new image dimensions
+        setTimeout(() => {
+            imageCanvas.width = imageDisplay.clientWidth || imageDisplay.naturalWidth;
+            imageCanvas.height = imageDisplay.clientHeight || imageDisplay.naturalHeight;
+            redrawImagePose();
+        }, 100);
+    });
+
     // Processing speed control
     processingSpeedSelect.addEventListener('change', (e) => {
         const targetFPS = parseInt(e.target.value);
@@ -234,6 +312,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('exportCsvBtn').addEventListener('click', exportAsCsv);
     document.getElementById('exportExcelBtn').addEventListener('click', exportAsExcel);
     document.getElementById('clearDataBtn').addEventListener('click', clearPoseData);
+
+    // Image export button handlers
+    document.getElementById('exportJsonBtnImage').addEventListener('click', exportImageAsJson);
+    document.getElementById('exportCsvBtnImage').addEventListener('click', exportImageAsCsv);
+    document.getElementById('exportExcelBtnImage').addEventListener('click', exportImageAsExcel);
 });
 
 function updateTimeDisplay() {
@@ -392,6 +475,15 @@ function stopPoseProcessing() {
 
 // Handle pose detection results
 function onPoseResults(results) {
+    // Check if we're in image mode or video mode
+    const imageSection = document.getElementById('imageSection');
+    if (imageSection && imageSection.style.display !== 'none') {
+        // Image mode
+        onImagePoseResults(results);
+        return;
+    }
+
+    // Video mode
     clearCanvas();
 
     if (!showPose || !results.poseLandmarks) {
@@ -700,4 +792,230 @@ function downloadFile(content, filename, contentType) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+}
+
+// ===== IMAGE POSE PROCESSING FUNCTIONS =====
+
+// Process pose estimation on uploaded image
+async function processImagePose() {
+    if (!imageDisplay || !pose) return;
+
+    try {
+        await pose.send({ image: imageDisplay });
+    } catch (error) {
+        console.error('Error processing image pose:', error);
+    }
+}
+
+// Handle pose detection results for image
+function onImagePoseResults(results) {
+    if (!results.poseLandmarks) {
+        document.getElementById('jointCountImage').textContent = '0';
+        return;
+    }
+
+    // Store pose data
+    imagePoseData = {
+        landmarks2D: results.poseLandmarks,
+        landmarks3D: results.poseWorldLandmarks || []
+    };
+
+    document.getElementById('jointCountImage').textContent = results.poseLandmarks.length;
+
+    // Draw pose on image
+    redrawImagePose();
+}
+
+// Redraw pose overlay on image
+function redrawImagePose() {
+    if (!imagePoseData) return;
+
+    // Clear canvas
+    imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+
+    if (!showPoseImage) return;
+
+    // Draw pose
+    drawImagePose(imagePoseData.landmarks2D, imagePoseData.landmarks3D);
+}
+
+// Draw pose skeleton and landmarks on image
+function drawImagePose(landmarks, landmarks3D) {
+    const width = imageCanvas.width;
+    const height = imageCanvas.height;
+
+    // Draw connections (skeleton)
+    imageCtx.strokeStyle = '#00FF00';
+    imageCtx.lineWidth = 4;
+
+    POSE_CONNECTIONS.forEach(([startIdx, endIdx]) => {
+        const start = landmarks[startIdx];
+        const end = landmarks[endIdx];
+
+        if (start && end && start.visibility > 0.5 && end.visibility > 0.5) {
+            imageCtx.beginPath();
+            imageCtx.moveTo(start.x * width, start.y * height);
+            imageCtx.lineTo(end.x * width, end.y * height);
+            imageCtx.stroke();
+        }
+    });
+
+    // Draw landmarks (joints)
+    landmarks.forEach((landmark, index) => {
+        if (landmark.visibility > 0.5) {
+            const x = landmark.x * width;
+            const y = landmark.y * height;
+
+            // Draw joint circle
+            imageCtx.fillStyle = '#FF0000';
+            imageCtx.beginPath();
+            imageCtx.arc(x, y, 6, 0, 2 * Math.PI);
+            imageCtx.fill();
+
+            let textY = y - 10;
+
+            // Draw joint number
+            if (showJointNumbersImage) {
+                imageCtx.fillStyle = '#FFFFFF';
+                imageCtx.strokeStyle = '#000000';
+                imageCtx.lineWidth = 3;
+                imageCtx.font = 'bold 14px Arial';
+                imageCtx.strokeText(index.toString(), x + 10, textY);
+                imageCtx.fillText(index.toString(), x + 10, textY);
+                textY -= 18;
+            }
+
+            // Draw coordinates
+            if (showCoordinatesImage && landmarks3D && landmarks3D[index]) {
+                const lm3d = landmarks3D[index];
+                // Negate Y to make positive direction upward (conventional)
+                const coordText = `(${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
+
+                imageCtx.fillStyle = '#FFFF00';
+                imageCtx.strokeStyle = '#000000';
+                imageCtx.lineWidth = 3;
+                imageCtx.font = 'bold 12px Arial';
+                imageCtx.strokeText(coordText, x + 10, textY);
+                imageCtx.fillText(coordText, x + 10, textY);
+            }
+        }
+    });
+}
+
+// Export image pose data as JSON
+function exportImageAsJson() {
+    if (!imagePoseData) {
+        alert('No pose data to export. Please upload an image first.');
+        return;
+    }
+
+    // Transform pose data to use conventional Y direction (positive upward)
+    const transformedLandmarks3D = imagePoseData.landmarks3D.map(lm => ({
+        ...lm,
+        y: -lm.y  // Negate Y to make positive direction upward
+    }));
+
+    const exportData = {
+        metadata: {
+            imageWidth: imageDisplay.naturalWidth,
+            imageHeight: imageDisplay.naturalHeight,
+            exportDate: new Date().toISOString()
+        },
+        poseData: {
+            landmarks2D: imagePoseData.landmarks2D,
+            landmarks3D: transformedLandmarks3D
+        }
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    downloadFile(dataStr, 'image_pose_data.json', 'application/json');
+    console.log('Exported image pose data to JSON');
+}
+
+// Export image pose data as CSV
+function exportImageAsCsv() {
+    if (!imagePoseData) {
+        alert('No pose data to export. Please upload an image first.');
+        return;
+    }
+
+    // Build header row with joint names
+    let header = 'Joint_Index,Joint_Name,X,Y,Z,Visibility';
+    let csv = header + '\n';
+
+    // Each row is one joint
+    imagePoseData.landmarks2D.forEach((lm2d, index) => {
+        const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+        // Negate Y to make positive direction upward (conventional)
+        const row = `${index},${LANDMARK_NAMES[index]},${lm3d.x.toFixed(6)},${(-lm3d.y).toFixed(6)},${lm3d.z.toFixed(6)},${lm2d.visibility.toFixed(3)}`;
+        csv += row + '\n';
+    });
+
+    downloadFile(csv, 'image_pose_data.csv', 'text/csv');
+    console.log('Exported image pose data to CSV');
+}
+
+// Export image pose data as Excel
+function exportImageAsExcel() {
+    if (!imagePoseData) {
+        alert('No pose data to export. Please upload an image first.');
+        return;
+    }
+
+    // Check if XLSX library is loaded
+    if (typeof XLSX === 'undefined') {
+        alert('Excel library not loaded. Please refresh the page and try again.');
+        console.error('XLSX library is not loaded');
+        return;
+    }
+
+    try {
+        console.log('Starting Excel export for image...');
+
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+
+        // Metadata sheet
+        const metadataSheet = XLSX.utils.aoa_to_sheet([
+            ['Property', 'Value'],
+            ['Image Width', imageDisplay.naturalWidth],
+            ['Image Height', imageDisplay.naturalHeight],
+            ['Detected Joints', imagePoseData.landmarks2D.length],
+            ['Export Date', new Date().toISOString()]
+        ]);
+        XLSX.utils.book_append_sheet(wb, metadataSheet, 'Metadata');
+        console.log('Metadata sheet created');
+
+        // Pose data sheet - each row is a joint
+        const header = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Z', 'Visibility'];
+        const poseDataRows = [header];
+
+        imagePoseData.landmarks2D.forEach((lm2d, index) => {
+            const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+            // Negate Y to make positive direction upward (conventional)
+            const row = [
+                index,
+                LANDMARK_NAMES[index],
+                parseFloat(lm3d.x.toFixed(6)),
+                parseFloat((-lm3d.y).toFixed(6)),
+                parseFloat(lm3d.z.toFixed(6)),
+                parseFloat(lm2d.visibility.toFixed(3))
+            ];
+            poseDataRows.push(row);
+        });
+
+        const poseSheet = XLSX.utils.aoa_to_sheet(poseDataRows);
+        XLSX.utils.book_append_sheet(wb, poseSheet, 'Pose Data');
+        console.log('Pose Data sheet created with', poseDataRows.length - 1, 'joints');
+
+        // Download the file
+        console.log('Attempting to write Excel file...');
+        XLSX.writeFile(wb, 'image_pose_data.xlsx');
+        console.log('Successfully exported image pose data to Excel');
+        alert('Image pose data exported successfully!');
+
+    } catch (error) {
+        console.error('Error exporting image to Excel:', error);
+        alert(`Error creating Excel file: ${error.message}\n\nPlease try exporting as CSV instead.`);
+    }
 }
