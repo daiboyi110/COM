@@ -865,7 +865,11 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     // Display scale length at midpoint
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
-    const scaleText = `Scale: ${scaleLength.toFixed(2)}m`;
+
+    // Calculate distance between the two points in normalized coordinates
+    const distance = Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+
+    const scaleText = `Scale: ${scaleLength.toFixed(2)}m (${distance.toFixed(3)})`;
     context.fillStyle = '#FF00FF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
