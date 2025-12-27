@@ -46,6 +46,9 @@ let draggedCalibrationPoint = null; // Which calibration point is being dragged 
 let calibrationScaleVideo = 1.0; // Scale length in meters for video
 let calibrationScaleImage = 1.0; // Scale length in meters for image
 
+// Font size for displaying joint names and coordinates
+let displayFontSize = 28; // Default font size in pixels
+
 // MediaPipe Pose landmark names (33 landmarks + 2 calculated)
 const LANDMARK_NAMES = [
     'Nose',
@@ -469,6 +472,40 @@ document.addEventListener('DOMContentLoaded', () => {
             redrawImagePose();
         }, 100);
     });
+
+    // Font size slider for image
+    const fontSizeSlider = document.getElementById('fontSizeSlider');
+    const fontSizeValue = document.getElementById('fontSizeValue');
+    if (fontSizeSlider && fontSizeValue) {
+        fontSizeSlider.addEventListener('input', (e) => {
+            displayFontSize = parseInt(e.target.value);
+            fontSizeValue.textContent = displayFontSize;
+            // Also update the video slider if it exists
+            const fontSizeSliderVideo = document.getElementById('fontSizeSliderVideo');
+            const fontSizeValueVideo = document.getElementById('fontSizeValueVideo');
+            if (fontSizeSliderVideo && fontSizeValueVideo) {
+                fontSizeSliderVideo.value = displayFontSize;
+                fontSizeValueVideo.textContent = displayFontSize;
+            }
+            redrawImagePose();
+        });
+    }
+
+    // Font size slider for video
+    const fontSizeSliderVideo = document.getElementById('fontSizeSliderVideo');
+    const fontSizeValueVideo = document.getElementById('fontSizeValueVideo');
+    if (fontSizeSliderVideo && fontSizeValueVideo) {
+        fontSizeSliderVideo.addEventListener('input', (e) => {
+            displayFontSize = parseInt(e.target.value);
+            fontSizeValueVideo.textContent = displayFontSize;
+            // Also update the image slider if it exists
+            if (fontSizeSlider && fontSizeValue) {
+                fontSizeSlider.value = displayFontSize;
+                fontSizeValue.textContent = displayFontSize;
+            }
+            drawPose();
+        });
+    }
 
     // Edit mode controls
     if (editModeImageCheckbox) {
@@ -1193,11 +1230,11 @@ function drawPose(landmarks, landmarks3D) {
             ctx.fillStyle = '#FFFFFF';
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 3;
-            ctx.font = 'bold 28px Arial';
+            ctx.font = `bold ${displayFontSize}px Arial`;
             const jointName = LANDMARK_NAMES[index];
             ctx.strokeText(jointName, x + 10, textY);
             ctx.fillText(jointName, x + 10, textY);
-            textY -= 36;
+            textY -= (displayFontSize + 8);
         }
 
         // Draw coordinates
@@ -1244,7 +1281,7 @@ function drawPose(landmarks, landmarks3D) {
                 ctx.fillStyle = coordColor;
                 ctx.strokeStyle = '#000000';
                 ctx.lineWidth = 3;
-                ctx.font = 'bold 28px Arial';
+                ctx.font = `bold ${displayFontSize}px Arial`;
                 ctx.strokeText(coordText, x + 10, textY);
                 ctx.fillText(coordText, x + 10, textY);
             }
@@ -1306,7 +1343,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.fillStyle = '#00FFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
-    context.font = 'bold 28px Arial';
+    context.font = `bold ${displayFontSize}px Arial`;
     context.strokeText(coordText1, x1 + 15, y1 - 10);
     context.fillText(coordText1, x1 + 15, y1 - 10);
 
@@ -1319,7 +1356,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.fillStyle = '#00FFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
-    context.font = 'bold 28px Arial';
+    context.font = `bold ${displayFontSize}px Arial`;
     context.strokeText(coordText2, x2 + 15, y2 - 10);
     context.fillText(coordText2, x2 + 15, y2 - 10);
 
@@ -1331,7 +1368,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.fillStyle = '#FFFFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
-    context.font = 'bold 28px Arial';
+    context.font = `bold ${displayFontSize}px Arial`;
     context.strokeText(scaleText, midX, midY - 20);
     context.fillText(scaleText, midX, midY - 20);
 }
@@ -2228,11 +2265,11 @@ function drawImagePose(landmarks, landmarks3D) {
             imageCtx.fillStyle = '#FFFFFF';
             imageCtx.strokeStyle = '#000000';
             imageCtx.lineWidth = 3;
-            imageCtx.font = 'bold 28px Arial';
+            imageCtx.font = `bold ${displayFontSize}px Arial`;
             const jointName = LANDMARK_NAMES[index];
             imageCtx.strokeText(jointName, x + 10, textY);
             imageCtx.fillText(jointName, x + 10, textY);
-            textY -= 36;
+            textY -= (displayFontSize + 8);
         }
 
         // Draw coordinates
@@ -2279,7 +2316,7 @@ function drawImagePose(landmarks, landmarks3D) {
                 imageCtx.fillStyle = coordColor;
                 imageCtx.strokeStyle = '#000000';
                 imageCtx.lineWidth = 3;
-                imageCtx.font = 'bold 28px Arial';
+                imageCtx.font = `bold ${displayFontSize}px Arial`;
                 imageCtx.strokeText(coordText, x + 10, textY);
                 imageCtx.fillText(coordText, x + 10, textY);
             }
