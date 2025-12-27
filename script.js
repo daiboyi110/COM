@@ -202,6 +202,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('imageInfo').textContent =
                     `${imageDisplay.naturalWidth} × ${imageDisplay.naturalHeight}`;
 
+                // Draw calibration points immediately if in 2D mode
+                redrawImagePose();
+
                 // Process pose estimation on the image
                 console.log('Processing pose estimation...');
                 processImagePose();
@@ -289,6 +292,11 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTimeDisplay();
         updateFrameNumber();
         updateVideoInfo();
+
+        // Draw calibration points immediately if in 2D mode
+        if (analysisModeVideo === '2D') {
+            drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo);
+        }
 
         // Process first frame
         processPoseFrame();
