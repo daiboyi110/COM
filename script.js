@@ -21,6 +21,10 @@ let showJointNumbersImage = true;
 let showCoordinatesImage = false;
 let imagePoseData = null; // Store pose data for the image
 
+// Analysis mode variables
+let analysisModeVideo = '3D'; // '2D' or '3D'
+let analysisModeImage = '3D'; // '2D' or '3D'
+
 // Joint dragging variables
 let isDragging = false;
 let draggedJointIndex = null;
@@ -466,6 +470,29 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('exportJsonBtnImage').addEventListener('click', exportImageAsJson);
     document.getElementById('exportCsvBtnImage').addEventListener('click', exportImageAsCsv);
     document.getElementById('exportExcelBtnImage').addEventListener('click', exportImageAsExcel);
+
+    // Analysis mode radio buttons - Video
+    document.querySelectorAll('input[name="analysisModeVideo"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            analysisModeVideo = e.target.value;
+            console.log(`Video analysis mode changed to: ${analysisModeVideo}`);
+            // Redraw current frame
+            if (!video.paused) {
+                clearCanvas();
+            } else {
+                processPoseFrame();
+            }
+        });
+    });
+
+    // Analysis mode radio buttons - Image
+    document.querySelectorAll('input[name="analysisModeImage"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            analysisModeImage = e.target.value;
+            console.log(`Image analysis mode changed to: ${analysisModeImage}`);
+            redrawImagePose();
+        });
+    });
 });
 
 function updateTimeDisplay() {
@@ -715,17 +742,27 @@ function drawPose(landmarks, landmarks3D) {
             }
 
             // Draw coordinates
-            if (showCoordinates && landmarks3D && landmarks3D[index]) {
-                const lm3d = landmarks3D[index];
-                // Negate Y to make positive direction upward (conventional)
-                const coordText = `(${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
+            if (showCoordinates) {
+                let coordText;
 
-                ctx.fillStyle = '#FFFF00';
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 3;
-                ctx.font = 'bold 12px Arial';
-                ctx.strokeText(coordText, x + 10, textY);
-                ctx.fillText(coordText, x + 10, textY);
+                if (analysisModeVideo === '3D' && landmarks3D && landmarks3D[index]) {
+                    // 3D world coordinates (meters)
+                    const lm3d = landmarks3D[index];
+                    // Negate Y to make positive direction upward (conventional)
+                    coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
+                } else if (analysisModeVideo === '2D') {
+                    // 2D normalized coordinates (0-1)
+                    coordText = `2D: (${landmark.x.toFixed(3)}, ${landmark.y.toFixed(3)}, ${landmark.z.toFixed(3)})`;
+                }
+
+                if (coordText) {
+                    ctx.fillStyle = '#FFFF00';
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 3;
+                    ctx.font = 'bold 12px Arial';
+                    ctx.strokeText(coordText, x + 10, textY);
+                    ctx.fillText(coordText, x + 10, textY);
+                }
             }
         }
     });
@@ -1221,17 +1258,27 @@ function drawImagePose(landmarks, landmarks3D) {
             }
 
             // Draw coordinates
-            if (showCoordinatesImage && landmarks3D && landmarks3D[index]) {
-                const lm3d = landmarks3D[index];
-                // Negate Y to make positive direction upward (conventional)
-                const coordText = `(${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
+            if (showCoordinatesImage) {
+                let coordText;
 
-                imageCtx.fillStyle = '#FFFF00';
-                imageCtx.strokeStyle = '#000000';
-                imageCtx.lineWidth = 3;
-                imageCtx.font = 'bold 12px Arial';
-                imageCtx.strokeText(coordText, x + 10, textY);
-                imageCtx.fillText(coordText, x + 10, textY);
+                if (analysisModeImage === '3D' && landmarks3D && landmarks3D[index]) {
+                    // 3D world coordinates (meters)
+                    const lm3d = landmarks3D[index];
+                    // Negate Y to make positive direction upward (conventional)
+                    coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
+                } else if (analysisModeImage === '2D') {
+                    // 2D normalized coordinates (0-1)
+                    coordText = `2D: (${landmark.x.toFixed(3)}, ${landmark.y.toFixed(3)}, ${landmark.z.toFixed(3)})`;
+                }
+
+                if (coordText) {
+                    imageCtx.fillStyle = '#FFFF00';
+                    imageCtx.strokeStyle = '#000000';
+                    imageCtx.lineWidth = 3;
+                    imageCtx.font = 'bold 12px Arial';
+                    imageCtx.strokeText(coordText, x + 10, textY);
+                    imageCtx.fillText(coordText, x + 10, textY);
+                }
             }
         }
     });

@@ -102,6 +102,32 @@ h1 {
     transform: translateY(0);
 }
 
+.analysis-mode-selector {
+    text-align: center;
+    margin: 15px 0;
+    padding: 12px;
+    background: #e3f2fd;
+    border-radius: 6px;
+    border: 2px solid #2196f3;
+}
+
+.analysis-mode-selector label {
+    display: inline-block;
+    margin: 0 15px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1976d2;
+    cursor: pointer;
+}
+
+.analysis-mode-selector input[type="radio"] {
+    margin-right: 6px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+}
+
 .video-wrapper {
     position: relative;
     width: fit-content;
