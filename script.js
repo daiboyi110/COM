@@ -11,6 +11,7 @@ let isProcessing = false;
 let showPose = true;
 let showJointNumbers = true;
 let showCoordinates = false;
+let showCoordinateSystem = false;
 let processingInterval = 1000 / 5; // Default 5 FPS (200ms) - video plays at full speed
 let processingTimer = null;
 let poseDataArray = []; // Store all captured pose data
@@ -19,6 +20,7 @@ let poseDataArray = []; // Store all captured pose data
 let showPoseImage = true;
 let showJointNumbersImage = true;
 let showCoordinatesImage = false;
+let showCoordinateSystemImage = false;
 let imagePoseData = null; // Store pose data for the image
 
 // Analysis mode variables
@@ -433,6 +435,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const showCoordinateSystemCheckbox = document.getElementById('showCoordinateSystem');
+    showCoordinateSystemCheckbox.addEventListener('change', (e) => {
+        showCoordinateSystem = e.target.checked;
+        if (!video.paused) {
+            clearCanvas();
+        } else {
+            processPoseFrame();
+        }
+    });
+
     fullSizeVideoCheckbox.addEventListener('change', (e) => {
         if (e.target.checked) {
             video.classList.add('full-size');
@@ -456,6 +468,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showCoordinatesImageCheckbox.addEventListener('change', (e) => {
         showCoordinatesImage = e.target.checked;
+        redrawImagePose();
+    });
+
+    const showCoordinateSystemImageCheckbox = document.getElementById('showCoordinateSystemImage');
+    showCoordinateSystemImageCheckbox.addEventListener('change', (e) => {
+        showCoordinateSystemImage = e.target.checked;
         redrawImagePose();
     });
 
@@ -931,8 +949,35 @@ function onPoseResults(results) {
     drawPose(results.poseLandmarks, results.poseWorldLandmarks);
     document.getElementById('jointCount').textContent = results.poseLandmarks.length;
 
-    // Store pose data for export
-    savePoseData(results.poseLandmarks, results.poseWorldLandmarks);
+    // Calculate extended landmarks including midpoints, segment COMs, and total body COM
+    const { midpoints2D, midpoints3D } = calculateMidpoints(results.poseLandmarks, results.poseWorldLandmarks);
+
+    // Extend landmarks array with midpoints
+    const extendedLandmarks2D = [...results.poseLandmarks];
+    const extendedLandmarks3D = results.poseWorldLandmarks ? [...results.poseWorldLandmarks] : [];
+    if (midpoints2D[33]) extendedLandmarks2D[33] = midpoints2D[33];
+    if (midpoints2D[34]) extendedLandmarks2D[34] = midpoints2D[34];
+    if (midpoints3D[33]) extendedLandmarks3D[33] = midpoints3D[33];
+    if (midpoints3D[34]) extendedLandmarks3D[34] = midpoints3D[34];
+
+    // Calculate segment centers of mass
+    const { segmentCOMs2D, segmentCOMs3D } = calculateSegmentCOMs(extendedLandmarks2D, extendedLandmarks3D, sexSelectionVideo);
+
+    // Extend landmarks array with COMs
+    for (let i = 35; i <= 48; i++) {
+        if (segmentCOMs2D[i]) extendedLandmarks2D[i] = segmentCOMs2D[i];
+        if (segmentCOMs3D[i]) extendedLandmarks3D[i] = segmentCOMs3D[i];
+    }
+
+    // Calculate total body center of mass
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionVideo);
+
+    // Add total body COM to extended landmarks (index 49)
+    if (totalBodyCOM2D) extendedLandmarks2D[49] = totalBodyCOM2D;
+    if (totalBodyCOM3D) extendedLandmarks3D[49] = totalBodyCOM3D;
+
+    // Store extended pose data for export (includes all calculated landmarks)
+    savePoseData(extendedLandmarks2D, extendedLandmarks3D);
 }
 
 // Calculate midpoint landmarks
@@ -1292,6 +1337,11 @@ function drawPose(landmarks, landmarks3D) {
     if (analysisModeVideo === '2D') {
         drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo);
     }
+
+    // Draw coordinate system if enabled
+    if (showCoordinateSystem) {
+        drawCoordinateSystem(ctx, canvas.width, canvas.height, analysisModeVideo, calibrationPoint1Video, calibrationPoint2Video);
+    }
 }
 
 // Draw calibration points for 2D analysis
@@ -1371,6 +1421,174 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.font = `bold ${displayFontSize}px Arial`;
     context.strokeText(scaleText, midX, midY - 20);
     context.fillText(scaleText, midX, midY - 20);
+}
+
+// Draw coordinate system axes
+function drawCoordinateSystem(context, width, height, analysisMode, calibrationPoint1, calibrationPoint2) {
+    const axisLength = 100; // Length of axes in pixels
+    const arrowSize = 10; // Size of arrowhead
+
+    if (analysisMode === '2D') {
+        // For 2D mode, origin is at calibration point 1
+        // Calculate origin position in pixels
+        const originX = calibrationPoint1.x * width;
+        const originY = calibrationPoint1.y * height;
+
+        // Draw X axis (positive direction: right, red color)
+        context.strokeStyle = '#FF0000'; // Red
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(originX, originY);
+        context.lineTo(originX + axisLength, originY);
+        context.stroke();
+
+        // Draw X axis arrowhead
+        context.beginPath();
+        context.moveTo(originX + axisLength, originY);
+        context.lineTo(originX + axisLength - arrowSize, originY - arrowSize/2);
+        context.lineTo(originX + axisLength - arrowSize, originY + arrowSize/2);
+        context.closePath();
+        context.fillStyle = '#FF0000';
+        context.fill();
+
+        // Draw X axis label
+        context.fillStyle = '#FF0000';
+        context.strokeStyle = '#000000';
+        context.lineWidth = 2;
+        context.font = `bold ${displayFontSize}px Arial`;
+        context.strokeText('+X', originX + axisLength + 15, originY + 5);
+        context.fillText('+X', originX + axisLength + 15, originY + 5);
+
+        // Draw Y axis (positive direction: down in screen space but up in our coordinate system, green color)
+        context.strokeStyle = '#00FF00'; // Green
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(originX, originY);
+        context.lineTo(originX, originY - axisLength); // Negative because screen Y is inverted
+        context.stroke();
+
+        // Draw Y axis arrowhead
+        context.beginPath();
+        context.moveTo(originX, originY - axisLength);
+        context.lineTo(originX - arrowSize/2, originY - axisLength + arrowSize);
+        context.lineTo(originX + arrowSize/2, originY - axisLength + arrowSize);
+        context.closePath();
+        context.fillStyle = '#00FF00';
+        context.fill();
+
+        // Draw Y axis label
+        context.fillStyle = '#00FF00';
+        context.strokeStyle = '#000000';
+        context.lineWidth = 2;
+        context.font = `bold ${displayFontSize}px Arial`;
+        context.strokeText('+Y', originX + 10, originY - axisLength - 10);
+        context.fillText('+Y', originX + 10, originY - axisLength - 10);
+
+        // Draw origin label
+        context.fillStyle = '#FFFFFF';
+        context.strokeStyle = '#000000';
+        context.lineWidth = 2;
+        context.font = `bold ${displayFontSize}px Arial`;
+        context.strokeText('O (0,0)', originX - 60, originY + 25);
+        context.fillText('O (0,0)', originX - 60, originY + 25);
+
+    } else if (analysisMode === '3D') {
+        // For 3D mode, show axes at a fixed position (top-left corner)
+        const originX = 100;
+        const originY = 100;
+
+        // Draw X axis (red, pointing right)
+        context.strokeStyle = '#FF0000'; // Red
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(originX, originY);
+        context.lineTo(originX + axisLength, originY);
+        context.stroke();
+
+        // X axis arrowhead
+        context.beginPath();
+        context.moveTo(originX + axisLength, originY);
+        context.lineTo(originX + axisLength - arrowSize, originY - arrowSize/2);
+        context.lineTo(originX + axisLength - arrowSize, originY + arrowSize/2);
+        context.closePath();
+        context.fillStyle = '#FF0000';
+        context.fill();
+
+        // X axis label
+        context.fillStyle = '#FF0000';
+        context.strokeStyle = '#000000';
+        context.lineWidth = 2;
+        context.font = `bold ${displayFontSize}px Arial`;
+        context.strokeText('+X', originX + axisLength + 10, originY + 5);
+        context.fillText('+X', originX + axisLength + 10, originY + 5);
+
+        // Draw Y axis (green, pointing up)
+        context.strokeStyle = '#00FF00'; // Green
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(originX, originY);
+        context.lineTo(originX, originY - axisLength);
+        context.stroke();
+
+        // Y axis arrowhead
+        context.beginPath();
+        context.moveTo(originX, originY - axisLength);
+        context.lineTo(originX - arrowSize/2, originY - axisLength + arrowSize);
+        context.lineTo(originX + arrowSize/2, originY - axisLength + arrowSize);
+        context.closePath();
+        context.fillStyle = '#00FF00';
+        context.fill();
+
+        // Y axis label
+        context.fillStyle = '#00FF00';
+        context.strokeStyle = '#000000';
+        context.lineWidth = 2;
+        context.font = `bold ${displayFontSize}px Arial`;
+        context.strokeText('+Y', originX + 10, originY - axisLength - 5);
+        context.fillText('+Y', originX + 10, originY - axisLength - 5);
+
+        // Draw Z axis (blue, pointing toward camera - diagonal down-right to simulate depth)
+        const zAxisEndX = originX - axisLength * 0.5;
+        const zAxisEndY = originY + axisLength * 0.5;
+
+        context.strokeStyle = '#0080FF'; // Blue
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(originX, originY);
+        context.lineTo(zAxisEndX, zAxisEndY);
+        context.stroke();
+
+        // Z axis arrowhead
+        const zAngle = Math.atan2(zAxisEndY - originY, zAxisEndX - originX);
+        const arrowX1 = zAxisEndX - arrowSize * Math.cos(zAngle - Math.PI/6);
+        const arrowY1 = zAxisEndY - arrowSize * Math.sin(zAngle - Math.PI/6);
+        const arrowX2 = zAxisEndX - arrowSize * Math.cos(zAngle + Math.PI/6);
+        const arrowY2 = zAxisEndY - arrowSize * Math.sin(zAngle + Math.PI/6);
+
+        context.beginPath();
+        context.moveTo(zAxisEndX, zAxisEndY);
+        context.lineTo(arrowX1, arrowY1);
+        context.lineTo(arrowX2, arrowY2);
+        context.closePath();
+        context.fillStyle = '#0080FF';
+        context.fill();
+
+        // Z axis label
+        context.fillStyle = '#0080FF';
+        context.strokeStyle = '#000000';
+        context.lineWidth = 2;
+        context.font = `bold ${displayFontSize}px Arial`;
+        context.strokeText('+Z', zAxisEndX - 15, zAxisEndY + 25);
+        context.fillText('+Z', zAxisEndX - 15, zAxisEndY + 25);
+
+        // Draw origin label
+        context.fillStyle = '#FFFFFF';
+        context.strokeStyle = '#000000';
+        context.lineWidth = 2;
+        context.font = `bold ${displayFontSize}px Arial`;
+        context.strokeText('O (0,0,0)', originX + 10, originY + 20);
+        context.fillText('O (0,0,0)', originX + 10, originY + 20);
+    }
 }
 
 // Clear the canvas
@@ -2326,6 +2544,11 @@ function drawImagePose(landmarks, landmarks3D) {
     // Draw calibration points in 2D mode
     if (analysisModeImage === '2D') {
         drawCalibrationPoints(imageCtx, imageCanvas.width, imageCanvas.height, calibrationPoint1Image, calibrationPoint2Image, calibrationScaleImage);
+    }
+
+    // Draw coordinate system if enabled
+    if (showCoordinateSystemImage) {
+        drawCoordinateSystem(imageCtx, imageCanvas.width, imageCanvas.height, analysisModeImage, calibrationPoint1Image, calibrationPoint2Image);
     }
 }
 
