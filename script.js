@@ -1328,7 +1328,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     const midY = (y1 + y2) / 2;
 
     const scaleText = `Scale: ${scaleLength.toFixed(2)}m (${distance.toFixed(1)} px)`;
-    context.fillStyle = '#FF00FF';
+    context.fillStyle = '#FFFFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
     context.font = 'bold 28px Arial';
