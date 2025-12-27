@@ -1496,8 +1496,13 @@ function exportAsCsv() {
     }
 
     // Build header row with joint names (include display coordinates)
+    // Only include landmarks that are displayed (exclude EXCLUDED_LANDMARKS)
     let header = 'Frame,Timestamp';
-    LANDMARK_NAMES.forEach(name => {
+    LANDMARK_NAMES.forEach((name, index) => {
+        // Skip excluded landmarks
+        if (EXCLUDED_LANDMARKS.includes(index)) {
+            return;
+        }
         header += `,${name}_X,${name}_Y,${name}_Z`;
         if (analysisModeVideo === '2D') {
             header += `,${name}_Display_X,${name}_Display_Y`;
@@ -1525,18 +1530,13 @@ function exportAsCsv() {
         // Add X, Y, Z and display coordinates for each landmark
         // Only export landmarks that are displayed (exclude EXCLUDED_LANDMARKS and check visibility)
         frameData.landmarks2D.forEach((lm2d, index) => {
-            const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-            const displayCoord = displayCoords[index];
-
             // Skip excluded landmarks (not displayed on screen)
             if (EXCLUDED_LANDMARKS.includes(index)) {
-                if (analysisModeVideo === '2D') {
-                    row += ',,,,,'; // X, Y, Z, Display_X, Display_Y
-                } else {
-                    row += ',,,,,,'; // X, Y, Z, Display_X, Display_Y, Display_Z
-                }
                 return;
             }
+
+            const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+            const displayCoord = displayCoords[index];
 
             // Check if landmark is visible (same threshold as drawing)
             if (lm2d.visibility > 0.5) {
@@ -1604,8 +1604,13 @@ function exportAsExcel() {
 
         // Pose data sheet - rows are frames, columns are joint coordinates
         // Build header row (include display coordinates)
+        // Only include landmarks that are displayed (exclude EXCLUDED_LANDMARKS)
         const header = ['Frame', 'Timestamp'];
-        LANDMARK_NAMES.forEach(name => {
+        LANDMARK_NAMES.forEach((name, index) => {
+            // Skip excluded landmarks
+            if (EXCLUDED_LANDMARKS.includes(index)) {
+                return;
+            }
             header.push(`${name}_X`, `${name}_Y`, `${name}_Z`);
             if (analysisModeVideo === '2D') {
                 header.push(`${name}_Display_X`, `${name}_Display_Y`);
@@ -1636,18 +1641,13 @@ function exportAsExcel() {
             // Add X, Y, Z and display coordinates for each landmark
             // Only export landmarks that are displayed (exclude EXCLUDED_LANDMARKS and check visibility)
             frameData.landmarks2D.forEach((lm2d, index) => {
-                const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-                const displayCoord = displayCoords[index];
-
                 // Skip excluded landmarks (not displayed on screen)
                 if (EXCLUDED_LANDMARKS.includes(index)) {
-                    if (analysisModeVideo === '2D') {
-                        row.push('', '', '', '', ''); // X, Y, Z, Display_X, Display_Y
-                    } else {
-                        row.push('', '', '', '', '', ''); // X, Y, Z, Display_X, Display_Y, Display_Z
-                    }
                     return;
                 }
+
+                const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+                const displayCoord = displayCoords[index];
 
                 // Check if landmark is visible (same threshold as drawing)
                 if (lm2d.visibility > 0.5) {
