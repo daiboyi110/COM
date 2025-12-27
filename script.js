@@ -209,6 +209,14 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('✗ SheetJS (XLSX) library failed to load - Excel export will not work');
     }
 
+    // Initialize calibration edit checkbox visibility (2D is default, so show them)
+    if (editCalibrationVideoLabel) {
+        editCalibrationVideoLabel.style.display = 'inline-block';
+    }
+    if (editCalibrationImageLabel) {
+        editCalibrationImageLabel.style.display = 'inline-block';
+    }
+
     // Initialize MediaPipe Pose
     initializePose();
 
@@ -489,31 +497,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    editModeCalibrationVideoCheckbox.addEventListener('change', (e) => {
-        isEditModeCalibration = e.target.checked;
-        if (isEditModeCalibration) {
-            canvas.classList.add('editable');
-            console.log('Calibration edit mode enabled for video');
-        } else {
-            canvas.classList.remove('editable');
-            isDragging = false;
-            draggedCalibrationPoint = null;
-            console.log('Calibration edit mode disabled for video');
-        }
-    });
+    if (editModeCalibrationVideoCheckbox) {
+        editModeCalibrationVideoCheckbox.addEventListener('change', (e) => {
+            isEditModeCalibration = e.target.checked;
+            if (isEditModeCalibration) {
+                canvas.classList.add('editable');
+                console.log('Calibration edit mode enabled for video');
+            } else {
+                canvas.classList.remove('editable');
+                isDragging = false;
+                draggedCalibrationPoint = null;
+                console.log('Calibration edit mode disabled for video');
+            }
+        });
+    }
 
-    editModeCalibrationImageCheckbox.addEventListener('change', (e) => {
-        isEditModeCalibration = e.target.checked;
-        if (isEditModeCalibration) {
-            imageCanvas.classList.add('editable');
-            console.log('Calibration edit mode enabled for image');
-        } else {
-            imageCanvas.classList.remove('editable');
-            isDragging = false;
-            draggedCalibrationPoint = null;
-            console.log('Calibration edit mode disabled for image');
-        }
-    });
+    if (editModeCalibrationImageCheckbox) {
+        editModeCalibrationImageCheckbox.addEventListener('change', (e) => {
+            isEditModeCalibration = e.target.checked;
+            if (isEditModeCalibration) {
+                imageCanvas.classList.add('editable');
+                console.log('Calibration edit mode enabled for image');
+            } else {
+                imageCanvas.classList.remove('editable');
+                isDragging = false;
+                draggedCalibrationPoint = null;
+                console.log('Calibration edit mode disabled for image');
+            }
+        });
+    }
 
     // Mouse events for image canvas
     imageCanvas.addEventListener('mousedown', handleMouseDown);
@@ -591,12 +603,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show/hide calibration scale input and calibration edit checkbox
             if (analysisModeVideo === '2D') {
                 calibrationScaleLabelVideo.style.display = 'inline-block';
-                editCalibrationVideoLabel.style.display = 'inline-block';
+                if (editCalibrationVideoLabel) {
+                    editCalibrationVideoLabel.style.display = 'inline-block';
+                }
             } else {
                 calibrationScaleLabelVideo.style.display = 'none';
-                editCalibrationVideoLabel.style.display = 'none';
+                if (editCalibrationVideoLabel) {
+                    editCalibrationVideoLabel.style.display = 'none';
+                }
                 // Disable calibration edit mode when switching to 3D
-                if (isEditModeCalibration) {
+                if (isEditModeCalibration && editModeCalibrationVideoCheckbox) {
                     editModeCalibrationVideoCheckbox.checked = false;
                     isEditModeCalibration = false;
                     canvas.classList.remove('editable');
@@ -622,12 +638,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show/hide calibration scale input and calibration edit checkbox
             if (analysisModeImage === '2D') {
                 calibrationScaleLabelImage.style.display = 'inline-block';
-                editCalibrationImageLabel.style.display = 'inline-block';
+                if (editCalibrationImageLabel) {
+                    editCalibrationImageLabel.style.display = 'inline-block';
+                }
             } else {
                 calibrationScaleLabelImage.style.display = 'none';
-                editCalibrationImageLabel.style.display = 'none';
+                if (editCalibrationImageLabel) {
+                    editCalibrationImageLabel.style.display = 'none';
+                }
                 // Disable calibration edit mode when switching to 3D
-                if (isEditModeCalibration) {
+                if (isEditModeCalibration && editModeCalibrationImageCheckbox) {
                     editModeCalibrationImageCheckbox.checked = false;
                     isEditModeCalibration = false;
                     imageCanvas.classList.remove('editable');
