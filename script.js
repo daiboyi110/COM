@@ -67,9 +67,9 @@ const LANDMARK_NAMES = [
 // Landmarks to exclude from display
 // 0-6: Nose and eye landmarks
 // 9-10: Mouth landmarks
-// 18-19: Right pinky and left index finger
+// 17-18: Left and right pinky fingers
 // 21-22: Left and right thumb landmarks
-const EXCLUDED_LANDMARKS = [0, 1, 2, 3, 4, 5, 6, 9, 10, 18, 19, 21, 22];
+const EXCLUDED_LANDMARKS = [0, 1, 2, 3, 4, 5, 6, 9, 10, 17, 18, 21, 22];
 
 // MediaPipe Pose connections for drawing skeleton
 const POSE_CONNECTIONS = [
