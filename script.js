@@ -7,6 +7,7 @@ let frameCount = 0;
 let isProcessing = false;
 let showPose = true;
 let showJointNumbers = true;
+let showCoordinates = false;
 let processingInterval = 1000 / 5; // Default 5 FPS (200ms) - video plays at full speed
 let processingTimer = null;
 let poseDataArray = []; // Store all captured pose data
@@ -69,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextFrameBtn = document.getElementById('nextFrameBtn');
     const showPoseCheckbox = document.getElementById('showPose');
     const showJointNumbersCheckbox = document.getElementById('showJointNumbers');
+    const showCoordinatesCheckbox = document.getElementById('showCoordinates');
     const processingSpeedSelect = document.getElementById('processingSpeed');
 
     // Check if XLSX library is loaded
@@ -157,6 +159,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showJointNumbersCheckbox.addEventListener('change', (e) => {
         showJointNumbers = e.target.checked;
+        if (!video.paused) {
+            clearCanvas();
+        } else {
+            processPoseFrame();
+        }
+    });
+
+    showCoordinatesCheckbox.addEventListener('change', (e) => {
+        showCoordinates = e.target.checked;
         if (!video.paused) {
             clearCanvas();
         } else {
@@ -377,7 +388,7 @@ function onPoseResults(results) {
         return;
     }
 
-    drawPose(results.poseLandmarks);
+    drawPose(results.poseLandmarks, results.poseWorldLandmarks);
     document.getElementById('jointCount').textContent = results.poseLandmarks.length;
 
     // Store pose data for export
@@ -385,7 +396,7 @@ function onPoseResults(results) {
 }
 
 // Draw pose skeleton and landmarks
-function drawPose(landmarks) {
+function drawPose(landmarks, landmarks3D) {
     const width = canvas.width;
     const height = canvas.height;
 
@@ -417,14 +428,30 @@ function drawPose(landmarks) {
             ctx.arc(x, y, 6, 0, 2 * Math.PI);
             ctx.fill();
 
+            let textY = y - 10;
+
             // Draw joint number
             if (showJointNumbers) {
                 ctx.fillStyle = '#FFFFFF';
                 ctx.strokeStyle = '#000000';
                 ctx.lineWidth = 3;
                 ctx.font = 'bold 14px Arial';
-                ctx.strokeText(index.toString(), x + 10, y - 10);
-                ctx.fillText(index.toString(), x + 10, y - 10);
+                ctx.strokeText(index.toString(), x + 10, textY);
+                ctx.fillText(index.toString(), x + 10, textY);
+                textY -= 18;
+            }
+
+            // Draw coordinates
+            if (showCoordinates && landmarks3D && landmarks3D[index]) {
+                const lm3d = landmarks3D[index];
+                const coordText = `(${lm3d.x.toFixed(3)}, ${lm3d.y.toFixed(3)}, ${lm3d.z.toFixed(3)})`;
+
+                ctx.fillStyle = '#FFFF00';
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 3;
+                ctx.font = 'bold 12px Arial';
+                ctx.strokeText(coordText, x + 10, textY);
+                ctx.fillText(coordText, x + 10, textY);
             }
         }
     });
