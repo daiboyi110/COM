@@ -34,6 +34,7 @@ let isDragging = false;
 let draggedJointIndex = null;
 let draggedJointFrame = null; // For video: which frame is being edited
 let isEditMode = false; // Toggle edit mode on/off
+let isEditModeCalibration = false; // Toggle calibration point edit mode on/off
 
 // Calibration points for 2D analysis (normalized coordinates 0-1)
 // Initial positions: Point 1 at (100, 100) pixels, Point 2 at (100, 600) pixels (based on ~800px reference)
@@ -190,6 +191,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Video edit mode
     const editModeVideoCheckbox = document.getElementById('editModeVideo');
+    const editModeCalibrationVideoCheckbox = document.getElementById('editModeCalibrationVideo');
+    const editCalibrationVideoLabel = document.getElementById('editCalibrationVideoLabel');
+
+    // Image calibration edit mode
+    const editModeCalibrationImageCheckbox = document.getElementById('editModeCalibrationImage');
+    const editCalibrationImageLabel = document.getElementById('editCalibrationImageLabel');
 
     // Close buttons
     const closeImageBtn = document.getElementById('closeImageBtn');
@@ -482,6 +489,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    editModeCalibrationVideoCheckbox.addEventListener('change', (e) => {
+        isEditModeCalibration = e.target.checked;
+        if (isEditModeCalibration) {
+            canvas.classList.add('editable');
+            console.log('Calibration edit mode enabled for video');
+        } else {
+            canvas.classList.remove('editable');
+            isDragging = false;
+            draggedCalibrationPoint = null;
+            console.log('Calibration edit mode disabled for video');
+        }
+    });
+
+    editModeCalibrationImageCheckbox.addEventListener('change', (e) => {
+        isEditModeCalibration = e.target.checked;
+        if (isEditModeCalibration) {
+            imageCanvas.classList.add('editable');
+            console.log('Calibration edit mode enabled for image');
+        } else {
+            imageCanvas.classList.remove('editable');
+            isDragging = false;
+            draggedCalibrationPoint = null;
+            console.log('Calibration edit mode disabled for image');
+        }
+    });
+
     // Mouse events for image canvas
     imageCanvas.addEventListener('mousedown', handleMouseDown);
     imageCanvas.addEventListener('mousemove', handleMouseMove);
@@ -555,11 +588,19 @@ document.addEventListener('DOMContentLoaded', () => {
             analysisModeVideo = e.target.value;
             console.log(`Video analysis mode changed to: ${analysisModeVideo}`);
 
-            // Show/hide calibration scale input
+            // Show/hide calibration scale input and calibration edit checkbox
             if (analysisModeVideo === '2D') {
                 calibrationScaleLabelVideo.style.display = 'inline-block';
+                editCalibrationVideoLabel.style.display = 'inline-block';
             } else {
                 calibrationScaleLabelVideo.style.display = 'none';
+                editCalibrationVideoLabel.style.display = 'none';
+                // Disable calibration edit mode when switching to 3D
+                if (isEditModeCalibration) {
+                    editModeCalibrationVideoCheckbox.checked = false;
+                    isEditModeCalibration = false;
+                    canvas.classList.remove('editable');
+                }
             }
 
             // Redraw current frame
@@ -578,11 +619,19 @@ document.addEventListener('DOMContentLoaded', () => {
             analysisModeImage = e.target.value;
             console.log(`Image analysis mode changed to: ${analysisModeImage}`);
 
-            // Show/hide calibration scale input
+            // Show/hide calibration scale input and calibration edit checkbox
             if (analysisModeImage === '2D') {
                 calibrationScaleLabelImage.style.display = 'inline-block';
+                editCalibrationImageLabel.style.display = 'inline-block';
             } else {
                 calibrationScaleLabelImage.style.display = 'none';
+                editCalibrationImageLabel.style.display = 'none';
+                // Disable calibration edit mode when switching to 3D
+                if (isEditModeCalibration) {
+                    editModeCalibrationImageCheckbox.checked = false;
+                    isEditModeCalibration = false;
+                    imageCanvas.classList.remove('editable');
+                }
             }
 
             redrawImagePose();
@@ -1161,7 +1210,7 @@ function drawPose(landmarks, landmarks3D) {
                 if (index === 49) {
                     coordColor = '#FF0000'; // Red for Total Body COM
                 } else if (index >= 35 && index <= 48) {
-                    coordColor = '#FF0000'; // Red for Segment COMs
+                    coordColor = '#FFD700'; // Gold for Segment COMs
                 } else if (index === 33 || index === 34) {
                     coordColor = '#0000FF'; // Blue for Mid-Shoulder and Mid-Hip
                 } else {
@@ -1233,7 +1282,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.fillStyle = '#00FFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
-    context.font = 'bold 14px Arial';
+    context.font = 'bold 28px Arial';
     context.strokeText(coordText1, x1 + 15, y1 - 10);
     context.fillText(coordText1, x1 + 15, y1 - 10);
 
@@ -1246,7 +1295,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.fillStyle = '#00FFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
-    context.font = 'bold 14px Arial';
+    context.font = 'bold 28px Arial';
     context.strokeText(coordText2, x2 + 15, y2 - 10);
     context.fillText(coordText2, x2 + 15, y2 - 10);
 
@@ -1510,8 +1559,8 @@ function handleMouseDown(e) {
     const isImageMode = targetCanvas === imageCanvas;
     const analysisMode = isImageMode ? analysisModeImage : analysisModeVideo;
 
-    // In 2D mode, always check for calibration points first (they're always draggable)
-    if (analysisMode === '2D') {
+    // In 2D mode, check for calibration points if calibration edit mode is enabled
+    if (analysisMode === '2D' && isEditModeCalibration) {
         const CLICK_THRESHOLD = 20;
         const point1 = isImageMode ? calibrationPoint1Image : calibrationPoint1Video;
         const point2 = isImageMode ? calibrationPoint2Image : calibrationPoint2Video;
@@ -1944,7 +1993,7 @@ function drawImagePose(landmarks, landmarks3D) {
                 if (index === 49) {
                     coordColor = '#FF0000'; // Red for Total Body COM
                 } else if (index >= 35 && index <= 48) {
-                    coordColor = '#FF0000'; // Red for Segment COMs
+                    coordColor = '#FFD700'; // Gold for Segment COMs
                 } else if (index === 33 || index === 34) {
                     coordColor = '#0000FF'; // Blue for Mid-Shoulder and Mid-Hip
                 } else {
