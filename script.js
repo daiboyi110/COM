@@ -792,10 +792,22 @@ function drawPose(landmarks, landmarks3D) {
                     // Negate Y to make positive direction upward (conventional)
                     coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
                 } else if (analysisModeVideo === '2D') {
-                    // 2D coordinates in pixels
+                    // 2D coordinates in pixels, divided by calibration distance
                     const pixelX = landmark.x * width;
                     const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
-                    coordText = `2D: (${pixelX.toFixed(1)}, ${pixelY.toFixed(1)}) px`;
+
+                    // Calculate calibration distance in pixels
+                    const p1x = calibrationPoint1Video.x * width;
+                    const p1y = calibrationPoint1Video.y * height;
+                    const p2x = calibrationPoint2Video.x * width;
+                    const p2y = calibrationPoint2Video.y * height;
+                    const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
+
+                    // Normalize by calibration distance
+                    const normalizedX = pixelX / calibDistance;
+                    const normalizedY = pixelY / calibDistance;
+
+                    coordText = `2D: (${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
                 }
 
                 if (coordText) {
@@ -856,10 +868,12 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     // Calculate distance between the two points in pixels
     const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 
-    // Display coordinates for Point 1 in pixels (transform Y to make upward positive)
+    // Display coordinates for Point 1 in pixels divided by distance (transform Y to make upward positive)
     const p1x_pixels = point1.x * width;
     const p1y_pixels = (1 - point1.y) * height;
-    const coordText1 = `P1: (${p1x_pixels.toFixed(1)}, ${p1y_pixels.toFixed(1)}) px`;
+    const p1x_normalized = p1x_pixels / distance;
+    const p1y_normalized = p1y_pixels / distance;
+    const coordText1 = `P1: (${p1x_normalized.toFixed(3)}, ${p1y_normalized.toFixed(3)})`;
     context.fillStyle = '#00FFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
@@ -867,10 +881,12 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.strokeText(coordText1, x1 + 15, y1 - 10);
     context.fillText(coordText1, x1 + 15, y1 - 10);
 
-    // Display coordinates for Point 2 in pixels (transform Y to make upward positive)
+    // Display coordinates for Point 2 in pixels divided by distance (transform Y to make upward positive)
     const p2x_pixels = point2.x * width;
     const p2y_pixels = (1 - point2.y) * height;
-    const coordText2 = `P2: (${p2x_pixels.toFixed(1)}, ${p2y_pixels.toFixed(1)}) px`;
+    const p2x_normalized = p2x_pixels / distance;
+    const p2y_normalized = p2y_pixels / distance;
+    const coordText2 = `P2: (${p2x_normalized.toFixed(3)}, ${p2y_normalized.toFixed(3)})`;
     context.fillStyle = '#00FFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
@@ -1464,10 +1480,22 @@ function drawImagePose(landmarks, landmarks3D) {
                     // Negate Y to make positive direction upward (conventional)
                     coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
                 } else if (analysisModeImage === '2D') {
-                    // 2D coordinates in pixels
+                    // 2D coordinates in pixels, divided by calibration distance
                     const pixelX = landmark.x * width;
                     const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
-                    coordText = `2D: (${pixelX.toFixed(1)}, ${pixelY.toFixed(1)}) px`;
+
+                    // Calculate calibration distance in pixels
+                    const p1x = calibrationPoint1Image.x * width;
+                    const p1y = calibrationPoint1Image.y * height;
+                    const p2x = calibrationPoint2Image.x * width;
+                    const p2y = calibrationPoint2Image.y * height;
+                    const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
+
+                    // Normalize by calibration distance
+                    const normalizedX = pixelX / calibDistance;
+                    const normalizedY = pixelY / calibDistance;
+
+                    coordText = `2D: (${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
                 }
 
                 if (coordText) {
