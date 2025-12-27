@@ -36,10 +36,11 @@ let draggedJointFrame = null; // For video: which frame is being edited
 let isEditMode = false; // Toggle edit mode on/off
 
 // Calibration points for 2D analysis (normalized coordinates 0-1)
-let calibrationPoint1Video = { x: 0.3, y: 0.5 }; // Point 1 for video
-let calibrationPoint2Video = { x: 0.7, y: 0.5 }; // Point 2 for video
-let calibrationPoint1Image = { x: 0.3, y: 0.5 }; // Point 1 for image
-let calibrationPoint2Image = { x: 0.7, y: 0.5 }; // Point 2 for image
+// Initial positions: Point 1 at (100, 100) pixels, Point 2 at (100, 600) pixels (based on ~800px reference)
+let calibrationPoint1Video = { x: 0.125, y: 0.125 }; // Point 1 for video
+let calibrationPoint2Video = { x: 0.125, y: 0.75 }; // Point 2 for video
+let calibrationPoint1Image = { x: 0.125, y: 0.125 }; // Point 1 for image
+let calibrationPoint2Image = { x: 0.125, y: 0.75 }; // Point 2 for image
 let draggedCalibrationPoint = null; // Which calibration point is being dragged ('point1' or 'point2')
 let calibrationScaleVideo = 1.0; // Scale length in meters for video
 let calibrationScaleImage = 1.0; // Scale length in meters for image
@@ -1155,7 +1156,19 @@ function drawPose(landmarks, landmarks3D) {
             }
 
             if (coordText) {
-                ctx.fillStyle = '#FFFF00';
+                // Determine coordinate color based on landmark type
+                let coordColor;
+                if (index === 49) {
+                    coordColor = '#FF0000'; // Red for Total Body COM
+                } else if (index >= 35 && index <= 48) {
+                    coordColor = '#FF0000'; // Red for Segment COMs
+                } else if (index === 33 || index === 34) {
+                    coordColor = '#0000FF'; // Blue for Mid-Shoulder and Mid-Hip
+                } else {
+                    coordColor = '#00FF00'; // Green for regular joints
+                }
+
+                ctx.fillStyle = coordColor;
                 ctx.strokeStyle = '#000000';
                 ctx.lineWidth = 3;
                 ctx.font = 'bold 48px Arial';
@@ -1926,7 +1939,19 @@ function drawImagePose(landmarks, landmarks3D) {
             }
 
             if (coordText) {
-                imageCtx.fillStyle = '#FFFF00';
+                // Determine coordinate color based on landmark type
+                let coordColor;
+                if (index === 49) {
+                    coordColor = '#FF0000'; // Red for Total Body COM
+                } else if (index >= 35 && index <= 48) {
+                    coordColor = '#FF0000'; // Red for Segment COMs
+                } else if (index === 33 || index === 34) {
+                    coordColor = '#0000FF'; // Blue for Mid-Shoulder and Mid-Hip
+                } else {
+                    coordColor = '#00FF00'; // Green for regular joints
+                }
+
+                imageCtx.fillStyle = coordColor;
                 imageCtx.strokeStyle = '#000000';
                 imageCtx.lineWidth = 3;
                 imageCtx.font = 'bold 48px Arial';
