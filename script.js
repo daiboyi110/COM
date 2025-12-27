@@ -11,6 +11,7 @@ let isProcessing = false;
 let showPose = true;
 let showJointNumbers = true;
 let showCoordinates = false;
+let showCOMCoordinates = false;
 let processingInterval = 1000 / 5; // Default 5 FPS (200ms) - video plays at full speed
 let processingTimer = null;
 let poseDataArray = []; // Store all captured pose data
@@ -19,6 +20,7 @@ let poseDataArray = []; // Store all captured pose data
 let showPoseImage = true;
 let showJointNumbersImage = true;
 let showCoordinatesImage = false;
+let showCOMCoordinatesImage = false;
 let imagePoseData = null; // Store pose data for the image
 
 // Analysis mode variables
@@ -177,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const showPoseCheckbox = document.getElementById('showPose');
     const showJointNumbersCheckbox = document.getElementById('showJointNumbers');
     const showCoordinatesCheckbox = document.getElementById('showCoordinates');
+    const showCOMCoordinatesCheckbox = document.getElementById('showCOMCoordinates');
     const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
     const processingSpeedSelect = document.getElementById('processingSpeed');
 
@@ -184,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const showPoseImageCheckbox = document.getElementById('showPoseImage');
     const showJointNumbersImageCheckbox = document.getElementById('showJointNumbersImage');
     const showCoordinatesImageCheckbox = document.getElementById('showCoordinatesImage');
+    const showCOMCoordinatesImageCheckbox = document.getElementById('showCOMCoordinatesImage');
     const fullSizeImageCheckbox = document.getElementById('fullSizeImage');
     const editModeImageCheckbox = document.getElementById('editModeImage');
 
@@ -414,6 +418,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    showCOMCoordinatesCheckbox.addEventListener('change', (e) => {
+        showCOMCoordinates = e.target.checked;
+        if (!video.paused) {
+            clearCanvas();
+        } else {
+            processPoseFrame();
+        }
+    });
+
     fullSizeVideoCheckbox.addEventListener('change', (e) => {
         if (e.target.checked) {
             video.classList.add('full-size');
@@ -437,6 +450,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showCoordinatesImageCheckbox.addEventListener('change', (e) => {
         showCoordinatesImage = e.target.checked;
+        redrawImagePose();
+    });
+
+    showCOMCoordinatesImageCheckbox.addEventListener('change', (e) => {
+        showCOMCoordinatesImage = e.target.checked;
         redrawImagePose();
     });
 
@@ -1103,8 +1121,11 @@ function drawPose(landmarks, landmarks3D) {
             textY -= 18;
         }
 
-        // Draw coordinates
-        if (showCoordinates) {
+        // Draw coordinates based on landmark type
+        const isCOMPoint = index >= 35; // Segment COMs (35-48) and Total Body COM (49)
+        const shouldShowCoordinates = isCOMPoint ? showCOMCoordinates : showCoordinates;
+
+        if (shouldShowCoordinates) {
             let coordText;
 
             if (analysisModeVideo === '3D' && extendedLandmarks3D && extendedLandmarks3D[index]) {
@@ -1851,8 +1872,11 @@ function drawImagePose(landmarks, landmarks3D) {
             textY -= 18;
         }
 
-        // Draw coordinates
-        if (showCoordinatesImage) {
+        // Draw coordinates based on landmark type
+        const isCOMPoint = index >= 35; // Segment COMs (35-48) and Total Body COM (49)
+        const shouldShowCoordinates = isCOMPoint ? showCOMCoordinatesImage : showCoordinatesImage;
+
+        if (shouldShowCoordinates) {
             let coordText;
 
             if (analysisModeImage === '3D' && extendedLandmarks3D && extendedLandmarks3D[index]) {
