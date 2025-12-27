@@ -1031,7 +1031,7 @@ function drawPose(landmarks, landmarks3D) {
     });
 
     // Calculate base size relative to canvas resolution for better visibility
-    const baseSize = Math.max(width, height) * 0.006; // Base size for regular joints
+    const baseSize = Math.max(width, height) * 0.003; // Base size for regular joints (~3px for 1000px resolution)
 
     // Draw landmarks (joints) - including calculated midpoints
     extendedLandmarks2D.forEach((landmark, index) => {
@@ -1779,7 +1779,7 @@ function drawImagePose(landmarks, landmarks3D) {
     });
 
     // Calculate base size relative to canvas resolution for better visibility
-    const baseSize = Math.max(width, height) * 0.006; // Base size for regular joints
+    const baseSize = Math.max(width, height) * 0.003; // Base size for regular joints (~3px for 1000px resolution)
 
     // Draw landmarks (joints) - including calculated midpoints
     extendedLandmarks2D.forEach((landmark, index) => {
