@@ -1583,6 +1583,8 @@ function handleMouseDown(e) {
     const isImageMode = targetCanvas === imageCanvas;
     const analysisMode = isImageMode ? analysisModeImage : analysisModeVideo;
 
+    console.log('handleMouseDown called - isEditMode:', isEditMode, 'isEditModeCalibration:', isEditModeCalibration);
+
     // In 2D mode, check for calibration points if calibration edit mode is enabled
     if (analysisMode === '2D' && isEditModeCalibration) {
         const CLICK_THRESHOLD = 20;
@@ -1613,13 +1615,21 @@ function handleMouseDown(e) {
     }
 
     // Only check pose landmarks if in edit mode
-    if (!isEditMode) return;
+    if (!isEditMode) {
+        console.log('Skipping joint check - isEditMode is false');
+        return;
+    }
+    console.log('Checking for joints to drag...');
 
     const landmarks = isImageMode ?
         (imagePoseData ? imagePoseData.landmarks2D : null) :
         (poseDataArray.length > 0 ? getCurrentFramePoseData()?.landmarks2D : null);
 
-    if (!landmarks) return;
+    if (!landmarks) {
+        console.log('No landmarks available for editing');
+        return;
+    }
+    console.log('Landmarks found:', landmarks.length);
 
     // Find the closest joint within 20 pixels
     const CLICK_THRESHOLD = 20;
@@ -1655,6 +1665,8 @@ function handleMouseDown(e) {
         }
         targetCanvas.style.cursor = 'move';
         console.log(`Started dragging joint ${draggedJointIndex} (${LANDMARK_NAMES[draggedJointIndex]})`);
+    } else {
+        console.log('No joint found within click threshold');
     }
 }
 
