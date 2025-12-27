@@ -1030,6 +1030,9 @@ function drawPose(landmarks, landmarks3D) {
         }
     });
 
+    // Calculate base size relative to canvas resolution for better visibility
+    const baseSize = Math.max(width, height) * 0.006; // Base size for regular joints
+
     // Draw landmarks (joints) - including calculated midpoints
     extendedLandmarks2D.forEach((landmark, index) => {
         // Skip excluded landmarks (nose and eyes)
@@ -1052,31 +1055,37 @@ function drawPose(landmarks, landmarks3D) {
         const isSegmentCOM = index >= 35 && index <= 48;
         const isTotalBodyCOM = index === 49;
 
+        // Calculate sizes based on landmark type
+        const regularJointSize = baseSize;
+        const midpointSize = baseSize * 1.3;
+        const segmentCOMSize = baseSize * 2; // 2x the size of regular joints
+        const totalBodyCOMSize = baseSize * 4; // 4x the size of regular joints
+
         if (isBeingDragged) {
             ctx.fillStyle = '#FF00FF'; // Magenta for dragged joint
             ctx.beginPath();
-            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
             ctx.fill();
         } else if (isTotalBodyCOM) {
             ctx.fillStyle = '#FF0000'; // Red for Total Body COM
             ctx.beginPath();
-            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
             ctx.fill();
             // Add outer ring for emphasis
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
             ctx.stroke();
         } else if (isSegmentCOM) {
             ctx.fillStyle = '#FFD700'; // Gold for segment COMs
             ctx.beginPath();
-            ctx.arc(x, y, 7, 0, 2 * Math.PI);
+            ctx.arc(x, y, segmentCOMSize, 0, 2 * Math.PI);
             ctx.fill();
         } else {
             ctx.fillStyle = isMidpoint ? '#0000FF' : '#00FF00'; // Blue for midpoints, green for regular joints
             ctx.beginPath();
-            ctx.arc(x, y, isMidpoint ? 8 : 6, 0, 2 * Math.PI);
+            ctx.arc(x, y, isMidpoint ? midpointSize : regularJointSize, 0, 2 * Math.PI);
             ctx.fill();
         }
 
@@ -1769,6 +1778,9 @@ function drawImagePose(landmarks, landmarks3D) {
         }
     });
 
+    // Calculate base size relative to canvas resolution for better visibility
+    const baseSize = Math.max(width, height) * 0.006; // Base size for regular joints
+
     // Draw landmarks (joints) - including calculated midpoints
     extendedLandmarks2D.forEach((landmark, index) => {
         // Skip excluded landmarks (nose and eyes)
@@ -1791,31 +1803,37 @@ function drawImagePose(landmarks, landmarks3D) {
         const isSegmentCOM = index >= 35 && index <= 48;
         const isTotalBodyCOM = index === 49;
 
+        // Calculate sizes based on landmark type
+        const regularJointSize = baseSize;
+        const midpointSize = baseSize * 1.3;
+        const segmentCOMSize = baseSize * 2; // 2x the size of regular joints
+        const totalBodyCOMSize = baseSize * 4; // 4x the size of regular joints
+
         if (isBeingDragged) {
             imageCtx.fillStyle = '#FF00FF'; // Magenta for dragged joint
             imageCtx.beginPath();
-            imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
+            imageCtx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
             imageCtx.fill();
         } else if (isTotalBodyCOM) {
             imageCtx.fillStyle = '#FF0000'; // Red for Total Body COM
             imageCtx.beginPath();
-            imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
+            imageCtx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
             imageCtx.fill();
             // Add outer ring for emphasis
             imageCtx.strokeStyle = '#FFFFFF';
             imageCtx.lineWidth = 2;
             imageCtx.beginPath();
-            imageCtx.arc(x, y, 10, 0, 2 * Math.PI);
+            imageCtx.arc(x, y, totalBodyCOMSize, 0, 2 * Math.PI);
             imageCtx.stroke();
         } else if (isSegmentCOM) {
             imageCtx.fillStyle = '#FFD700'; // Gold for segment COMs
             imageCtx.beginPath();
-            imageCtx.arc(x, y, 7, 0, 2 * Math.PI);
+            imageCtx.arc(x, y, segmentCOMSize, 0, 2 * Math.PI);
             imageCtx.fill();
         } else {
             imageCtx.fillStyle = isMidpoint ? '#0000FF' : '#00FF00'; // Blue for midpoints, green for regular joints
             imageCtx.beginPath();
-            imageCtx.arc(x, y, isMidpoint ? 8 : 6, 0, 2 * Math.PI);
+            imageCtx.arc(x, y, isMidpoint ? midpointSize : regularJointSize, 0, 2 * Math.PI);
             imageCtx.fill();
         }
 
