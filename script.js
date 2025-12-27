@@ -105,6 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Video edit mode
     const editModeVideoCheckbox = document.getElementById('editModeVideo');
 
+    // Close buttons
+    const closeImageBtn = document.getElementById('closeImageBtn');
+    const closeVideoBtn = document.getElementById('closeVideoBtn');
+
     // Check if XLSX library is loaded
     if (typeof XLSX !== 'undefined') {
         console.log('✓ SheetJS (XLSX) library loaded successfully');
@@ -122,7 +126,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = URL.createObjectURL(file);
             video.src = url;
             videoSection.style.display = 'block';
-            imageSection.style.display = 'none';
+
+            // Close image section if open
+            if (imageSection.style.display !== 'none') {
+                imageSection.style.display = 'none';
+                imageDisplay.src = '';
+                imagePoseData = null;
+                imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+                imageInput.value = '';
+            }
+
             // Clear previous pose data
             poseDataArray = [];
             document.getElementById('capturedFrames').textContent = '0';
@@ -136,8 +149,18 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Image file selected:', file.name);
             const url = URL.createObjectURL(file);
             imageDisplay.src = url;
-            videoSection.style.display = 'none';
             imageSection.style.display = 'block';
+
+            // Close video section if open
+            if (videoSection.style.display !== 'none') {
+                video.pause();
+                videoSection.style.display = 'none';
+                video.src = '';
+                poseDataArray = [];
+                clearCanvas();
+                videoInput.value = '';
+            }
+
             imagePoseData = null;
 
             imageDisplay.onload = () => {
@@ -163,6 +186,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Failed to load image. Please try a different file.');
             };
         }
+    });
+
+    // Close image button
+    closeImageBtn.addEventListener('click', () => {
+        // Hide image section
+        imageSection.style.display = 'none';
+
+        // Clear image data
+        imageDisplay.src = '';
+        imagePoseData = null;
+
+        // Clear canvas
+        imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+
+        // Reset checkboxes
+        if (editModeImageCheckbox.checked) {
+            editModeImageCheckbox.checked = false;
+            imageCanvas.classList.remove('editable');
+            isEditMode = false;
+        }
+
+        // Reset input
+        imageInput.value = '';
+
+        console.log('Image closed and data cleared');
+    });
+
+    // Close video button
+    closeVideoBtn.addEventListener('click', () => {
+        // Pause and hide video section
+        video.pause();
+        videoSection.style.display = 'none';
+
+        // Clear video data
+        video.src = '';
+        poseDataArray = [];
+
+        // Clear canvas
+        clearCanvas();
+
+        // Reset checkboxes
+        if (editModeVideoCheckbox.checked) {
+            editModeVideoCheckbox.checked = false;
+            canvas.classList.remove('editable');
+            isEditMode = false;
+        }
+
+        // Reset captured frames display
+        document.getElementById('capturedFrames').textContent = '0';
+
+        // Reset input
+        videoInput.value = '';
+
+        console.log('Video closed and data cleared');
     });
 
     // When video metadata is loaded
