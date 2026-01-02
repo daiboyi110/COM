@@ -1593,40 +1593,11 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.lineWidth = 2;
     context.stroke();
 
-    // Calculate distance between the two points in pixels
-    const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-
-    // Display coordinates for Point 1 in pixels divided by distance (transform Y to make upward positive)
-    const p1x_pixels = point1.x * width;
-    const p1y_pixels = (1 - point1.y) * height;
-    const p1x_normalized = p1x_pixels / distance;
-    const p1y_normalized = p1y_pixels / distance;
-    const coordText1 = `Calibration Point 1: (${p1x_normalized.toFixed(3)}, ${p1y_normalized.toFixed(3)})`;
-    context.fillStyle = '#00FFFF';
-    context.strokeStyle = '#000000';
-    context.lineWidth = 3;
-    context.font = `bold ${displayFontSize}px Arial`;
-    context.strokeText(coordText1, x1 + 15, y1 - 10);
-    context.fillText(coordText1, x1 + 15, y1 - 10);
-
-    // Display coordinates for Point 2 in pixels divided by distance (transform Y to make upward positive)
-    const p2x_pixels = point2.x * width;
-    const p2y_pixels = (1 - point2.y) * height;
-    const p2x_normalized = p2x_pixels / distance;
-    const p2y_normalized = p2y_pixels / distance;
-    const coordText2 = `Calibration Point 2: (${p2x_normalized.toFixed(3)}, ${p2y_normalized.toFixed(3)})`;
-    context.fillStyle = '#00FFFF';
-    context.strokeStyle = '#000000';
-    context.lineWidth = 3;
-    context.font = `bold ${displayFontSize}px Arial`;
-    context.strokeText(coordText2, x2 + 15, y2 - 10);
-    context.fillText(coordText2, x2 + 15, y2 - 10);
-
-    // Display scale length at midpoint
+    // Display scale length at midpoint (without pixel information)
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
 
-    const scaleText = `Scale: ${scaleLength.toFixed(2)}m (${distance.toFixed(1)} px)`;
+    const scaleText = `Scale: ${scaleLength.toFixed(2)}m`;
     context.fillStyle = '#FFFFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
