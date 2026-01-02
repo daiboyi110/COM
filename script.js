@@ -1262,7 +1262,7 @@ function drawPose(landmarks, landmarks3D) {
             return;
         }
 
-        if (start && end && start.visibility > 0.5 && end.visibility > 0.5) {
+        if (start && end && start.visibility > 0.3 && end.visibility > 0.3) {
             ctx.beginPath();
             ctx.moveTo(start.x * width, start.y * height);
             ctx.lineTo(end.x * width, end.y * height);
@@ -1275,7 +1275,7 @@ function drawPose(landmarks, landmarks3D) {
         const midShoulder = extendedLandmarks2D[33];
         const midHip = extendedLandmarks2D[34];
 
-        if (midShoulder.visibility > 0.5 && midHip.visibility > 0.5) {
+        if (midShoulder.visibility > 0.3 && midHip.visibility > 0.3) {
             ctx.strokeStyle = '#00FF00';
             ctx.lineWidth = 4;
             ctx.beginPath();
@@ -1301,7 +1301,7 @@ function drawPose(landmarks, landmarks3D) {
         }
 
         // Skip if landmark doesn't exist or has low visibility
-        if (!landmark || landmark.visibility < 0.5) {
+        if (!landmark || landmark.visibility < 0.3) {
             return;
         }
 
@@ -2486,7 +2486,7 @@ function drawImagePose(landmarks, landmarks3D) {
             return;
         }
 
-        if (start && end && start.visibility > 0.5 && end.visibility > 0.5) {
+        if (start && end && start.visibility > 0.3 && end.visibility > 0.3) {
             imageCtx.beginPath();
             imageCtx.moveTo(start.x * width, start.y * height);
             imageCtx.lineTo(end.x * width, end.y * height);
@@ -2499,7 +2499,7 @@ function drawImagePose(landmarks, landmarks3D) {
         const midShoulder = extendedLandmarks2D[33];
         const midHip = extendedLandmarks2D[34];
 
-        if (midShoulder.visibility > 0.5 && midHip.visibility > 0.5) {
+        if (midShoulder.visibility > 0.3 && midHip.visibility > 0.3) {
             imageCtx.strokeStyle = '#00FF00';
             imageCtx.lineWidth = 4;
             imageCtx.beginPath();
@@ -2525,7 +2525,7 @@ function drawImagePose(landmarks, landmarks3D) {
         }
 
         // Skip if landmark doesn't exist or has low visibility
-        if (!landmark || landmark.visibility < 0.5) {
+        if (!landmark || landmark.visibility < 0.3) {
             return;
         }
 
