@@ -1046,8 +1046,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const editModeImageSelect = document.getElementById('editModeImageSelect');
 
     if (editModeVideoSelect) {
+        console.log('Video edit mode dropdown found and listener attached');
         editModeVideoSelect.addEventListener('change', (e) => {
             const mode = e.target.value;
+            console.log('Video edit mode dropdown changed to:', mode);
 
             // Reset both edit modes
             isEditMode = false;
@@ -1057,13 +1059,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mode === 'joints') {
                 isEditMode = true;
                 canvas.classList.add('editable');
-                console.log('Video edit mode: Edit Joint Positions enabled');
+                console.log('Video edit mode: Edit Joint Positions enabled - isEditMode:', isEditMode, 'canvas has editable class:', canvas.classList.contains('editable'));
             } else if (mode === 'calibration') {
                 isEditModeCalibration = true;
                 canvas.classList.add('editable');
-                console.log('Video edit mode: Edit Calibration Points enabled');
+                console.log('Video edit mode: Edit Calibration Points enabled - isEditModeCalibration:', isEditModeCalibration, 'canvas has editable class:', canvas.classList.contains('editable'));
             } else {
-                console.log('Video edit mode: None');
+                console.log('Video edit mode: None - isEditMode:', isEditMode, 'isEditModeCalibration:', isEditModeCalibration);
             }
 
             // Reset dragging state
@@ -1071,11 +1073,15 @@ document.addEventListener('DOMContentLoaded', () => {
             draggedJointIndex = null;
             draggedCalibrationPoint = null;
         });
+    } else {
+        console.error('Video edit mode dropdown NOT found!');
     }
 
     if (editModeImageSelect) {
+        console.log('Image edit mode dropdown found and listener attached');
         editModeImageSelect.addEventListener('change', (e) => {
             const mode = e.target.value;
+            console.log('Image edit mode dropdown changed to:', mode);
 
             // Reset both edit modes
             isEditMode = false;
@@ -1085,13 +1091,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mode === 'joints') {
                 isEditMode = true;
                 imageCanvas.classList.add('editable');
-                console.log('Image edit mode: Edit Joint Positions enabled');
+                console.log('Image edit mode: Edit Joint Positions enabled - isEditMode:', isEditMode, 'imageCanvas has editable class:', imageCanvas.classList.contains('editable'));
             } else if (mode === 'calibration') {
                 isEditModeCalibration = true;
                 imageCanvas.classList.add('editable');
-                console.log('Image edit mode: Edit Calibration Points enabled');
+                console.log('Image edit mode: Edit Calibration Points enabled - isEditModeCalibration:', isEditModeCalibration, 'imageCanvas has editable class:', imageCanvas.classList.contains('editable'));
             } else {
-                console.log('Image edit mode: None');
+                console.log('Image edit mode: None - isEditMode:', isEditMode, 'isEditModeCalibration:', isEditModeCalibration);
             }
 
             // Reset dragging state
@@ -1099,6 +1105,8 @@ document.addEventListener('DOMContentLoaded', () => {
             draggedJointIndex = null;
             draggedCalibrationPoint = null;
         });
+    } else {
+        console.error('Image edit mode dropdown NOT found!');
     }
 
     // Export dropdowns
@@ -1122,6 +1130,63 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (format === 'json') exportImageAsJson();
             else if (format === 'csv') exportImageAsCsv();
             e.target.value = ''; // Reset selection
+        });
+    }
+
+    // Display options dropdowns
+    const displayOptionsVideo = document.getElementById('displayOptionsVideo');
+    const displayOptionsImage = document.getElementById('displayOptionsImage');
+
+    if (displayOptionsVideo) {
+        displayOptionsVideo.addEventListener('change', (e) => {
+            const displayMode = e.target.value;
+
+            // Reset all display options
+            showJointNumbers = false;
+            showCoordinates = false;
+            showCoordinateSystem = false;
+
+            // Set the selected display option
+            if (displayMode === 'names') {
+                showJointNumbers = true;
+            } else if (displayMode === 'coordinates') {
+                showCoordinates = true;
+            } else if (displayMode === 'coordinate-system') {
+                showCoordinateSystem = true;
+            }
+
+            // Redraw
+            if (!video.paused) {
+                clearCanvas();
+            } else {
+                processPoseFrame();
+            }
+
+            console.log(`Video display mode changed to: ${displayMode}`);
+        });
+    }
+
+    if (displayOptionsImage) {
+        displayOptionsImage.addEventListener('change', (e) => {
+            const displayMode = e.target.value;
+
+            // Reset all display options
+            showJointNumbersImage = false;
+            showCoordinatesImage = false;
+            showCoordinateSystemImage = false;
+
+            // Set the selected display option
+            if (displayMode === 'names') {
+                showJointNumbersImage = true;
+            } else if (displayMode === 'coordinates') {
+                showCoordinatesImage = true;
+            } else if (displayMode === 'coordinate-system') {
+                showCoordinateSystemImage = true;
+            }
+
+            redrawImagePose();
+
+            console.log(`Image display mode changed to: ${displayMode}`);
         });
     }
 });

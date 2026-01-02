@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git merge:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd body side display selection feature \\(full-body, right-side, left-side\\)\n\n- Add body side selection UI \\(Full Body, Right Side, Left Side\\) for both video and image modes\n- Implement landmark filtering to show only selected body side landmarks\n- Add symmetric COM calculation: when left/right side is selected, double the mass of visible side-specific segments to calculate accurate whole-body COM\n- Filter skeleton connections based on body side selection\n- Add event listeners for body side selection changes\n- Keep all previous functionality intact when Full Body is selected\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nLower visibility threshold from 0.5 to 0.3 for increased landmark visibility\n\n- Change visibility threshold from 0.5 to 0.3 for both landmarks and connections\n- Apply to both video \\(drawPose\\) and image \\(drawImagePose\\) modes\n- Shows more body landmarks even when detection confidence is lower\n- Increases visibility of partially occluded or less accurate landmarks\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)"
+    ]
+  }
+}
