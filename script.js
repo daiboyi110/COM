@@ -1185,7 +1185,49 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Display Image dropdown value:', displayImageDD ? displayImageDD.value : 'NOT FOUND');
     };
 
+    // Add test function to manually enable edit mode
+    window.testEditMode = function(mode = 'joints', target = 'video') {
+        console.log(`Manually enabling ${mode} edit mode for ${target}`);
+
+        isEditMode = false;
+        isEditModeCalibration = false;
+
+        const targetCanvas = target === 'video' ? canvas : imageCanvas;
+        targetCanvas.classList.remove('editable');
+
+        if (mode === 'joints') {
+            isEditMode = true;
+            targetCanvas.classList.add('editable');
+            console.log(`${target} canvas should now have editable class and crosshair cursor`);
+        } else if (mode === 'calibration') {
+            isEditModeCalibration = true;
+            targetCanvas.classList.add('editable');
+            console.log(`${target} canvas should now have editable class and crosshair cursor for calibration`);
+        }
+
+        console.log(`isEditMode: ${isEditMode}, isEditModeCalibration: ${isEditModeCalibration}`);
+        console.log(`Canvas has editable class: ${targetCanvas.classList.contains('editable')}`);
+        console.log(`Canvas cursor: ${window.getComputedStyle(targetCanvas).cursor}`);
+    };
+
     console.log('Debug function available: Call window.debugAppState() to check current state');
+
+    // Add mutation observer to watch for class changes on canvas (for debugging)
+    const canvasObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const target = mutation.target;
+                const canvasName = target.id;
+                console.log(`${canvasName} class changed to:`, target.className);
+                console.log(`${canvasName} has editable class:`, target.classList.contains('editable'));
+                console.log(`${canvasName} computed cursor:`, window.getComputedStyle(target).cursor);
+            }
+        });
+    });
+
+    canvasObserver.observe(canvas, { attributes: true, attributeFilter: ['class'] });
+    canvasObserver.observe(imageCanvas, { attributes: true, attributeFilter: ['class'] });
+    console.log('Canvas class mutation observers attached');
 });
 
 function updateTimeDisplay() {
