@@ -1155,6 +1155,37 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         console.error('Display options dropdown for image NOT found!');
     }
+
+    // Summary log
+    console.log('=== Initialization Complete ===');
+    console.log('All dropdown event listeners have been attached.');
+    console.log('Ready to use the application.');
+
+    // Add global debug function
+    window.debugAppState = function() {
+        console.log('=== Current Application State ===');
+        console.log('isEditMode:', isEditMode);
+        console.log('isEditModeCalibration:', isEditModeCalibration);
+        console.log('analysisModeVideo:', analysisModeVideo);
+        console.log('analysisModeImage:', analysisModeImage);
+        console.log('Video canvas has editable class:', canvas.classList.contains('editable'));
+        console.log('Image canvas has editable class:', imageCanvas.classList.contains('editable'));
+        console.log('Video section displayed:', videoSection.style.display !== 'none');
+        console.log('Image section displayed:', imageSection.style.display !== 'none');
+
+        // Check if dropdowns exist and their current values
+        const editVideoDD = document.getElementById('editModeVideoSelect');
+        const editImageDD = document.getElementById('editModeImageSelect');
+        const displayVideoDD = document.getElementById('displayOptionsVideo');
+        const displayImageDD = document.getElementById('displayOptionsImage');
+
+        console.log('Edit Mode Video dropdown value:', editVideoDD ? editVideoDD.value : 'NOT FOUND');
+        console.log('Edit Mode Image dropdown value:', editImageDD ? editImageDD.value : 'NOT FOUND');
+        console.log('Display Video dropdown value:', displayVideoDD ? displayVideoDD.value : 'NOT FOUND');
+        console.log('Display Image dropdown value:', displayImageDD ? displayImageDD.value : 'NOT FOUND');
+    };
+
+    console.log('Debug function available: Call window.debugAppState() to check current state');
 });
 
 function updateTimeDisplay() {
