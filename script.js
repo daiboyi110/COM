@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const showCoordinatesCheckbox = document.getElementById('showCoordinates');
     const showCoordinateSystemCheckbox = document.getElementById('showCoordinateSystem');
     const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
-    const processingSpeedSelect = document.getElementById('processingSpeed');
+    // Processing speed is now handled via radio buttons - see event listeners below
 
     // Image controls
     const showPoseImageCheckbox = document.getElementById('showPoseImage');
@@ -681,14 +681,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Edit mode controls
+    // Edit mode controls - Mutually exclusive checkboxes
     if (editModeImageCheckbox) {
         editModeImageCheckbox.addEventListener('change', (e) => {
-            isEditMode = e.target.checked;
-            if (isEditMode) {
+            if (e.target.checked) {
+                // Uncheck calibration edit mode
+                if (editModeCalibrationImageCheckbox) {
+                    editModeCalibrationImageCheckbox.checked = false;
+                }
+                isEditMode = true;
+                isEditModeCalibration = false;
                 imageCanvas.classList.add('editable');
                 console.log('Edit mode enabled for image');
             } else {
+                isEditMode = false;
                 imageCanvas.classList.remove('editable');
                 isDragging = false;
                 draggedJointIndex = null;
@@ -699,11 +705,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (editModeVideoCheckbox) {
         editModeVideoCheckbox.addEventListener('change', (e) => {
-            isEditMode = e.target.checked;
-            if (isEditMode) {
+            if (e.target.checked) {
+                // Uncheck calibration edit mode
+                if (editModeCalibrationVideoCheckbox) {
+                    editModeCalibrationVideoCheckbox.checked = false;
+                }
+                isEditMode = true;
+                isEditModeCalibration = false;
                 canvas.classList.add('editable');
                 console.log('Edit mode enabled for video');
             } else {
+                isEditMode = false;
                 canvas.classList.remove('editable');
                 isDragging = false;
                 draggedJointIndex = null;
@@ -714,11 +726,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (editModeCalibrationVideoCheckbox) {
         editModeCalibrationVideoCheckbox.addEventListener('change', (e) => {
-            isEditModeCalibration = e.target.checked;
-            if (isEditModeCalibration) {
+            if (e.target.checked) {
+                // Uncheck joint edit mode
+                if (editModeVideoCheckbox) {
+                    editModeVideoCheckbox.checked = false;
+                }
+                isEditMode = false;
+                isEditModeCalibration = true;
                 canvas.classList.add('editable');
                 console.log('Calibration edit mode enabled for video');
             } else {
+                isEditModeCalibration = false;
                 canvas.classList.remove('editable');
                 isDragging = false;
                 draggedCalibrationPoint = null;
@@ -729,11 +747,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (editModeCalibrationImageCheckbox) {
         editModeCalibrationImageCheckbox.addEventListener('change', (e) => {
-            isEditModeCalibration = e.target.checked;
-            if (isEditModeCalibration) {
+            if (e.target.checked) {
+                // Uncheck joint edit mode
+                if (editModeImageCheckbox) {
+                    editModeImageCheckbox.checked = false;
+                }
+                isEditMode = false;
+                isEditModeCalibration = true;
                 imageCanvas.classList.add('editable');
                 console.log('Calibration edit mode enabled for image');
             } else {
+                isEditModeCalibration = false;
                 imageCanvas.classList.remove('editable');
                 isDragging = false;
                 draggedCalibrationPoint = null;
@@ -754,17 +778,19 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mouseup', handleMouseUp);
     canvas.addEventListener('mouseleave', handleMouseUp);
 
-    // Processing speed control
-    processingSpeedSelect.addEventListener('change', (e) => {
-        const targetFPS = parseInt(e.target.value);
-        processingInterval = 1000 / targetFPS;
-        console.log(`Processing speed set to ${targetFPS} FPS (${processingInterval}ms interval)`);
+    // Processing speed control - Radio buttons
+    document.querySelectorAll('input[name="processingSpeed"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const targetFPS = parseInt(e.target.value);
+            processingInterval = 1000 / targetFPS;
+            console.log(`Processing speed set to ${targetFPS} FPS (${processingInterval}ms interval)`);
 
-        // Restart processing with new interval if video is playing
-        if (!video.paused) {
-            stopPoseProcessing();
-            startPoseProcessing();
-        }
+            // Restart processing with new interval if video is playing
+            if (!video.paused) {
+                stopPoseProcessing();
+                startPoseProcessing();
+            }
+        });
     });
 
     // Previous frame
@@ -797,16 +823,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Export button handlers
-    document.getElementById('exportJsonBtn').addEventListener('click', exportAsJson);
-    document.getElementById('exportCsvBtn').addEventListener('click', exportAsCsv);
-    document.getElementById('exportExcelBtn').addEventListener('click', exportAsExcel);
+    // Video export button handlers
+    document.getElementById('exportVideoExcel').addEventListener('click', exportAsExcel);
+    document.getElementById('exportVideoJson').addEventListener('click', exportAsJson);
+    document.getElementById('exportVideoCsv').addEventListener('click', exportAsCsv);
     document.getElementById('clearDataBtn').addEventListener('click', clearPoseData);
 
     // Image export button handlers
-    document.getElementById('exportJsonBtnImage').addEventListener('click', exportImageAsJson);
-    document.getElementById('exportCsvBtnImage').addEventListener('click', exportImageAsCsv);
-    document.getElementById('exportExcelBtnImage').addEventListener('click', exportImageAsExcel);
+    document.getElementById('exportImageExcel').addEventListener('click', exportImageAsExcel);
+    document.getElementById('exportImageJson').addEventListener('click', exportImageAsJson);
+    document.getElementById('exportImageCsv').addEventListener('click', exportImageAsCsv);
 
     // Analysis mode radio buttons - Video
     const calibrationScaleLabelVideo = document.getElementById('calibrationScaleLabelVideo');
@@ -874,7 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Sex selection radio buttons - Video
-    document.querySelectorAll('input[name="sexSelectionVideo"]').forEach(radio => {
+    document.querySelectorAll('input[name="sexVideo"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             sexSelectionVideo = e.target.value;
             console.log(`Video sex selection changed to: ${sexSelectionVideo}`);
@@ -889,7 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Sex selection radio buttons - Image
-    document.querySelectorAll('input[name="sexSelectionImage"]').forEach(radio => {
+    document.querySelectorAll('input[name="sexImage"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             sexSelectionImage = e.target.value;
             console.log(`Image sex selection changed to: ${sexSelectionImage}`);
@@ -941,203 +967,9 @@ document.addEventListener('DOMContentLoaded', () => {
         redrawImagePose();
     });
 
-    // New dropdown-based event listeners
-
-    // Analysis Mode dropdowns
-    const analysisModeVideoSelect = document.getElementById('analysisModeVideoSelect');
-    const analysisModeImageSelect = document.getElementById('analysisModeImageSelect');
-
-    if (analysisModeVideoSelect) {
-        analysisModeVideoSelect.addEventListener('change', (e) => {
-            analysisModeVideo = e.target.value;
-            console.log(`Video analysis mode changed to: ${analysisModeVideo}`);
-
-            if (analysisModeVideo === '2D') {
-                calibrationScaleLabelVideo.style.display = 'inline-block';
-            } else {
-                calibrationScaleLabelVideo.style.display = 'none';
-                if (isEditModeCalibration) {
-                    isEditModeCalibration = false;
-                    canvas.classList.remove('editable');
-                    const editModeVideoSelect = document.getElementById('editModeVideoSelect');
-                    if (editModeVideoSelect) editModeVideoSelect.value = 'none';
-                }
-            }
-
-            if (!video.paused) {
-                clearCanvas();
-            } else {
-                processPoseFrame();
-            }
-        });
-    }
-
-    if (analysisModeImageSelect) {
-        analysisModeImageSelect.addEventListener('change', (e) => {
-            analysisModeImage = e.target.value;
-            console.log(`Image analysis mode changed to: ${analysisModeImage}`);
-
-            if (analysisModeImage === '2D') {
-                calibrationScaleLabelImage.style.display = 'inline-block';
-            } else {
-                calibrationScaleLabelImage.style.display = 'none';
-                if (isEditModeCalibration) {
-                    isEditModeCalibration = false;
-                    imageCanvas.classList.remove('editable');
-                    const editModeImageSelect = document.getElementById('editModeImageSelect');
-                    if (editModeImageSelect) editModeImageSelect.value = 'none';
-                }
-            }
-
-            redrawImagePose();
-        });
-    }
-
-    // Sex selection dropdowns
-    const sexSelectionVideoSelect = document.getElementById('sexSelectionVideoSelect');
-    const sexSelectionImageSelect = document.getElementById('sexSelectionImageSelect');
-
-    if (sexSelectionVideoSelect) {
-        sexSelectionVideoSelect.addEventListener('change', (e) => {
-            sexSelectionVideo = e.target.value;
-            console.log(`Video sex selection changed to: ${sexSelectionVideo}`);
-
-            if (!video.paused) {
-                clearCanvas();
-            } else {
-                processPoseFrame();
-            }
-        });
-    }
-
-    if (sexSelectionImageSelect) {
-        sexSelectionImageSelect.addEventListener('change', (e) => {
-            sexSelectionImage = e.target.value;
-            console.log(`Image sex selection changed to: ${sexSelectionImage}`);
-            redrawImagePose();
-        });
-    }
-
-    // Body side dropdowns
-    const bodySideVideoSelect = document.getElementById('bodySideVideoSelect');
-    const bodySideImageSelect = document.getElementById('bodySideImageSelect');
-
-    if (bodySideVideoSelect) {
-        bodySideVideoSelect.addEventListener('change', (e) => {
-            bodySideVideo = e.target.value;
-            console.log(`Video body side selection changed to: ${bodySideVideo}`);
-
-            if (!video.paused) {
-                clearCanvas();
-            } else {
-                processPoseFrame();
-            }
-        });
-    }
-
-    if (bodySideImageSelect) {
-        bodySideImageSelect.addEventListener('change', (e) => {
-            bodySideImage = e.target.value;
-            console.log(`Image body side selection changed to: ${bodySideImage}`);
-            redrawImagePose();
-        });
-    }
-
-    // Edit mode dropdowns
-    const editModeVideoSelect = document.getElementById('editModeVideoSelect');
-    const editModeImageSelect = document.getElementById('editModeImageSelect');
-
-    if (editModeVideoSelect) {
-        console.log('Video edit mode dropdown found and listener attached');
-        editModeVideoSelect.addEventListener('change', (e) => {
-            const mode = e.target.value;
-            console.log('Video edit mode dropdown changed to:', mode);
-
-            // Reset both edit modes
-            isEditMode = false;
-            isEditModeCalibration = false;
-            canvas.classList.remove('editable');
-
-            if (mode === 'joints') {
-                isEditMode = true;
-                canvas.classList.add('editable');
-                console.log('Video edit mode: Edit Joint Positions enabled - isEditMode:', isEditMode, 'canvas has editable class:', canvas.classList.contains('editable'));
-            } else if (mode === 'calibration') {
-                isEditModeCalibration = true;
-                canvas.classList.add('editable');
-                console.log('Video edit mode: Edit Calibration Points enabled - isEditModeCalibration:', isEditModeCalibration, 'canvas has editable class:', canvas.classList.contains('editable'));
-            } else {
-                console.log('Video edit mode: None - isEditMode:', isEditMode, 'isEditModeCalibration:', isEditModeCalibration);
-            }
-
-            // Reset dragging state
-            isDragging = false;
-            draggedJointIndex = null;
-            draggedCalibrationPoint = null;
-        });
-    } else {
-        console.error('Video edit mode dropdown NOT found!');
-    }
-
-    if (editModeImageSelect) {
-        console.log('Image edit mode dropdown found and listener attached');
-        editModeImageSelect.addEventListener('change', (e) => {
-            const mode = e.target.value;
-            console.log('Image edit mode dropdown changed to:', mode);
-
-            // Reset both edit modes
-            isEditMode = false;
-            isEditModeCalibration = false;
-            imageCanvas.classList.remove('editable');
-
-            if (mode === 'joints') {
-                isEditMode = true;
-                imageCanvas.classList.add('editable');
-                console.log('Image edit mode: Edit Joint Positions enabled - isEditMode:', isEditMode, 'imageCanvas has editable class:', imageCanvas.classList.contains('editable'));
-            } else if (mode === 'calibration') {
-                isEditModeCalibration = true;
-                imageCanvas.classList.add('editable');
-                console.log('Image edit mode: Edit Calibration Points enabled - isEditModeCalibration:', isEditModeCalibration, 'imageCanvas has editable class:', imageCanvas.classList.contains('editable'));
-            } else {
-                console.log('Image edit mode: None - isEditMode:', isEditMode, 'isEditModeCalibration:', isEditModeCalibration);
-            }
-
-            // Reset dragging state
-            isDragging = false;
-            draggedJointIndex = null;
-            draggedCalibrationPoint = null;
-        });
-    } else {
-        console.error('Image edit mode dropdown NOT found!');
-    }
-
-    // Export dropdowns
-    const exportVideoSelect = document.getElementById('exportVideoSelect');
-    const exportImageSelect = document.getElementById('exportImageSelect');
-
-    if (exportVideoSelect) {
-        exportVideoSelect.addEventListener('change', (e) => {
-            const format = e.target.value;
-            if (format === 'excel') exportAsExcel();
-            else if (format === 'json') exportAsJson();
-            else if (format === 'csv') exportAsCsv();
-            e.target.value = ''; // Reset selection
-        });
-    }
-
-    if (exportImageSelect) {
-        exportImageSelect.addEventListener('change', (e) => {
-            const format = e.target.value;
-            if (format === 'excel') exportImageAsExcel();
-            else if (format === 'json') exportImageAsJson();
-            else if (format === 'csv') exportImageAsCsv();
-            e.target.value = ''; // Reset selection
-        });
-    }
-
     // Summary log
     console.log('=== Initialization Complete ===');
-    console.log('All dropdown event listeners have been attached.');
+    console.log('All event listeners have been attached.');
     console.log('Ready to use the application.');
 
     // Add global debug function
