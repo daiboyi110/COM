@@ -34,39 +34,28 @@
                 <button id="closeImageBtn" class="btn-close">✕ Close Image</button>
             </div>
 
-            <div class="analysis-mode-selector">
+            <div class="compact-controls">
                 <label>
-                    <input type="radio" name="analysisModeImage" value="2D" checked> 2D Analysis
+                    Analysis Mode:
+                    <select id="analysisModeImageSelect">
+                        <option value="2D" selected>2D Analysis</option>
+                        <option value="3D">3D Analysis</option>
+                    </select>
                 </label>
                 <label>
-                    <input type="radio" name="analysisModeImage" value="3D"> 3D Analysis
-                </label>
-                <label id="calibrationScaleLabelImage" style="margin-left: 30px;">
-                    Calibration Scale Length (m):
-                    <input type="number" id="calibrationScaleImage" value="1.0" step="0.01" min="0.01" style="width: 80px; margin-left: 5px;">
-                </label>
-            </div>
-
-            <div class="analysis-mode-selector" style="margin-top: 10px;">
-                <label style="font-weight: bold; margin-right: 15px;">Sex (for COM calculation):</label>
-                <label>
-                    <input type="radio" name="sexSelectionImage" value="male" checked> Male
+                    Sex:
+                    <select id="sexSelectionImageSelect">
+                        <option value="male" selected>Male</option>
+                        <option value="female">Female</option>
+                    </select>
                 </label>
                 <label>
-                    <input type="radio" name="sexSelectionImage" value="female"> Female
-                </label>
-            </div>
-
-            <div class="analysis-mode-selector" style="margin-top: 10px;">
-                <label style="font-weight: bold; margin-right: 15px;">Body Side Display:</label>
-                <label>
-                    <input type="radio" name="bodySideImage" value="full" checked> Full Body
-                </label>
-                <label>
-                    <input type="radio" name="bodySideImage" value="right"> Right Side
-                </label>
-                <label>
-                    <input type="radio" name="bodySideImage" value="left"> Left Side
+                    Body Side:
+                    <select id="bodySideImageSelect">
+                        <option value="full" selected>Full Body</option>
+                        <option value="right">Right Side</option>
+                        <option value="left">Left Side</option>
+                    </select>
                 </label>
             </div>
 
@@ -75,47 +64,62 @@
                 <canvas id="imageCanvas"></canvas>
             </div>
 
-            <div class="pose-controls">
+            <div class="compact-controls">
                 <label>
-                    <input type="checkbox" id="showPoseImage" checked> Show Pose Estimation
+                    <input type="checkbox" id="showPoseImage" checked> Show Pose
                 </label>
                 <label>
-                    <input type="checkbox" id="showJointNumbersImage" checked> Show Names
+                    <input type="checkbox" id="showJointNumbersImage" checked> Names
                 </label>
                 <label>
-                    <input type="checkbox" id="showCoordinatesImage"> Show Coordinates
+                    <input type="checkbox" id="showCoordinatesImage"> Coordinates
                 </label>
                 <label>
-                    <input type="checkbox" id="showCoordinateSystemImage"> Show Coordinate System
+                    <input type="checkbox" id="showCoordinateSystemImage"> Coordinate System
+                </label>
+                <label>
+                    <input type="checkbox" id="fullSizeImage"> Full Size
                 </label>
                 <label>
                     Font Size:
-                    <input type="range" id="fontSizeSlider" min="12" max="60" value="28" step="2" style="width: 150px; vertical-align: middle; margin: 0 10px;">
+                    <input type="range" id="fontSizeSlider" min="12" max="60" value="28" step="2" style="width: 100px; vertical-align: middle;">
                     <span id="fontSizeValue">28</span>px
                 </label>
+            </div>
+
+            <div class="compact-controls">
                 <label>
-                    <input type="checkbox" id="fullSizeImage"> Full Size Image
-                </label>
-                <label style="color: #d63384; font-weight: bold;">
-                    <input type="checkbox" id="editModeImage"> Edit Joint Positions
-                </label>
-                <label id="editCalibrationImageLabel" style="color: #d63384; font-weight: bold;">
-                    <input type="checkbox" id="editModeCalibrationImage"> Edit Calibration Point Positions
+                    Edit Mode:
+                    <select id="editModeImageSelect">
+                        <option value="none" selected>None</option>
+                        <option value="joints">Edit Joint Positions</option>
+                        <option value="calibration">Edit Calibration Points</option>
+                    </select>
                 </label>
             </div>
 
-            <div class="info">
-                <p><strong>Image:</strong> <span id="imageInfo">Loading...</span></p>
-                <p><strong>Detected Joints:</strong> <span id="jointCountImage">0</span></p>
+            <div class="compact-controls">
+                <label id="calibrationScaleLabelImage">
+                    Calibration Scale (m):
+                    <input type="number" id="calibrationScaleImage" value="1.0" step="0.01" min="0.01" style="width: 80px;">
+                </label>
             </div>
 
-            <div class="export-section">
-                <h3>Export Pose Data</h3>
-                <div class="export-buttons">
-                    <button id="exportJsonBtnImage" class="btn-export">📄 Export JSON</button>
-                    <button id="exportCsvBtnImage" class="btn-export">📊 Export CSV</button>
-                    <button id="exportExcelBtnImage" class="btn-export">📗 Export Excel</button>
-                </div>
+            <div class="info" style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <span><strong>Image:</strong> <span id="imageInfo">Loading...</span></span>
+                <span><strong>Detected Joints:</strong> <span id="jointCountImage">0</span></span>
+            </div>
+
+            <div class="compact-controls">
+                <label>
+                    Export Data:
+                    <select id="exportImageSelect">
+                        <option value="">Select format...</option>
+                        <option value="excel">📗 Excel</option>
+                        <option value="json">📄 JSON</option>
+                        <option value="csv">📊 CSV</option>
+                    </select>
+                </label>
             </div>
         </div>
 
@@ -125,39 +129,37 @@
                 <button id="closeVideoBtn" class="btn-close">✕ Close Video</button>
             </div>
 
-            <div class="analysis-mode-selector">
+            <div class="compact-controls">
                 <label>
-                    <input type="radio" name="analysisModeVideo" value="2D" checked> 2D Analysis
+                    Analysis Mode:
+                    <select id="analysisModeVideoSelect">
+                        <option value="2D" selected>2D Analysis</option>
+                        <option value="3D">3D Analysis</option>
+                    </select>
                 </label>
                 <label>
-                    <input type="radio" name="analysisModeVideo" value="3D"> 3D Analysis
-                </label>
-                <label id="calibrationScaleLabelVideo" style="margin-left: 30px;">
-                    Calibration Scale Length (m):
-                    <input type="number" id="calibrationScaleVideo" value="1.0" step="0.01" min="0.01" style="width: 80px; margin-left: 5px;">
-                </label>
-            </div>
-
-            <div class="analysis-mode-selector" style="margin-top: 10px;">
-                <label style="font-weight: bold; margin-right: 15px;">Sex (for COM calculation):</label>
-                <label>
-                    <input type="radio" name="sexSelectionVideo" value="male" checked> Male
+                    Sex:
+                    <select id="sexSelectionVideoSelect">
+                        <option value="male" selected>Male</option>
+                        <option value="female">Female</option>
+                    </select>
                 </label>
                 <label>
-                    <input type="radio" name="sexSelectionVideo" value="female"> Female
-                </label>
-            </div>
-
-            <div class="analysis-mode-selector" style="margin-top: 10px;">
-                <label style="font-weight: bold; margin-right: 15px;">Body Side Display:</label>
-                <label>
-                    <input type="radio" name="bodySideVideo" value="full" checked> Full Body
+                    Body Side:
+                    <select id="bodySideVideoSelect">
+                        <option value="full" selected>Full Body</option>
+                        <option value="right">Right Side</option>
+                        <option value="left">Left Side</option>
+                    </select>
                 </label>
                 <label>
-                    <input type="radio" name="bodySideVideo" value="right"> Right Side
-                </label>
-                <label>
-                    <input type="radio" name="bodySideVideo" value="left"> Left Side
+                    Processing Rate:
+                    <select id="processingSpeed">
+                        <option value="5" selected>5 FPS</option>
+                        <option value="10">10 FPS</option>
+                        <option value="15">15 FPS</option>
+                        <option value="30">30 FPS</option>
+                    </select>
                 </label>
             </div>
 
@@ -177,61 +179,67 @@
                 </div>
             </div>
 
-            <div class="pose-controls">
+            <div class="compact-controls">
                 <label>
-                    <input type="checkbox" id="showPose" checked> Show Pose Estimation
+                    <input type="checkbox" id="showPose" checked> Show Pose
                 </label>
                 <label>
-                    <input type="checkbox" id="showJointNumbers" checked> Show Names
+                    <input type="checkbox" id="showJointNumbers" checked> Names
                 </label>
                 <label>
-                    <input type="checkbox" id="showCoordinates"> Show Coordinates
+                    <input type="checkbox" id="showCoordinates"> Coordinates
                 </label>
                 <label>
-                    <input type="checkbox" id="showCoordinateSystem"> Show Coordinate System
+                    <input type="checkbox" id="showCoordinateSystem"> Coordinate System
+                </label>
+                <label>
+                    <input type="checkbox" id="fullSizeVideo"> Full Size
                 </label>
                 <label>
                     Font Size:
-                    <input type="range" id="fontSizeSliderVideo" min="12" max="60" value="28" step="2" style="width: 150px; vertical-align: middle; margin: 0 10px;">
+                    <input type="range" id="fontSizeSliderVideo" min="12" max="60" value="28" step="2" style="width: 100px; vertical-align: middle;">
                     <span id="fontSizeValueVideo">28</span>px
                 </label>
+            </div>
+
+            <div class="compact-controls">
                 <label>
-                    <input type="checkbox" id="fullSizeVideo"> Full Size Video
-                </label>
-                <label style="color: #d63384; font-weight: bold;">
-                    <input type="checkbox" id="editModeVideo"> Edit Joint Positions
-                </label>
-                <label id="editCalibrationVideoLabel" style="color: #d63384; font-weight: bold;">
-                    <input type="checkbox" id="editModeCalibrationVideo"> Edit Calibration Point Positions
-                </label>
-                <label>
-                    Pose Processing Rate:
-                    <select id="processingSpeed">
-                        <option value="5" selected>5 FPS (Smooth Playback)</option>
-                        <option value="10">10 FPS (Balanced)</option>
-                        <option value="15">15 FPS (More Frequent)</option>
-                        <option value="30">30 FPS (Max Detail)</option>
+                    Edit Mode:
+                    <select id="editModeVideoSelect">
+                        <option value="none" selected>None</option>
+                        <option value="joints">Edit Joint Positions</option>
+                        <option value="calibration">Edit Calibration Points</option>
                     </select>
                 </label>
             </div>
 
-            <div class="info">
-                <p><strong>Video:</strong> <span id="videoInfo">Loading...</span></p>
-                <p><strong>Current Time:</strong> <span id="timeDisplay">0:00</span></p>
-                <p><strong>Frame:</strong> <span id="frameNumber">0</span> / <span id="totalFrames">0</span></p>
-                <p><strong>Detected Joints:</strong> <span id="jointCount">0</span></p>
-                <p><strong>Frames with Pose Data:</strong> <span id="capturedFrames">0</span></p>
-                <p id="frameStep" class="frame-step" style="display: none;">Frame stepping...</p>
+            <div class="compact-controls">
+                <label id="calibrationScaleLabelVideo">
+                    Calibration Scale (m):
+                    <input type="number" id="calibrationScaleVideo" value="1.0" step="0.01" min="0.01" style="width: 80px;">
+                </label>
             </div>
 
-            <div class="export-section">
-                <h3>Export Pose Data</h3>
-                <div class="export-buttons">
-                    <button id="exportJsonBtn" class="btn-export">📄 Export JSON</button>
-                    <button id="exportCsvBtn" class="btn-export">📊 Export CSV</button>
-                    <button id="exportExcelBtn" class="btn-export">📗 Export Excel</button>
-                    <button id="clearDataBtn" class="btn-clear">🗑️ Clear Data</button>
-                </div>
+            <div class="info" style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <span><strong>Video:</strong> <span id="videoInfo">Loading...</span></span>
+                <span><strong>Time:</strong> <span id="timeDisplay">0:00</span></span>
+                <span><strong>Frame:</strong> <span id="frameNumber">0</span> / <span id="totalFrames">0</span></span>
+                <span><strong>Joints:</strong> <span id="jointCount">0</span></span>
+                <span><strong>Frames w/ Data:</strong> <span id="capturedFrames">0</span></span>
+                <span id="frameStep" class="frame-step" style="display: none;">Frame stepping...</span>
+            </div>
+
+            <div class="compact-controls">
+                <label>
+                    Export Data:
+                    <select id="exportVideoSelect">
+                        <option value="">Select format...</option>
+                        <option value="excel">📗 Excel</option>
+                        <option value="json">📄 JSON</option>
+                        <option value="csv">📊 CSV</option>
+                    </select>
+                </label>
+                <button id="clearDataBtn" class="btn-clear">🗑️ Clear Data</button>
             </div>
         </div>
     </div>

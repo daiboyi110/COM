@@ -938,6 +938,192 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Image calibration scale set to: ${calibrationScaleImage}m`);
         redrawImagePose();
     });
+
+    // New dropdown-based event listeners
+
+    // Analysis Mode dropdowns
+    const analysisModeVideoSelect = document.getElementById('analysisModeVideoSelect');
+    const analysisModeImageSelect = document.getElementById('analysisModeImageSelect');
+
+    if (analysisModeVideoSelect) {
+        analysisModeVideoSelect.addEventListener('change', (e) => {
+            analysisModeVideo = e.target.value;
+            console.log(`Video analysis mode changed to: ${analysisModeVideo}`);
+
+            if (analysisModeVideo === '2D') {
+                calibrationScaleLabelVideo.style.display = 'inline-block';
+            } else {
+                calibrationScaleLabelVideo.style.display = 'none';
+                if (isEditModeCalibration) {
+                    isEditModeCalibration = false;
+                    canvas.classList.remove('editable');
+                    const editModeVideoSelect = document.getElementById('editModeVideoSelect');
+                    if (editModeVideoSelect) editModeVideoSelect.value = 'none';
+                }
+            }
+
+            if (!video.paused) {
+                clearCanvas();
+            } else {
+                processPoseFrame();
+            }
+        });
+    }
+
+    if (analysisModeImageSelect) {
+        analysisModeImageSelect.addEventListener('change', (e) => {
+            analysisModeImage = e.target.value;
+            console.log(`Image analysis mode changed to: ${analysisModeImage}`);
+
+            if (analysisModeImage === '2D') {
+                calibrationScaleLabelImage.style.display = 'inline-block';
+            } else {
+                calibrationScaleLabelImage.style.display = 'none';
+                if (isEditModeCalibration) {
+                    isEditModeCalibration = false;
+                    imageCanvas.classList.remove('editable');
+                    const editModeImageSelect = document.getElementById('editModeImageSelect');
+                    if (editModeImageSelect) editModeImageSelect.value = 'none';
+                }
+            }
+
+            redrawImagePose();
+        });
+    }
+
+    // Sex selection dropdowns
+    const sexSelectionVideoSelect = document.getElementById('sexSelectionVideoSelect');
+    const sexSelectionImageSelect = document.getElementById('sexSelectionImageSelect');
+
+    if (sexSelectionVideoSelect) {
+        sexSelectionVideoSelect.addEventListener('change', (e) => {
+            sexSelectionVideo = e.target.value;
+            console.log(`Video sex selection changed to: ${sexSelectionVideo}`);
+
+            if (!video.paused) {
+                clearCanvas();
+            } else {
+                processPoseFrame();
+            }
+        });
+    }
+
+    if (sexSelectionImageSelect) {
+        sexSelectionImageSelect.addEventListener('change', (e) => {
+            sexSelectionImage = e.target.value;
+            console.log(`Image sex selection changed to: ${sexSelectionImage}`);
+            redrawImagePose();
+        });
+    }
+
+    // Body side dropdowns
+    const bodySideVideoSelect = document.getElementById('bodySideVideoSelect');
+    const bodySideImageSelect = document.getElementById('bodySideImageSelect');
+
+    if (bodySideVideoSelect) {
+        bodySideVideoSelect.addEventListener('change', (e) => {
+            bodySideVideo = e.target.value;
+            console.log(`Video body side selection changed to: ${bodySideVideo}`);
+
+            if (!video.paused) {
+                clearCanvas();
+            } else {
+                processPoseFrame();
+            }
+        });
+    }
+
+    if (bodySideImageSelect) {
+        bodySideImageSelect.addEventListener('change', (e) => {
+            bodySideImage = e.target.value;
+            console.log(`Image body side selection changed to: ${bodySideImage}`);
+            redrawImagePose();
+        });
+    }
+
+    // Edit mode dropdowns
+    const editModeVideoSelect = document.getElementById('editModeVideoSelect');
+    const editModeImageSelect = document.getElementById('editModeImageSelect');
+
+    if (editModeVideoSelect) {
+        editModeVideoSelect.addEventListener('change', (e) => {
+            const mode = e.target.value;
+
+            // Reset both edit modes
+            isEditMode = false;
+            isEditModeCalibration = false;
+            canvas.classList.remove('editable');
+
+            if (mode === 'joints') {
+                isEditMode = true;
+                canvas.classList.add('editable');
+                console.log('Video edit mode: Edit Joint Positions enabled');
+            } else if (mode === 'calibration') {
+                isEditModeCalibration = true;
+                canvas.classList.add('editable');
+                console.log('Video edit mode: Edit Calibration Points enabled');
+            } else {
+                console.log('Video edit mode: None');
+            }
+
+            // Reset dragging state
+            isDragging = false;
+            draggedJointIndex = null;
+            draggedCalibrationPoint = null;
+        });
+    }
+
+    if (editModeImageSelect) {
+        editModeImageSelect.addEventListener('change', (e) => {
+            const mode = e.target.value;
+
+            // Reset both edit modes
+            isEditMode = false;
+            isEditModeCalibration = false;
+            imageCanvas.classList.remove('editable');
+
+            if (mode === 'joints') {
+                isEditMode = true;
+                imageCanvas.classList.add('editable');
+                console.log('Image edit mode: Edit Joint Positions enabled');
+            } else if (mode === 'calibration') {
+                isEditModeCalibration = true;
+                imageCanvas.classList.add('editable');
+                console.log('Image edit mode: Edit Calibration Points enabled');
+            } else {
+                console.log('Image edit mode: None');
+            }
+
+            // Reset dragging state
+            isDragging = false;
+            draggedJointIndex = null;
+            draggedCalibrationPoint = null;
+        });
+    }
+
+    // Export dropdowns
+    const exportVideoSelect = document.getElementById('exportVideoSelect');
+    const exportImageSelect = document.getElementById('exportImageSelect');
+
+    if (exportVideoSelect) {
+        exportVideoSelect.addEventListener('change', (e) => {
+            const format = e.target.value;
+            if (format === 'excel') exportAsExcel();
+            else if (format === 'json') exportAsJson();
+            else if (format === 'csv') exportAsCsv();
+            e.target.value = ''; // Reset selection
+        });
+    }
+
+    if (exportImageSelect) {
+        exportImageSelect.addEventListener('change', (e) => {
+            const format = e.target.value;
+            if (format === 'excel') exportImageAsExcel();
+            else if (format === 'json') exportImageAsJson();
+            else if (format === 'csv') exportImageAsCsv();
+            e.target.value = ''; // Reset selection
+        });
+    }
 });
 
 function updateTimeDisplay() {

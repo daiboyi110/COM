@@ -364,3 +364,65 @@ h1 {
 .btn-clear:active {
     transform: translateY(0);
 }
+
+.compact-controls {
+    text-align: center;
+    margin: 12px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.compact-controls label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+}
+
+.compact-controls select {
+    padding: 6px 12px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.compact-controls select:hover {
+    border-color: #007bff;
+}
+
+.compact-controls select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.1);
+}
+
+.compact-controls input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.compact-controls input[type="number"] {
+    padding: 6px 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 80px;
+}
+
+.compact-controls input[type="number"]:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.1);
+}
