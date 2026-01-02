@@ -42,6 +42,10 @@ let draggedJointFrame = null; // For video: which frame is being edited
 let isEditMode = false; // Toggle edit mode on/off
 let isEditModeCalibration = false; // Toggle calibration point edit mode on/off
 
+// Store filled landmarks (with mirroring) for edit mode click detection
+let lastFilledLandmarks2DVideo = null;
+let lastFilledLandmarks2DImage = null;
+
 // Calibration points for 2D analysis (normalized coordinates 0-1)
 // Initial positions: Point 1 at (100, 100) pixels, Point 2 at (100, 600) pixels (based on ~800px reference)
 let calibrationPoint1Video = { x: 0.125, y: 0.125 }; // Point 1 for video
@@ -1336,6 +1340,9 @@ function drawPose(landmarks, landmarks3D) {
     // Fill missing landmarks with mirrored versions from opposite side
     const { filled2D, filled3D } = fillMissingLandmarksWithMirrors(landmarks, landmarks3D);
 
+    // Store filled landmarks for edit mode click detection
+    lastFilledLandmarks2DVideo = filled2D;
+
     // Calculate midpoint landmarks
     const { midpoints2D, midpoints3D } = calculateMidpoints(filled2D, filled3D);
 
@@ -2325,28 +2332,28 @@ function handleMouseDown(e) {
     }
     console.log('Checking for joints to drag...');
 
-    const landmarks = isImageMode ?
-        (imagePoseData ? imagePoseData.landmarks2D : null) :
-        (poseDataArray.length > 0 ? getCurrentFramePoseData()?.landmarks2D : null);
+    // Use filled landmarks (with mirroring) for click detection
+    const filledLandmarks = isImageMode ? lastFilledLandmarks2DImage : lastFilledLandmarks2DVideo;
 
-    if (!landmarks) {
-        console.log('No landmarks available for editing');
+    if (!filledLandmarks) {
+        console.log('No filled landmarks available for editing');
         return;
     }
-    console.log('Landmarks found:', landmarks.length);
+    console.log('Filled landmarks found:', filledLandmarks.length);
 
     // Find the closest joint within 20 pixels
     const CLICK_THRESHOLD = 20;
     let closestJoint = null;
     let closestDistance = CLICK_THRESHOLD;
 
-    landmarks.forEach((landmark, index) => {
+    filledLandmarks.forEach((landmark, index) => {
         // Skip excluded landmarks (nose and eyes)
         if (EXCLUDED_LANDMARKS.includes(index)) {
             return;
         }
 
-        if (landmark.visibility > 0.5) {
+        // Check all landmarks including mirrored ones (visibility > 0 instead of > 0.5)
+        if (landmark && landmark.visibility > 0) {
             const jointX = landmark.x * targetCanvas.width;
             const jointY = landmark.y * targetCanvas.height;
             const distance = Math.sqrt(
@@ -2427,24 +2434,47 @@ function handleMouseMove(e) {
 
     if (isImageMode && imagePoseData) {
         // Update image pose data
-        const landmark2D = imagePoseData.landmarks2D[draggedJointIndex];
-        const landmark3D = imagePoseData.landmarks3D[draggedJointIndex];
+        let landmark2D = imagePoseData.landmarks2D[draggedJointIndex];
+        let landmark3D = imagePoseData.landmarks3D[draggedJointIndex];
 
-        // Calculate the delta in normalized coordinates
-        const deltaX = clampedX - landmark2D.x;
-        const deltaY = clampedY - landmark2D.y;
+        // If landmark doesn't exist or has low visibility (was mirrored), create a new one
+        if (!landmark2D || landmark2D.visibility < 0.5) {
+            landmark2D = {
+                x: clampedX,
+                y: clampedY,
+                z: lastFilledLandmarks2DImage[draggedJointIndex]?.z || 0,
+                visibility: 1.0 // Mark as fully visible (user-edited)
+            };
+            imagePoseData.landmarks2D[draggedJointIndex] = landmark2D;
 
-        // Update 2D position
-        landmark2D.x = clampedX;
-        landmark2D.y = clampedY;
+            // Create 3D landmark if it doesn't exist
+            if (imagePoseData.landmarks3D) {
+                landmark3D = {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                    visibility: 1.0
+                };
+                imagePoseData.landmarks3D[draggedJointIndex] = landmark3D;
+            }
+        } else {
+            // Calculate the delta in normalized coordinates
+            const deltaX = clampedX - landmark2D.x;
+            const deltaY = clampedY - landmark2D.y;
 
-        // Update 3D position (scale proportionally, keep Z the same)
-        if (landmark3D) {
-            // Estimate the change in world coordinates based on 2D movement
-            // This is approximate - we're scaling by typical human body dimensions
-            const SCALE_FACTOR = 2.0; // Approximate scaling from normalized to meters
-            landmark3D.x += deltaX * SCALE_FACTOR;
-            landmark3D.y -= deltaY * SCALE_FACTOR; // Negative because Y is flipped in display
+            // Update 2D position
+            landmark2D.x = clampedX;
+            landmark2D.y = clampedY;
+            landmark2D.visibility = 1.0; // Mark as user-edited
+
+            // Update 3D position (scale proportionally, keep Z the same)
+            if (landmark3D) {
+                // Estimate the change in world coordinates based on 2D movement
+                // This is approximate - we're scaling by typical human body dimensions
+                const SCALE_FACTOR = 2.0; // Approximate scaling from normalized to meters
+                landmark3D.x += deltaX * SCALE_FACTOR;
+                landmark3D.y -= deltaY * SCALE_FACTOR; // Negative because Y is flipped in display
+            }
         }
 
         redrawImagePose();
@@ -2454,19 +2484,42 @@ function handleMouseMove(e) {
         const frameData = poseDataArray.find(d => d.frame === currentFrame);
 
         if (frameData) {
-            const landmark2D = frameData.landmarks2D[draggedJointIndex];
-            const landmark3D = frameData.landmarks3D[draggedJointIndex];
+            let landmark2D = frameData.landmarks2D[draggedJointIndex];
+            let landmark3D = frameData.landmarks3D[draggedJointIndex];
 
-            const deltaX = clampedX - landmark2D.x;
-            const deltaY = clampedY - landmark2D.y;
+            // If landmark doesn't exist or has low visibility (was mirrored), create a new one
+            if (!landmark2D || landmark2D.visibility < 0.5) {
+                landmark2D = {
+                    x: clampedX,
+                    y: clampedY,
+                    z: lastFilledLandmarks2DVideo[draggedJointIndex]?.z || 0,
+                    visibility: 1.0 // Mark as fully visible (user-edited)
+                };
+                frameData.landmarks2D[draggedJointIndex] = landmark2D;
 
-            landmark2D.x = clampedX;
-            landmark2D.y = clampedY;
+                // Create 3D landmark if it doesn't exist
+                if (frameData.landmarks3D) {
+                    landmark3D = {
+                        x: 0,
+                        y: 0,
+                        z: 0,
+                        visibility: 1.0
+                    };
+                    frameData.landmarks3D[draggedJointIndex] = landmark3D;
+                }
+            } else {
+                const deltaX = clampedX - landmark2D.x;
+                const deltaY = clampedY - landmark2D.y;
 
-            if (landmark3D) {
-                const SCALE_FACTOR = 2.0;
-                landmark3D.x += deltaX * SCALE_FACTOR;
-                landmark3D.y -= deltaY * SCALE_FACTOR;
+                landmark2D.x = clampedX;
+                landmark2D.y = clampedY;
+                landmark2D.visibility = 1.0; // Mark as user-edited
+
+                if (landmark3D) {
+                    const SCALE_FACTOR = 2.0;
+                    landmark3D.x += deltaX * SCALE_FACTOR;
+                    landmark3D.y -= deltaY * SCALE_FACTOR;
+                }
             }
 
             // Redraw the current frame
@@ -2562,6 +2615,9 @@ function drawImagePose(landmarks, landmarks3D) {
 
     // Fill missing landmarks with mirrored versions from opposite side
     const { filled2D, filled3D } = fillMissingLandmarksWithMirrors(landmarks, landmarks3D);
+
+    // Store filled landmarks for edit mode click detection
+    lastFilledLandmarks2DImage = filled2D;
 
     // Calculate midpoint landmarks
     const { midpoints2D, midpoints3D } = calculateMidpoints(filled2D, filled3D);
