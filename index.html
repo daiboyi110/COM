@@ -36,26 +36,25 @@
 
             <div class="compact-controls">
                 <label>
-                    Analysis Mode:
-                    <select id="analysisModeImageSelect">
-                        <option value="2D" selected>2D Analysis</option>
-                        <option value="3D">3D Analysis</option>
-                    </select>
+                    <input type="radio" name="analysisModeImage" value="2D" checked> 2D
                 </label>
                 <label>
-                    Sex:
-                    <select id="sexSelectionImageSelect">
-                        <option value="male" selected>Male</option>
-                        <option value="female">Female</option>
-                    </select>
+                    <input type="radio" name="analysisModeImage" value="3D"> 3D
                 </label>
                 <label>
-                    Body Side:
-                    <select id="bodySideImageSelect">
-                        <option value="full" selected>Full Body</option>
-                        <option value="right">Right Side</option>
-                        <option value="left">Left Side</option>
-                    </select>
+                    <input type="radio" name="sexImage" value="male" checked> Male
+                </label>
+                <label>
+                    <input type="radio" name="sexImage" value="female"> Female
+                </label>
+                <label>
+                    <input type="radio" name="bodySideImage" value="full" checked> Full Body
+                </label>
+                <label>
+                    <input type="radio" name="bodySideImage" value="right"> Right Side
+                </label>
+                <label>
+                    <input type="radio" name="bodySideImage" value="left"> Left Side
                 </label>
             </div>
 
@@ -89,12 +88,10 @@
 
             <div class="compact-controls">
                 <label>
-                    Edit Mode:
-                    <select id="editModeImageSelect">
-                        <option value="none" selected>None</option>
-                        <option value="joints">Edit Joint Positions</option>
-                        <option value="calibration">Edit Calibration Points</option>
-                    </select>
+                    <input type="checkbox" id="editModeImage"> Edit Joint Positions
+                </label>
+                <label>
+                    <input type="checkbox" id="editModeCalibrationImage"> Edit Calibration Points
                 </label>
             </div>
 
@@ -111,15 +108,9 @@
             </div>
 
             <div class="compact-controls">
-                <label>
-                    Export Data:
-                    <select id="exportImageSelect">
-                        <option value="">Select format...</option>
-                        <option value="excel">📗 Excel</option>
-                        <option value="json">📄 JSON</option>
-                        <option value="csv">📊 CSV</option>
-                    </select>
-                </label>
+                <button id="exportImageExcel" class="btn-export">📗 Export Excel</button>
+                <button id="exportImageJson" class="btn-export">📄 Export JSON</button>
+                <button id="exportImageCsv" class="btn-export">📊 Export CSV</button>
             </div>
         </div>
 
@@ -131,35 +122,37 @@
 
             <div class="compact-controls">
                 <label>
-                    Analysis Mode:
-                    <select id="analysisModeVideoSelect">
-                        <option value="2D" selected>2D Analysis</option>
-                        <option value="3D">3D Analysis</option>
-                    </select>
+                    <input type="radio" name="analysisModeVideo" value="2D" checked> 2D
                 </label>
                 <label>
-                    Sex:
-                    <select id="sexSelectionVideoSelect">
-                        <option value="male" selected>Male</option>
-                        <option value="female">Female</option>
-                    </select>
+                    <input type="radio" name="analysisModeVideo" value="3D"> 3D
                 </label>
                 <label>
-                    Body Side:
-                    <select id="bodySideVideoSelect">
-                        <option value="full" selected>Full Body</option>
-                        <option value="right">Right Side</option>
-                        <option value="left">Left Side</option>
-                    </select>
+                    <input type="radio" name="sexVideo" value="male" checked> Male
                 </label>
                 <label>
-                    Processing Rate:
-                    <select id="processingSpeed">
-                        <option value="5" selected>5 FPS</option>
-                        <option value="10">10 FPS</option>
-                        <option value="15">15 FPS</option>
-                        <option value="30">30 FPS</option>
-                    </select>
+                    <input type="radio" name="sexVideo" value="female"> Female
+                </label>
+                <label>
+                    <input type="radio" name="bodySideVideo" value="full" checked> Full Body
+                </label>
+                <label>
+                    <input type="radio" name="bodySideVideo" value="right"> Right Side
+                </label>
+                <label>
+                    <input type="radio" name="bodySideVideo" value="left"> Left Side
+                </label>
+                <label>
+                    <input type="radio" name="processingSpeed" value="5" checked> 5 FPS
+                </label>
+                <label>
+                    <input type="radio" name="processingSpeed" value="10"> 10 FPS
+                </label>
+                <label>
+                    <input type="radio" name="processingSpeed" value="15"> 15 FPS
+                </label>
+                <label>
+                    <input type="radio" name="processingSpeed" value="30"> 30 FPS
                 </label>
             </div>
 
@@ -204,12 +197,10 @@
 
             <div class="compact-controls">
                 <label>
-                    Edit Mode:
-                    <select id="editModeVideoSelect">
-                        <option value="none" selected>None</option>
-                        <option value="joints">Edit Joint Positions</option>
-                        <option value="calibration">Edit Calibration Points</option>
-                    </select>
+                    <input type="checkbox" id="editModeVideo"> Edit Joint Positions
+                </label>
+                <label>
+                    <input type="checkbox" id="editModeCalibrationVideo"> Edit Calibration Points
                 </label>
             </div>
 
@@ -230,15 +221,9 @@
             </div>
 
             <div class="compact-controls">
-                <label>
-                    Export Data:
-                    <select id="exportVideoSelect">
-                        <option value="">Select format...</option>
-                        <option value="excel">📗 Excel</option>
-                        <option value="json">📄 JSON</option>
-                        <option value="csv">📊 CSV</option>
-                    </select>
-                </label>
+                <button id="exportVideoExcel" class="btn-export">📗 Export Excel</button>
+                <button id="exportVideoJson" class="btn-export">📄 Export JSON</button>
+                <button id="exportVideoCsv" class="btn-export">📊 Export CSV</button>
                 <button id="clearDataBtn" class="btn-clear">🗑️ Clear Data</button>
             </div>
         </div>
