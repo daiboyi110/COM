@@ -31,6 +31,10 @@ let analysisModeImage = '2D'; // '2D' or '3D'
 let sexSelectionVideo = 'male'; // 'male' or 'female'
 let sexSelectionImage = 'male'; // 'male' or 'female'
 
+// Body side selection for display
+let bodySideVideo = 'full'; // 'full', 'right', or 'left'
+let bodySideImage = 'full'; // 'full', 'right', or 'left'
+
 // Joint dragging variables
 let isDragging = false;
 let draggedJointIndex = null;
@@ -164,6 +168,41 @@ const POSE_CONNECTIONS = [
 const FILTERED_POSE_CONNECTIONS = POSE_CONNECTIONS.filter(([startIdx, endIdx]) => {
     return !EXCLUDED_LANDMARKS.includes(startIdx) && !EXCLUDED_LANDMARKS.includes(endIdx);
 });
+
+// Helper function to determine if a landmark is on the left side
+function isLeftSideLandmark(index) {
+    const name = LANDMARK_NAMES[index];
+    if (!name) return false;
+    return name.includes('Left_');
+}
+
+// Helper function to determine if a landmark is on the right side
+function isRightSideLandmark(index) {
+    const name = LANDMARK_NAMES[index];
+    if (!name) return false;
+    return name.includes('Right_');
+}
+
+// Helper function to determine if a landmark is central (not left or right specific)
+function isCentralLandmark(index) {
+    return !isLeftSideLandmark(index) && !isRightSideLandmark(index);
+}
+
+// Helper function to filter landmarks based on body side selection
+function shouldDisplayLandmark(index, bodySide) {
+    if (bodySide === 'full') return true;
+    if (bodySide === 'left') return isLeftSideLandmark(index) || isCentralLandmark(index);
+    if (bodySide === 'right') return isRightSideLandmark(index) || isCentralLandmark(index);
+    return true;
+}
+
+// Helper function to filter connections based on body side selection
+function shouldDisplayConnection(startIdx, endIdx, bodySide) {
+    if (bodySide === 'full') return true;
+
+    // Only show connection if both endpoints should be displayed
+    return shouldDisplayLandmark(startIdx, bodySide) && shouldDisplayLandmark(endIdx, bodySide);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     video = document.getElementById('video');
@@ -742,6 +781,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Body side selection handlers
+    document.querySelectorAll('input[name="bodySideVideo"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            bodySideVideo = e.target.value;
+            console.log(`Video body side selection changed to: ${bodySideVideo}`);
+
+            if (!video.paused) {
+                clearCanvas();
+            } else {
+                processPoseFrame();
+            }
+        });
+    });
+
+    document.querySelectorAll('input[name="bodySideImage"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            bodySideImage = e.target.value;
+            console.log(`Image body side selection changed to: ${bodySideImage}`);
+
+            redrawImagePose();
+        });
+    });
+
     // Calibration scale input handlers
     const calibrationScaleVideoInput = document.getElementById('calibrationScaleVideo');
     const calibrationScaleImageInput = document.getElementById('calibrationScaleImage');
@@ -1073,7 +1135,8 @@ function calculateSegmentCOMs(extendedLandmarks2D, extendedLandmarks3D, sex) {
 }
 
 // Calculate total body center of mass using weighted average of segment COMs
-function calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex) {
+// If bodySide is 'left' or 'right', assumes symmetric body and doubles the mass of visible segments
+function calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex, bodySide = 'full') {
     let totalBodyCOM2D = null;
     let totalBodyCOM3D = null;
 
@@ -1084,10 +1147,18 @@ function calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex) {
 
     for (const segmentMass of SEGMENT_MASS_PERCENTAGES) {
         const { index, male, female } = segmentMass;
-        const massPercent = sex === 'male' ? male : female;
+        let massPercent = sex === 'male' ? male : female;
         const segmentCOM = segmentCOMs2D[index];
 
         if (segmentCOM) {
+            // For left/right side display, double the mass of side-specific segments
+            // to account for the symmetric missing side
+            if (bodySide === 'left' || bodySide === 'right') {
+                if (isLeftSideLandmark(index) || isRightSideLandmark(index)) {
+                    massPercent *= 2;
+                }
+            }
+
             sum2D.x += segmentCOM.x * massPercent;
             sum2D.y += segmentCOM.y * massPercent;
             sum2D.z += segmentCOM.z * massPercent;
@@ -1113,10 +1184,18 @@ function calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex) {
 
         for (const segmentMass of SEGMENT_MASS_PERCENTAGES) {
             const { index, male, female } = segmentMass;
-            const massPercent = sex === 'male' ? male : female;
+            let massPercent = sex === 'male' ? male : female;
             const segmentCOM = segmentCOMs3D[index];
 
             if (segmentCOM) {
+                // For left/right side display, double the mass of side-specific segments
+                // to account for the symmetric missing side
+                if (bodySide === 'left' || bodySide === 'right') {
+                    if (isLeftSideLandmark(index) || isRightSideLandmark(index)) {
+                        massPercent *= 2;
+                    }
+                }
+
                 sum3D.x += segmentCOM.x * massPercent;
                 sum3D.y += segmentCOM.y * massPercent;
                 sum3D.z += segmentCOM.z * massPercent;
@@ -1164,7 +1243,7 @@ function drawPose(landmarks, landmarks3D) {
     }
 
     // Calculate total body center of mass
-    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionVideo);
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionVideo, bodySideVideo);
 
     // Add total body COM to extended landmarks (index 49)
     if (totalBodyCOM2D) extendedLandmarks2D[49] = totalBodyCOM2D;
@@ -1177,6 +1256,11 @@ function drawPose(landmarks, landmarks3D) {
     FILTERED_POSE_CONNECTIONS.forEach(([startIdx, endIdx]) => {
         const start = landmarks[startIdx];
         const end = landmarks[endIdx];
+
+        // Filter connections based on body side selection
+        if (!shouldDisplayConnection(startIdx, endIdx, bodySideVideo)) {
+            return;
+        }
 
         if (start && end && start.visibility > 0.5 && end.visibility > 0.5) {
             ctx.beginPath();
@@ -1208,6 +1292,11 @@ function drawPose(landmarks, landmarks3D) {
     extendedLandmarks2D.forEach((landmark, index) => {
         // Skip excluded landmarks (nose and eyes)
         if (EXCLUDED_LANDMARKS.includes(index)) {
+            return;
+        }
+
+        // Skip landmarks based on body side selection
+        if (!shouldDisplayLandmark(index, bodySideVideo)) {
             return;
         }
 
@@ -2378,7 +2467,7 @@ function drawImagePose(landmarks, landmarks3D) {
     }
 
     // Calculate total body center of mass
-    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionImage);
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionImage, bodySideImage);
 
     // Add total body COM to extended landmarks (index 49)
     if (totalBodyCOM2D) extendedLandmarks2D[49] = totalBodyCOM2D;
@@ -2391,6 +2480,11 @@ function drawImagePose(landmarks, landmarks3D) {
     FILTERED_POSE_CONNECTIONS.forEach(([startIdx, endIdx]) => {
         const start = landmarks[startIdx];
         const end = landmarks[endIdx];
+
+        // Filter connections based on body side selection
+        if (!shouldDisplayConnection(startIdx, endIdx, bodySideImage)) {
+            return;
+        }
 
         if (start && end && start.visibility > 0.5 && end.visibility > 0.5) {
             imageCtx.beginPath();
@@ -2422,6 +2516,11 @@ function drawImagePose(landmarks, landmarks3D) {
     extendedLandmarks2D.forEach((landmark, index) => {
         // Skip excluded landmarks (nose and eyes)
         if (EXCLUDED_LANDMARKS.includes(index)) {
+            return;
+        }
+
+        // Skip landmarks based on body side selection
+        if (!shouldDisplayLandmark(index, bodySideImage)) {
             return;
         }
 
