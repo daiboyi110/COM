@@ -320,6 +320,8 @@ function fillMissingLandmarksWithMirrors(landmarks2D, landmarks3D) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOMContentLoaded event fired - initializing application');
+
     video = document.getElementById('video');
     canvas = document.getElementById('poseCanvas');
     ctx = canvas.getContext('2d');
@@ -336,15 +338,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const prevFrameBtn = document.getElementById('prevFrameBtn');
     const nextFrameBtn = document.getElementById('nextFrameBtn');
     const showPoseCheckbox = document.getElementById('showPose');
-    const showJointNumbersCheckbox = document.getElementById('showJointNumbers');
-    const showCoordinatesCheckbox = document.getElementById('showCoordinates');
     const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
     const processingSpeedSelect = document.getElementById('processingSpeed');
 
     // Image controls
     const showPoseImageCheckbox = document.getElementById('showPoseImage');
-    const showJointNumbersImageCheckbox = document.getElementById('showJointNumbersImage');
-    const showCoordinatesImageCheckbox = document.getElementById('showCoordinatesImage');
     const fullSizeImageCheckbox = document.getElementById('fullSizeImage');
     const editModeImageCheckbox = document.getElementById('editModeImage');
 
@@ -571,33 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    showJointNumbersCheckbox.addEventListener('change', (e) => {
-        showJointNumbers = e.target.checked;
-        if (!video.paused) {
-            clearCanvas();
-        } else {
-            processPoseFrame();
-        }
-    });
-
-    showCoordinatesCheckbox.addEventListener('change', (e) => {
-        showCoordinates = e.target.checked;
-        if (!video.paused) {
-            clearCanvas();
-        } else {
-            processPoseFrame();
-        }
-    });
-
-    const showCoordinateSystemCheckbox = document.getElementById('showCoordinateSystem');
-    showCoordinateSystemCheckbox.addEventListener('change', (e) => {
-        showCoordinateSystem = e.target.checked;
-        if (!video.paused) {
-            clearCanvas();
-        } else {
-            processPoseFrame();
-        }
-    });
+    // Note: Display options (Names, Coordinates, Coordinate System) are now handled by displayOptionsVideo dropdown
 
     fullSizeVideoCheckbox.addEventListener('change', (e) => {
         if (e.target.checked) {
@@ -615,21 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
         redrawImagePose();
     });
 
-    showJointNumbersImageCheckbox.addEventListener('change', (e) => {
-        showJointNumbersImage = e.target.checked;
-        redrawImagePose();
-    });
-
-    showCoordinatesImageCheckbox.addEventListener('change', (e) => {
-        showCoordinatesImage = e.target.checked;
-        redrawImagePose();
-    });
-
-    const showCoordinateSystemImageCheckbox = document.getElementById('showCoordinateSystemImage');
-    showCoordinateSystemImageCheckbox.addEventListener('change', (e) => {
-        showCoordinateSystemImage = e.target.checked;
-        redrawImagePose();
-    });
+    // Note: Display options (Names, Coordinates, Coordinate System) are now handled by displayOptionsImage dropdown
 
     fullSizeImageCheckbox.addEventListener('change', (e) => {
         if (e.target.checked) {
@@ -1138,8 +1096,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const displayOptionsImage = document.getElementById('displayOptionsImage');
 
     if (displayOptionsVideo) {
+        console.log('Display options dropdown for video found and listener attached');
         displayOptionsVideo.addEventListener('change', (e) => {
             const displayMode = e.target.value;
+            console.log(`Video display mode changed to: ${displayMode}`);
 
             // Reset all display options
             showJointNumbers = false;
@@ -1155,20 +1115,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 showCoordinateSystem = true;
             }
 
+            console.log(`showJointNumbers: ${showJointNumbers}, showCoordinates: ${showCoordinates}, showCoordinateSystem: ${showCoordinateSystem}`);
+
             // Redraw
             if (!video.paused) {
                 clearCanvas();
             } else {
                 processPoseFrame();
             }
-
-            console.log(`Video display mode changed to: ${displayMode}`);
         });
+    } else {
+        console.error('Display options dropdown for video NOT found!');
     }
 
     if (displayOptionsImage) {
+        console.log('Display options dropdown for image found and listener attached');
         displayOptionsImage.addEventListener('change', (e) => {
             const displayMode = e.target.value;
+            console.log(`Image display mode changed to: ${displayMode}`);
 
             // Reset all display options
             showJointNumbersImage = false;
@@ -1184,10 +1148,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 showCoordinateSystemImage = true;
             }
 
-            redrawImagePose();
+            console.log(`showJointNumbersImage: ${showJointNumbersImage}, showCoordinatesImage: ${showCoordinatesImage}, showCoordinateSystemImage: ${showCoordinateSystemImage}`);
 
-            console.log(`Image display mode changed to: ${displayMode}`);
+            redrawImagePose();
         });
+    } else {
+        console.error('Display options dropdown for image NOT found!');
     }
 });
 
