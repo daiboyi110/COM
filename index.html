@@ -17,6 +17,12 @@
     <div class="container">
         <h1>Center of Mass (COM) Visualization</h1>
 
+        <div style="text-align: center; margin-bottom: 15px; padding: 10px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffc107;">
+            <p style="margin: 0; color: #856404; font-size: 14px; font-weight: 600;">
+                💡 <strong>Tip:</strong> For optimal performance, press <strong>Ctrl+F5</strong> to refresh the page before loading a new video or image.
+            </p>
+        </div>
+
         <div class="upload-section">
             <label class="upload-btn">
                 📹 Upload Video
@@ -57,6 +63,13 @@
                 <canvas id="imageCanvas"></canvas>
             </div>
 
+            <div class="legend">
+                <strong>Legend:</strong>
+                <span class="legend-item"><span class="legend-circle green"></span> Joints</span>
+                <span class="legend-item"><span class="legend-circle yellow"></span> Segment COM</span>
+                <span class="legend-item"><span class="legend-circle red"></span> Total-body COM</span>
+            </div>
+
             <div class="compact-controls">
                 <label>
                     <input type="checkbox" id="showPoseImage" checked> Show Pose
@@ -95,19 +108,12 @@
 
             <div class="info" style="display: flex; gap: 20px; flex-wrap: wrap;">
                 <span><strong>Image:</strong> <span id="imageInfo">Loading...</span></span>
-                <span><strong>Detected Joints:</strong> <span id="jointCountImage">0</span></span>
+                <span><strong>Points Displayed:</strong> <span id="jointCountImage">0</span></span>
             </div>
 
             <div class="compact-controls">
                 <button id="exportImageExcel" class="btn-export">📗 Export Excel</button>
                 <button id="exportImageScreenshot" class="btn-export">📷 Export Image with Overlay</button>
-            </div>
-
-            <div class="legend">
-                <strong>Legend:</strong>
-                <span class="legend-item"><span class="legend-circle green"></span> Joints</span>
-                <span class="legend-item"><span class="legend-circle yellow"></span> Segment COM</span>
-                <span class="legend-item"><span class="legend-circle red"></span> Total-body COM</span>
             </div>
         </div>
 
@@ -135,6 +141,13 @@
             <div class="video-wrapper">
                 <video id="video" controls></video>
                 <canvas id="poseCanvas"></canvas>
+            </div>
+
+            <div class="legend">
+                <strong>Legend:</strong>
+                <span class="legend-item"><span class="legend-circle green"></span> Joints</span>
+                <span class="legend-item"><span class="legend-circle yellow"></span> Segment COM</span>
+                <span class="legend-item"><span class="legend-circle red"></span> Total-body COM</span>
             </div>
 
             <div class="controls">
@@ -188,7 +201,7 @@
                 <span><strong>Video:</strong> <span id="videoInfo">Loading...</span></span>
                 <span><strong>Time:</strong> <span id="timeDisplay">0:00</span></span>
                 <span><strong>Frame:</strong> <span id="frameNumber">0</span> / <span id="totalFrames">0</span></span>
-                <span><strong>Joints:</strong> <span id="jointCount">0</span></span>
+                <span><strong>Points Displayed:</strong> <span id="jointCount">0</span></span>
                 <span><strong>Frames w/ Data:</strong> <span id="capturedFrames">0</span></span>
                 <span><strong>Processing FPS:</strong> <span id="processingFPS">0</span></span>
                 <span id="frameStep" class="frame-step" style="display: none;">Frame stepping...</span>
@@ -200,12 +213,96 @@
                 <button id="exportVideoWithOverlay" class="btn-export">🎬 Export Video with Overlay</button>
                 <button id="clearDataBtn" class="btn-clear">🗑️ Clear Data</button>
             </div>
+        </div>
 
-            <div class="legend">
-                <strong>Legend:</strong>
-                <span class="legend-item"><span class="legend-circle green"></span> Joints</span>
-                <span class="legend-item"><span class="legend-circle yellow"></span> Segment COM</span>
-                <span class="legend-item"><span class="legend-circle red"></span> Total-body COM</span>
+        <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #007bff;">
+            <h2 style="margin-top: 0; color: #007bff; text-align: center;">About This Application</h2>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #333; margin-bottom: 10px;">📋 Features</h3>
+                <ul style="line-height: 1.8; color: #333;">
+                    <li><strong>Video & Image Analysis:</strong> Process both video files and static images</li>
+                    <li><strong>MediaPipe Pose Estimation:</strong> Automatic detection of 33 body landmarks</li>
+                    <li><strong>2D & 3D Analysis Modes:</strong> Choose between 2D pixel-based or 3D world coordinate analysis</li>
+                    <li><strong>Center of Mass Calculation:</strong> Calculate segment COM and total-body COM with sex-specific models (de Leva, 1996)</li>
+                    <li><strong>Bilateral Symmetry Mirroring:</strong> Automatically estimate missing landmarks using opposite side data</li>
+                    <li><strong>Interactive Editing:</strong> Manually adjust joint positions and calibration points</li>
+                    <li><strong>Coordinate System Visualization:</strong> Display 2D or 3D coordinate axes with origin markers</li>
+                    <li><strong>Data Export:</strong> Export pose data to Excel, export images/frames with overlays, and export videos with overlays</li>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #333; margin-bottom: 10px;">🔬 Technical Details</h3>
+                <ul style="line-height: 1.8; color: #333;">
+                    <li><strong>Pose Estimation:</strong> MediaPipe Pose v0.5+ (Google)</li>
+                    <li><strong>Landmarks Tracked:</strong> 50 total points (33 base + 17 calculated)</li>
+                    <li><strong>Landmarks Displayed:</strong> 37 points (20 base + 17 calculated)</li>
+                    <li><strong>Visibility Threshold:</strong> 0.3 (landmarks with visibility < 0.3 are hidden)</li>
+                    <li><strong>2D Coordinate System:</strong> Origin at left-bottom corner, calibrated to meters</li>
+                    <li><strong>3D Coordinate System:</strong> Origin at mid-hip, coordinates in meters</li>
+                    <li><strong>Processing:</strong> Client-side only (no data uploaded to servers)</li>
+                    <li><strong>Browser Compatibility:</strong> Chrome 90+, Firefox 88+, Safari 14+, Edge 90+</li>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #333; margin-bottom: 10px;">📊 Sex-Specific Models</h3>
+                <p style="color: #333; line-height: 1.8; margin-bottom: 10px;">
+                    The application uses different segment mass percentages and center of mass locations for males and females based on biomechanical research by de Leva (1996):
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4 style="color: #007bff; margin-bottom: 8px;">Male Model</h4>
+                        <ul style="font-size: 14px; line-height: 1.6; color: #333;">
+                            <li>Head+Neck: 6.94% of body mass, COM at 50.00%</li>
+                            <li>Trunk: 43.46%, COM at 43.10%</li>
+                            <li>Upper Arm: 2.71% each, COM at 57.72%</li>
+                            <li>Forearm: 1.62% each, COM at 45.74%</li>
+                            <li>Hand: 0.61% each, COM at 79.00%</li>
+                            <li>Thigh: 14.16% each, COM at 40.95%</li>
+                            <li>Shank: 4.33% each, COM at 44.59%</li>
+                            <li>Foot: 1.37% each, COM at 44.15%</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: #e83e8c; margin-bottom: 8px;">Female Model</h4>
+                        <ul style="font-size: 14px; line-height: 1.6; color: #333;">
+                            <li>Head+Neck: 6.68% of body mass, COM at 50.00%</li>
+                            <li>Trunk: 42.57%, COM at 37.82%</li>
+                            <li>Upper Arm: 2.55% each, COM at 57.54%</li>
+                            <li>Forearm: 1.38% each, COM at 45.59%</li>
+                            <li>Hand: 0.56% each, COM at 74.74%</li>
+                            <li>Thigh: 14.78% each, COM at 36.12%</li>
+                            <li>Shank: 4.81% each, COM at 44.16%</li>
+                            <li>Foot: 1.29% each, COM at 40.14%</li>
+                        </ul>
+                    </div>
+                </div>
+                <p style="font-size: 13px; color: #666; margin-top: 10px; font-style: italic;">
+                    Note: COM percentages indicate location from proximal to distal joint. Total-body COM is calculated as weighted average of all 12 segment COMs.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #333; margin-bottom: 10px;">🎯 Use Cases</h3>
+                <ul style="line-height: 1.8; color: #333;">
+                    <li>Biomechanical analysis of human movement</li>
+                    <li>Gait analysis and postural assessment</li>
+                    <li>Sports performance analysis</li>
+                    <li>Rehabilitation monitoring</li>
+                    <li>Ergonomics research</li>
+                    <li>Physical therapy progress tracking</li>
+                </ul>
+            </div>
+
+            <div>
+                <h3 style="color: #333; margin-bottom: 10px;">📚 Citation</h3>
+                <p style="color: #333; line-height: 1.6; font-size: 14px; background: white; padding: 12px; border-radius: 4px; border-left: 4px solid #007bff;">
+                    de Leva P. (1996). Adjustments to Zatsiorsky-Seluyanov's segment inertia parameters.
+                    <em>Journal of Biomechanics</em>, 29(9):1223-1230.
+                    doi: <a href="https://doi.org/10.1016/0021-9290(95)00178-6" target="_blank" style="color: #007bff;">10.1016/0021-9290(95)00178-6</a>
+                </p>
             </div>
         </div>
 

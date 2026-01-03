@@ -255,74 +255,60 @@ function getMirrorLandmarkIndex(index) {
     return null; // No mirror pair (central landmark)
 }
 
-// Function to mirror a landmark horizontally (assumes bilateral symmetry)
-// For 2D: mirrors across the vertical center line of the body
-// For 3D: mirrors across the sagittal plane (X coordinate)
-function mirrorLandmark(landmark, centerX = 0.5) {
+// Function to copy landmark from opposite side (bilateral symmetry estimation)
+// Uses the same coordinates with small random noise to avoid complete overlap
+function mirrorLandmark(landmark) {
     if (!landmark) return null;
 
+    // Add small random noise (±0.5% of coordinate value) to avoid complete overlap
+    const noise = () => (Math.random() - 0.5) * 0.01;
+
     return {
-        x: 2 * centerX - landmark.x, // Mirror across center
-        y: landmark.y,               // Y stays the same
-        z: landmark.z,               // Z stays the same (depth)
+        x: landmark.x + noise(),     // Add small noise to X
+        y: landmark.y + noise(),     // Add small noise to Y
+        z: landmark.z + noise(),     // Add small noise to Z (depth)
         visibility: landmark.visibility
     };
 }
 
-// Function to fill missing landmarks with mirrored versions from opposite side
+// Function to fill missing landmarks with copied versions from opposite side
 function fillMissingLandmarksWithMirrors(landmarks2D, landmarks3D) {
     // Create copies to avoid modifying originals
     const filled2D = [...landmarks2D];
     const filled3D = landmarks3D ? [...landmarks3D] : [];
 
-    // Calculate body center X for 2D mirroring (average of left and right hips if available)
-    let centerX = 0.5;
-    if (filled2D[23] && filled2D[24]) { // Left and Right Hip
-        centerX = (filled2D[23].x + filled2D[24].x) / 2;
-    } else if (filled2D[11] && filled2D[12]) { // Left and Right Shoulder
-        centerX = (filled2D[11].x + filled2D[12].x) / 2;
-    }
-
-    // Calculate body center X for 3D mirroring
-    let centerX3D = 0;
-    if (filled3D[23] && filled3D[24]) {
-        centerX3D = (filled3D[23].x + filled3D[24].x) / 2;
-    } else if (filled3D[11] && filled3D[12]) {
-        centerX3D = (filled3D[11].x + filled3D[12].x) / 2;
-    }
-
-    // Fill missing landmarks with mirrored versions
+    // Fill missing landmarks by copying from opposite side
     for (const [leftIdx, rightIdx] of LEFT_RIGHT_LANDMARK_PAIRS) {
-        // 2D mirroring
+        // 2D copying
         const left2D = filled2D[leftIdx];
         const right2D = filled2D[rightIdx];
 
-        if (!left2D || left2D.visibility < 0.5) {
-            if (right2D && right2D.visibility >= 0.5) {
-                filled2D[leftIdx] = mirrorLandmark(right2D, centerX);
+        if (!left2D || left2D.visibility < 0.3) {
+            if (right2D && right2D.visibility >= 0.3) {
+                filled2D[leftIdx] = mirrorLandmark(right2D);
             }
         }
 
-        if (!right2D || right2D.visibility < 0.5) {
-            if (left2D && left2D.visibility >= 0.5) {
-                filled2D[rightIdx] = mirrorLandmark(left2D, centerX);
+        if (!right2D || right2D.visibility < 0.3) {
+            if (left2D && left2D.visibility >= 0.3) {
+                filled2D[rightIdx] = mirrorLandmark(left2D);
             }
         }
 
-        // 3D mirroring
+        // 3D copying
         if (filled3D.length > 0) {
             const left3D = filled3D[leftIdx];
             const right3D = filled3D[rightIdx];
 
-            if (!left3D || left3D.visibility < 0.5) {
-                if (right3D && right3D.visibility >= 0.5) {
-                    filled3D[leftIdx] = mirrorLandmark(right3D, centerX3D);
+            if (!left3D || left3D.visibility < 0.3) {
+                if (right3D && right3D.visibility >= 0.3) {
+                    filled3D[leftIdx] = mirrorLandmark(right3D);
                 }
             }
 
-            if (!right3D || right3D.visibility < 0.5) {
-                if (left3D && left3D.visibility >= 0.5) {
-                    filled3D[rightIdx] = mirrorLandmark(left3D, centerX3D);
+            if (!right3D || right3D.visibility < 0.3) {
+                if (left3D && left3D.visibility >= 0.3) {
+                    filled3D[rightIdx] = mirrorLandmark(left3D);
                 }
             }
         }
@@ -399,6 +385,13 @@ document.addEventListener('DOMContentLoaded', () => {
     videoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Reinitialize MediaPipe Pose for optimal sampling rate
+            console.log('Reinitializing MediaPipe Pose before loading new video...');
+            if (pose) {
+                pose.close();
+            }
+            initializePose();
+
             // Store original filename (without extension)
             originalVideoFileName = file.name.replace(/\.[^/.]+$/, '');
 
@@ -1140,8 +1133,8 @@ function initializePose() {
         modelComplexity: 0, // Use lite model for faster processing
         smoothLandmarks: true,
         enableSegmentation: false,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
+        minDetectionConfidence: 0.3,
+        minTrackingConfidence: 0.3
     });
 
     pose.onResults(onPoseResults);
@@ -1159,33 +1152,30 @@ async function processPoseFrame() {
     }
 }
 
-// Start pose processing using requestAnimationFrame at maximum framerate
+// Start pose processing synchronized with video framerate
 function startPoseProcessing() {
     stopPoseProcessing(); // Clear any existing timer
 
     if (!showPose) return;
 
-    // Reset FPS counter
-    processedFrameCount = 0;
-    fpsStartTime = performance.now();
+    // Display the detected video FPS in the Processing FPS field
+    const fpsDisplay = document.getElementById('processingFPS');
+    if (fpsDisplay) {
+        fpsDisplay.textContent = fps;
+    }
 
-    // Use requestAnimationFrame for maximum framerate processing
+    let lastProcessedTime = -1;
+
+    // Use requestAnimationFrame but only process new video frames
     function processFrame() {
         if (!video.paused && !video.ended && showPose) {
-            processPoseFrame().catch(err => console.error('Pose processing error:', err));
+            // Only process if video has advanced to a new frame
+            // Video currentTime changes when a new frame is available
+            const currentTime = video.currentTime;
 
-            // Calculate and update FPS display
-            processedFrameCount++;
-            const now = performance.now();
-            const fpsElapsed = (now - fpsStartTime) / 1000;
-            if (fpsElapsed >= 1) {
-                currentFPS = Math.round(processedFrameCount / fpsElapsed);
-                const fpsDisplay = document.getElementById('processingFPS');
-                if (fpsDisplay) {
-                    fpsDisplay.textContent = currentFPS;
-                }
-                processedFrameCount = 0;
-                fpsStartTime = now;
+            if (currentTime !== lastProcessedTime) {
+                lastProcessedTime = currentTime;
+                processPoseFrame().catch(err => console.error('Pose processing error:', err));
             }
 
             processingTimer = requestAnimationFrame(processFrame);
@@ -1195,7 +1185,7 @@ function startPoseProcessing() {
     }
 
     processingTimer = requestAnimationFrame(processFrame);
-    console.log('Pose processing started at maximum framerate');
+    console.log(`Pose processing started at video framerate: ${fps} FPS`);
 }
 
 // Stop pose processing
@@ -1496,7 +1486,7 @@ function drawPose(landmarks, landmarks3D) {
             return;
         }
 
-        if (start && end && start.visibility > 0.5 && end.visibility > 0.5) {
+        if (start && end && start.visibility > 0.3 && end.visibility > 0.3) {
             ctx.beginPath();
             ctx.moveTo(start.x * width, start.y * height);
             ctx.lineTo(end.x * width, end.y * height);
@@ -1509,7 +1499,7 @@ function drawPose(landmarks, landmarks3D) {
         const midShoulder = extendedLandmarks2D[33];
         const midHip = extendedLandmarks2D[34];
 
-        if (midShoulder.visibility > 0.5 && midHip.visibility > 0.5) {
+        if (midShoulder.visibility > 0.3 && midHip.visibility > 0.3) {
             ctx.strokeStyle = '#00FF00';
             ctx.lineWidth = 4;
             ctx.beginPath();
@@ -1535,7 +1525,7 @@ function drawPose(landmarks, landmarks3D) {
         }
 
         // Skip if landmark doesn't exist or has low visibility
-        if (!landmark || landmark.visibility < 0.5) {
+        if (!landmark || landmark.visibility < 0.3) {
             return;
         }
 
@@ -1791,7 +1781,7 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
         let originX = 100; // Default position
         let originY = 100;
 
-        if (midHipLandmark && midHipLandmark.visibility > 0.5) {
+        if (midHipLandmark && midHipLandmark.visibility > 0.3) {
             originX = midHipLandmark.x * width;
             originY = midHipLandmark.y * height;
         }
@@ -2064,7 +2054,7 @@ function exportAsJson() {
     }
 
     // Transform pose data to use conventional Y direction (positive upward) and add display coordinates
-    // Only include landmarks that are visible (visibility > 0.5)
+    // Only include landmarks that are visible (visibility > 0.3)
     const transformedPoseData = poseDataArray.map(frameData => {
         const displayCoords = calculateDisplayCoordinates(
             frameData.landmarks2D,
@@ -2084,7 +2074,7 @@ function exportAsJson() {
                 return;
             }
             // Only include landmarks with sufficient visibility
-            if (lm2d.visibility > 0.5) {
+            if (lm2d.visibility > 0.3) {
                 const lm3d = frameData.landmarks3D[index];
                 visibleLandmarks.push({
                     index: index,
@@ -2157,7 +2147,7 @@ function exportAsCsv() {
             const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
 
             // Check if landmark is visible
-            if (lm2d.visibility > 0.5) {
+            if (lm2d.visibility > 0.3) {
                 // Negate Y to make positive direction upward (conventional)
                 row += `,${lm3d.x.toFixed(6)},${(-lm3d.y).toFixed(6)},${lm3d.z.toFixed(6)}`;
             } else {
@@ -2209,7 +2199,7 @@ function exportAsCsv() {
             const displayCoord = displayCoords[index];
 
             // Check if landmark is visible
-            if (lm2d.visibility > 0.5) {
+            if (lm2d.visibility > 0.3) {
                 // Add display coordinates
                 if (analysisModeVideo === '2D') {
                     row += `,${displayCoord.x.toFixed(6)},${displayCoord.y.toFixed(6)}`;
@@ -2471,7 +2461,7 @@ function handleMouseDown(e) {
             return;
         }
 
-        // Check all landmarks including mirrored ones (visibility > 0 instead of > 0.5)
+        // Check all landmarks including mirrored ones (visibility > 0 instead of > 0.3)
         if (landmark && landmark.visibility > 0) {
             const jointX = landmark.x * targetCanvas.width;
             const jointY = landmark.y * targetCanvas.height;
@@ -2557,7 +2547,7 @@ function handleMouseMove(e) {
         let landmark3D = imagePoseData.landmarks3D[draggedJointIndex];
 
         // If landmark doesn't exist or has low visibility (was mirrored), create a new one
-        if (!landmark2D || landmark2D.visibility < 0.5) {
+        if (!landmark2D || landmark2D.visibility < 0.3) {
             landmark2D = {
                 x: clampedX,
                 y: clampedY,
@@ -2607,7 +2597,7 @@ function handleMouseMove(e) {
             let landmark3D = frameData.landmarks3D[draggedJointIndex];
 
             // If landmark doesn't exist or has low visibility (was mirrored), create a new one
-            if (!landmark2D || landmark2D.visibility < 0.5) {
+            if (!landmark2D || landmark2D.visibility < 0.3) {
                 landmark2D = {
                     x: clampedX,
                     y: clampedY,
@@ -2786,7 +2776,7 @@ function drawImagePose(landmarks, landmarks3D) {
             return;
         }
 
-        if (start && end && start.visibility > 0.5 && end.visibility > 0.5) {
+        if (start && end && start.visibility > 0.3 && end.visibility > 0.3) {
             imageCtx.beginPath();
             imageCtx.moveTo(start.x * width, start.y * height);
             imageCtx.lineTo(end.x * width, end.y * height);
@@ -2799,7 +2789,7 @@ function drawImagePose(landmarks, landmarks3D) {
         const midShoulder = extendedLandmarks2D[33];
         const midHip = extendedLandmarks2D[34];
 
-        if (midShoulder.visibility > 0.5 && midHip.visibility > 0.5) {
+        if (midShoulder.visibility > 0.3 && midHip.visibility > 0.3) {
             imageCtx.strokeStyle = '#00FF00';
             imageCtx.lineWidth = 4;
             imageCtx.beginPath();
@@ -2825,7 +2815,7 @@ function drawImagePose(landmarks, landmarks3D) {
         }
 
         // Skip if landmark doesn't exist or has low visibility
-        if (!landmark || landmark.visibility < 0.5) {
+        if (!landmark || landmark.visibility < 0.3) {
             return;
         }
 
@@ -2968,7 +2958,7 @@ function exportImageAsJson() {
             return;
         }
         // Only include landmarks with sufficient visibility
-        if (lm2d.visibility > 0.5) {
+        if (lm2d.visibility > 0.3) {
             const lm3d = imagePoseData.landmarks3D[index];
             visibleLandmarks.push({
                 index: index,
@@ -3029,7 +3019,7 @@ function exportImageAsCsv() {
             return;
         }
         // Only export landmarks that are visible
-        if (lm2d.visibility > 0.5) {
+        if (lm2d.visibility > 0.3) {
             const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
 
             // Negate Y to make positive direction upward (conventional)
@@ -3055,7 +3045,7 @@ function exportImageAsCsv() {
             return;
         }
         // Only export landmarks that are visible
-        if (lm2d.visibility > 0.5) {
+        if (lm2d.visibility > 0.3) {
             const displayCoord = displayCoords[index];
 
             let row = `${index},${LANDMARK_NAMES[index]}`;

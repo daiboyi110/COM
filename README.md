@@ -68,7 +68,9 @@ The application extends these 20 displayed base landmarks by calculating:
 The application uses different segment mass percentages and center of mass locations for males and females based on biomechanical research by de Leva (1996)[^1]:
 
 ### Male Model
-- Head+Neck: 8.26% of total body mass
+
+**Segment Mass Percentages:**
+- Head+Neck: 6.94% of total body mass
 - Trunk: 43.46%
 - Upper Arm: 2.71% (each)
 - Forearm: 1.62% (each)
@@ -77,8 +79,20 @@ The application uses different segment mass percentages and center of mass locat
 - Shank: 4.33% (each)
 - Foot: 1.37% (each)
 
+**Segment COM Locations** (percentage from proximal to distal joint):
+- Head+Neck: 50.00% from left ear to right ear
+- Trunk: 43.10% from mid-shoulder to mid-hip
+- Upper Arm: 57.72% from shoulder to elbow
+- Forearm: 45.74% from elbow to wrist
+- Hand: 79.00% from wrist to knuckle
+- Thigh: 40.95% from hip to knee
+- Shank: 44.59% from knee to ankle
+- Foot: 44.15% from heel to toe
+
 ### Female Model
-- Head+Neck: 8.20% of total body mass
+
+**Segment Mass Percentages:**
+- Head+Neck: 6.68% of total body mass
 - Trunk: 42.57%
 - Upper Arm: 2.55% (each)
 - Forearm: 1.38% (each)
@@ -86,6 +100,16 @@ The application uses different segment mass percentages and center of mass locat
 - Thigh: 14.78% (each)
 - Shank: 4.81% (each)
 - Foot: 1.29% (each)
+
+**Segment COM Locations** (percentage from proximal to distal joint):
+- Head+Neck: 50.00% from left ear to right ear
+- Trunk: 37.82% from mid-shoulder to mid-hip
+- Upper Arm: 57.54% from shoulder to elbow
+- Forearm: 45.59% from elbow to wrist
+- Hand: 74.74% from wrist to knuckle
+- Thigh: 36.12% from hip to knee
+- Shank: 44.16% from knee to ankle
+- Foot: 40.14% from heel to toe
 
 **Total Body COM**: Calculated as weighted average of all 12 segment COMs based on their mass percentages.
 
@@ -97,6 +121,8 @@ Open `index.html` in a modern web browser (Chrome, Firefox, Edge, or Safari reco
 ### 2. Upload Media
 - Click **"📹 Upload Video"** to select a video file (MP4, WebM, etc.)
 - Click **"🖼️ Upload Image"** to select an image file (JPG, PNG, etc.)
+
+**Tip**: For optimal performance when loading multiple videos or images sequentially, press **Ctrl+F5** (Windows/Linux) or **Cmd+Shift+R** (Mac) to hard refresh the page before uploading a new file. This clears the MediaPipe cache and ensures better pose detection accuracy.
 
 ### 3. Configure Analysis Settings
 
@@ -145,14 +171,14 @@ If pose estimation is inaccurate, you can manually adjust landmarks:
 4. COM calculations will update automatically based on new positions
 5. Uncheck "Edit Joint Positions" when done
 
-**Note**: Only joints with visibility > 0.5 can be edited. Edited positions persist until you reload the media.
+**Note**: Only joints with visibility > 0.3 can be edited. Edited positions persist until you reload the media.
 
 ### 7. Video Playback Controls
 
 - **▶ Play / ⏸ Pause**: Start/stop video playback
 - **⏮ Previous Frame / ⏭ Next Frame**: Step through video frame-by-frame
 - **Video Progress Bar**: Click or drag to jump to specific time
-- **Processing FPS**: Shows actual pose processing framerate (runs at maximum speed)
+- **Processing FPS**: Shows the detected video framerate (automatically detected from video file)
 
 ### 8. Export Data
 
