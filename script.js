@@ -1574,66 +1574,49 @@ function drawPose(landmarks, landmarks3D) {
 
         let textY = y - 10;
 
-        // Draw joint name
+        // Draw joint name with coordinates (if enabled)
         if (showJointNumbers) {
+            let jointName = getDisplayName(LANDMARK_NAMES[index]);
+
+            // Append coordinates to name if showCoordinates is enabled
+            if (showCoordinates) {
+                let coordText = '';
+
+                if (analysisModeVideo === '3D' && extendedLandmarks3D && extendedLandmarks3D[index]) {
+                    // 3D world coordinates (meters)
+                    const lm3d = extendedLandmarks3D[index];
+                    // Negate Y to make positive direction upward (conventional)
+                    coordText = `(${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
+                } else if (analysisModeVideo === '2D') {
+                    // 2D coordinates in pixels, divided by calibration distance
+                    const pixelX = landmark.x * width;
+                    const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
+
+                    // Calculate calibration distance in pixels
+                    const p1x = calibrationPoint1Video.x * width;
+                    const p1y = calibrationPoint1Video.y * height;
+                    const p2x = calibrationPoint2Video.x * width;
+                    const p2y = calibrationPoint2Video.y * height;
+                    const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
+
+                    // Normalize by calibration distance
+                    const normalizedX = pixelX / calibDistance;
+                    const normalizedY = pixelY / calibDistance;
+
+                    coordText = `(${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
+                }
+
+                if (coordText) {
+                    jointName += ` ${coordText}`;
+                }
+            }
+
             ctx.fillStyle = '#FFFFFF';
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 3;
             ctx.font = `bold ${displayFontSize}px Arial`;
-            const jointName = getDisplayName(LANDMARK_NAMES[index]);
             ctx.strokeText(jointName, x + 10, textY);
             ctx.fillText(jointName, x + 10, textY);
-            textY -= (displayFontSize + 8);
-        }
-
-        // Draw coordinates
-        if (showCoordinates) {
-            let coordText;
-
-            if (analysisModeVideo === '3D' && extendedLandmarks3D && extendedLandmarks3D[index]) {
-                // 3D world coordinates (meters)
-                const lm3d = extendedLandmarks3D[index];
-                // Negate Y to make positive direction upward (conventional)
-                coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
-            } else if (analysisModeVideo === '2D') {
-                // 2D coordinates in pixels, divided by calibration distance
-                const pixelX = landmark.x * width;
-                const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
-
-                // Calculate calibration distance in pixels
-                const p1x = calibrationPoint1Video.x * width;
-                const p1y = calibrationPoint1Video.y * height;
-                const p2x = calibrationPoint2Video.x * width;
-                const p2y = calibrationPoint2Video.y * height;
-                const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
-
-                // Normalize by calibration distance
-                const normalizedX = pixelX / calibDistance;
-                const normalizedY = pixelY / calibDistance;
-
-                coordText = `2D: (${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
-            }
-
-            if (coordText) {
-                // Determine coordinate color based on landmark type
-                let coordColor;
-                if (index === 49) {
-                    coordColor = '#FF0000'; // Red for Total Body COM
-                } else if (index >= 35 && index <= 48) {
-                    coordColor = '#FFD700'; // Gold for Segment COMs
-                } else if (index === 33 || index === 34) {
-                    coordColor = '#0000FF'; // Blue for Mid-Shoulder and Mid-Hip
-                } else {
-                    coordColor = '#00FF00'; // Green for regular joints
-                }
-
-                ctx.fillStyle = coordColor;
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 3;
-                ctx.font = `bold ${displayFontSize}px Arial`;
-                ctx.strokeText(coordText, x + 10, textY);
-                ctx.fillText(coordText, x + 10, textY);
-            }
         }
     });
 
@@ -2821,66 +2804,49 @@ function drawImagePose(landmarks, landmarks3D) {
 
         let textY = y - 10;
 
-        // Draw joint name
+        // Draw joint name with coordinates (if enabled)
         if (showJointNumbersImage) {
+            let jointName = getDisplayName(LANDMARK_NAMES[index]);
+
+            // Append coordinates to name if showCoordinatesImage is enabled
+            if (showCoordinatesImage) {
+                let coordText = '';
+
+                if (analysisModeImage === '3D' && extendedLandmarks3D && extendedLandmarks3D[index]) {
+                    // 3D world coordinates (meters)
+                    const lm3d = extendedLandmarks3D[index];
+                    // Negate Y to make positive direction upward (conventional)
+                    coordText = `(${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
+                } else if (analysisModeImage === '2D') {
+                    // 2D coordinates in pixels, divided by calibration distance
+                    const pixelX = landmark.x * width;
+                    const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
+
+                    // Calculate calibration distance in pixels
+                    const p1x = calibrationPoint1Image.x * width;
+                    const p1y = calibrationPoint1Image.y * height;
+                    const p2x = calibrationPoint2Image.x * width;
+                    const p2y = calibrationPoint2Image.y * height;
+                    const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
+
+                    // Normalize by calibration distance
+                    const normalizedX = pixelX / calibDistance;
+                    const normalizedY = pixelY / calibDistance;
+
+                    coordText = `(${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
+                }
+
+                if (coordText) {
+                    jointName += ` ${coordText}`;
+                }
+            }
+
             imageCtx.fillStyle = '#FFFFFF';
             imageCtx.strokeStyle = '#000000';
             imageCtx.lineWidth = 3;
             imageCtx.font = `bold ${displayFontSize}px Arial`;
-            const jointName = getDisplayName(LANDMARK_NAMES[index]);
             imageCtx.strokeText(jointName, x + 10, textY);
             imageCtx.fillText(jointName, x + 10, textY);
-            textY -= (displayFontSize + 8);
-        }
-
-        // Draw coordinates
-        if (showCoordinatesImage) {
-            let coordText;
-
-            if (analysisModeImage === '3D' && extendedLandmarks3D && extendedLandmarks3D[index]) {
-                // 3D world coordinates (meters)
-                const lm3d = extendedLandmarks3D[index];
-                // Negate Y to make positive direction upward (conventional)
-                coordText = `3D: (${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
-            } else if (analysisModeImage === '2D') {
-                // 2D coordinates in pixels, divided by calibration distance
-                const pixelX = landmark.x * width;
-                const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
-
-                // Calculate calibration distance in pixels
-                const p1x = calibrationPoint1Image.x * width;
-                const p1y = calibrationPoint1Image.y * height;
-                const p2x = calibrationPoint2Image.x * width;
-                const p2y = calibrationPoint2Image.y * height;
-                const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
-
-                // Normalize by calibration distance
-                const normalizedX = pixelX / calibDistance;
-                const normalizedY = pixelY / calibDistance;
-
-                coordText = `2D: (${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
-            }
-
-            if (coordText) {
-                // Determine coordinate color based on landmark type
-                let coordColor;
-                if (index === 49) {
-                    coordColor = '#FF0000'; // Red for Total Body COM
-                } else if (index >= 35 && index <= 48) {
-                    coordColor = '#FFD700'; // Gold for Segment COMs
-                } else if (index === 33 || index === 34) {
-                    coordColor = '#0000FF'; // Blue for Mid-Shoulder and Mid-Hip
-                } else {
-                    coordColor = '#00FF00'; // Green for regular joints
-                }
-
-                imageCtx.fillStyle = coordColor;
-                imageCtx.strokeStyle = '#000000';
-                imageCtx.lineWidth = 3;
-                imageCtx.font = `bold ${displayFontSize}px Arial`;
-                imageCtx.strokeText(coordText, x + 10, textY);
-                imageCtx.fillText(coordText, x + 10, textY);
-            }
         }
     });
 
