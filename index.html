@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Center of Mass Visualization</title>
+    <title>Center of Mass (COM) Visualization</title>
     <link rel="stylesheet" href="styles.css">
     <!-- MediaPipe Pose Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -15,7 +15,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Center of Mass Visualization</h1>
+        <h1>Center of Mass (COM) Visualization</h1>
 
         <div class="upload-section">
             <label class="upload-btn">
@@ -98,6 +98,13 @@
             <div class="compact-controls">
                 <button id="exportImageExcel" class="btn-export">📗 Export Excel</button>
                 <button id="exportImageScreenshot" class="btn-export">📷 Export Image with Overlay</button>
+            </div>
+
+            <div class="legend">
+                <strong>Legend:</strong>
+                <span class="legend-item"><span class="legend-circle green"></span> Joints</span>
+                <span class="legend-item"><span class="legend-circle yellow"></span> Segment COM</span>
+                <span class="legend-item"><span class="legend-circle red"></span> Total-body COM</span>
             </div>
         </div>
 
@@ -188,6 +195,13 @@
                 <button id="exportVideoExcel" class="btn-export">📗 Export Excel</button>
                 <button id="exportFrameScreenshot" class="btn-export">📷 Export Frame with Overlay</button>
                 <button id="clearDataBtn" class="btn-clear">🗑️ Clear Data</button>
+            </div>
+
+            <div class="legend">
+                <strong>Legend:</strong>
+                <span class="legend-item"><span class="legend-circle green"></span> Joints</span>
+                <span class="legend-item"><span class="legend-circle yellow"></span> Segment COM</span>
+                <span class="legend-item"><span class="legend-circle red"></span> Total-body COM</span>
             </div>
         </div>
     </div>

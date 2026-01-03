@@ -1212,7 +1212,9 @@ function onPoseResults(results) {
         document.getElementById('jointCount').textContent = '0';
         // Still draw calibration points in 2D mode even without pose
         if (analysisModeVideo === '2D') {
-            drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo);
+            const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
+            const effectiveFontSize = fullSizeVideoCheckbox && fullSizeVideoCheckbox.checked ? displayFontSize * 2 : displayFontSize;
+            drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo, effectiveFontSize);
         }
         return;
     }
@@ -1431,6 +1433,10 @@ function drawPose(landmarks, landmarks3D) {
     const width = canvas.width;
     const height = canvas.height;
 
+    // Calculate effective font size (double if Full Size is checked)
+    const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
+    const effectiveFontSize = fullSizeVideoCheckbox && fullSizeVideoCheckbox.checked ? displayFontSize * 2 : displayFontSize;
+
     // Fill missing landmarks with mirrored versions from opposite side
     const { filled2D, filled3D } = fillMissingLandmarksWithMirrors(landmarks, landmarks3D);
 
@@ -1614,7 +1620,7 @@ function drawPose(landmarks, landmarks3D) {
             ctx.fillStyle = '#FFFFFF';
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 3;
-            ctx.font = `bold ${displayFontSize}px Arial`;
+            ctx.font = `bold ${effectiveFontSize}px Arial`;
             ctx.strokeText(jointName, x + 10, textY);
             ctx.fillText(jointName, x + 10, textY);
         }
@@ -1622,7 +1628,7 @@ function drawPose(landmarks, landmarks3D) {
 
     // Draw calibration points in 2D mode
     if (analysisModeVideo === '2D') {
-        drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo);
+        drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo, effectiveFontSize);
     }
 
     // Draw coordinate system if enabled
@@ -1634,7 +1640,7 @@ function drawPose(landmarks, landmarks3D) {
 }
 
 // Draw calibration points for 2D analysis
-function drawCalibrationPoints(context, width, height, point1, point2, scaleLength) {
+function drawCalibrationPoints(context, width, height, point1, point2, scaleLength, fontSize = displayFontSize) {
     const x1 = point1.x * width;
     const y1 = point1.y * height;
     const x2 = point2.x * width;
@@ -1660,6 +1666,14 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.lineWidth = 2;
     context.stroke();
 
+    // Draw label for Point 1
+    context.fillStyle = '#FFFFFF';
+    context.strokeStyle = '#000000';
+    context.lineWidth = 3;
+    context.font = `bold ${fontSize}px Arial`;
+    context.strokeText('Calibration 1', x1 + 10, y1 - 10);
+    context.fillText('Calibration 1', x1 + 10, y1 - 10);
+
     // Draw Point 2
     const isDraggingPoint2 = draggedCalibrationPoint === 'point2';
     context.fillStyle = isDraggingPoint2 ? '#FFFF00' : '#00FFFF'; // Yellow if dragging, cyan otherwise
@@ -1670,6 +1684,14 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.lineWidth = 2;
     context.stroke();
 
+    // Draw label for Point 2
+    context.fillStyle = '#FFFFFF';
+    context.strokeStyle = '#000000';
+    context.lineWidth = 3;
+    context.font = `bold ${fontSize}px Arial`;
+    context.strokeText('Calibration 2', x2 + 10, y2 - 10);
+    context.fillText('Calibration 2', x2 + 10, y2 - 10);
+
     // Display scale length at midpoint (without pixel information)
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
@@ -1678,7 +1700,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.fillStyle = '#FFFFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
-    context.font = `bold ${displayFontSize}px Arial`;
+    context.font = `bold ${fontSize}px Arial`;
     context.strokeText(scaleText, midX, midY - 20);
     context.fillText(scaleText, midX, midY - 20);
 }
@@ -2645,7 +2667,9 @@ function redrawImagePose() {
 
     // Draw calibration points in 2D mode (always visible)
     if (analysisModeImage === '2D') {
-        drawCalibrationPoints(imageCtx, imageCanvas.width, imageCanvas.height, calibrationPoint1Image, calibrationPoint2Image, calibrationScaleImage);
+        const fullSizeImageCheckbox = document.getElementById('fullSizeImage');
+        const effectiveFontSize = fullSizeImageCheckbox && fullSizeImageCheckbox.checked ? displayFontSize * 2 : displayFontSize;
+        drawCalibrationPoints(imageCtx, imageCanvas.width, imageCanvas.height, calibrationPoint1Image, calibrationPoint2Image, calibrationScaleImage, effectiveFontSize);
     }
 
     // Draw pose if available and enabled
@@ -2660,6 +2684,10 @@ function redrawImagePose() {
 function drawImagePose(landmarks, landmarks3D) {
     const width = imageCanvas.width;
     const height = imageCanvas.height;
+
+    // Calculate effective font size (double if Full Size is checked)
+    const fullSizeImageCheckbox = document.getElementById('fullSizeImage');
+    const effectiveFontSize = fullSizeImageCheckbox && fullSizeImageCheckbox.checked ? displayFontSize * 2 : displayFontSize;
 
     // Fill missing landmarks with mirrored versions from opposite side
     const { filled2D, filled3D } = fillMissingLandmarksWithMirrors(landmarks, landmarks3D);
@@ -2844,7 +2872,7 @@ function drawImagePose(landmarks, landmarks3D) {
             imageCtx.fillStyle = '#FFFFFF';
             imageCtx.strokeStyle = '#000000';
             imageCtx.lineWidth = 3;
-            imageCtx.font = `bold ${displayFontSize}px Arial`;
+            imageCtx.font = `bold ${effectiveFontSize}px Arial`;
             imageCtx.strokeText(jointName, x + 10, textY);
             imageCtx.fillText(jointName, x + 10, textY);
         }
@@ -2852,7 +2880,7 @@ function drawImagePose(landmarks, landmarks3D) {
 
     // Draw calibration points in 2D mode
     if (analysisModeImage === '2D') {
-        drawCalibrationPoints(imageCtx, imageCanvas.width, imageCanvas.height, calibrationPoint1Image, calibrationPoint2Image, calibrationScaleImage);
+        drawCalibrationPoints(imageCtx, imageCanvas.width, imageCanvas.height, calibrationPoint1Image, calibrationPoint2Image, calibrationScaleImage, effectiveFontSize);
     }
 
     // Draw coordinate system if enabled

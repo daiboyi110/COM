@@ -427,3 +427,50 @@ h1 {
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.1);
 }
+
+.legend {
+    text-align: center;
+    margin: 15px 0;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.legend strong {
+    color: #000;
+    font-size: 16px;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: #333;
+    font-weight: 600;
+}
+
+.legend-circle {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #000;
+}
+
+.legend-circle.green {
+    background-color: #00FF00;
+}
+
+.legend-circle.yellow {
+    background-color: #FFD700;
+}
+
+.legend-circle.red {
+    background-color: #FF0000;
+}
