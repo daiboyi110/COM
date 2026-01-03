@@ -827,15 +827,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('exportVideoExcel').addEventListener('click', exportAsExcel);
     document.getElementById('exportVideoJson').addEventListener('click', exportAsJson);
     document.getElementById('exportVideoCsv').addEventListener('click', exportAsCsv);
+    document.getElementById('exportFrameScreenshot').addEventListener('click', exportFrameScreenshot);
+    document.getElementById('exportFrameOriginal').addEventListener('click', exportFrameOriginal);
     document.getElementById('clearDataBtn').addEventListener('click', clearPoseData);
 
     // Image export button handlers
     document.getElementById('exportImageExcel').addEventListener('click', exportImageAsExcel);
     document.getElementById('exportImageJson').addEventListener('click', exportImageAsJson);
     document.getElementById('exportImageCsv').addEventListener('click', exportImageAsCsv);
+    document.getElementById('exportImageScreenshot').addEventListener('click', exportImageScreenshot);
+    document.getElementById('exportImageOriginal').addEventListener('click', exportImageOriginal);
 
     // Analysis mode radio buttons - Video
     const calibrationScaleLabelVideo = document.getElementById('calibrationScaleLabelVideo');
+    const editCalibrationVideoLabel = document.getElementById('editCalibrationVideoLabel');
     document.querySelectorAll('input[name="analysisModeVideo"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             analysisModeVideo = e.target.value;
@@ -871,6 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Analysis mode radio buttons - Image
     const calibrationScaleLabelImage = document.getElementById('calibrationScaleLabelImage');
+    const editCalibrationImageLabel = document.getElementById('editCalibrationImageLabel');
     document.querySelectorAll('input[name="analysisModeImage"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             analysisModeImage = e.target.value;
@@ -3153,5 +3159,155 @@ function exportImageAsExcel() {
     } catch (error) {
         console.error('Error exporting image to Excel:', error);
         alert(`Error creating Excel file: ${error.message}\n\nPlease try exporting as CSV instead.`);
+    }
+}
+
+// Export current video frame as screenshot with overlay
+function exportFrameScreenshot() {
+    if (!video || !video.videoWidth) {
+        alert('No video frame available to export');
+        return;
+    }
+
+    try {
+        // Create a temporary canvas to combine video and overlay
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = video.videoWidth;
+        tempCanvas.height = video.videoHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // Draw the current video frame
+        tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+
+        // Draw the pose overlay on top
+        tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+        // Convert to blob and download
+        tempCanvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `frame_with_overlay_${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+
+        console.log('Frame with overlay exported successfully');
+    } catch (error) {
+        console.error('Error exporting frame screenshot:', error);
+        alert(`Error exporting frame: ${error.message}`);
+    }
+}
+
+// Export current video frame as original without overlay
+function exportFrameOriginal() {
+    if (!video || !video.videoWidth) {
+        alert('No video frame available to export');
+        return;
+    }
+
+    try {
+        // Create a temporary canvas
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = video.videoWidth;
+        tempCanvas.height = video.videoHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // Draw only the video frame without overlay
+        tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+
+        // Convert to blob and download
+        tempCanvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `frame_original_${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+
+        console.log('Original frame exported successfully');
+    } catch (error) {
+        console.error('Error exporting original frame:', error);
+        alert(`Error exporting frame: ${error.message}`);
+    }
+}
+
+// Export image as screenshot with overlay
+function exportImageScreenshot() {
+    if (!imageDisplay || !imageDisplay.src) {
+        alert('No image available to export');
+        return;
+    }
+
+    try {
+        // Create a temporary canvas to combine image and overlay
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = imageDisplay.naturalWidth;
+        tempCanvas.height = imageDisplay.naturalHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // Draw the image
+        tempCtx.drawImage(imageDisplay, 0, 0, tempCanvas.width, tempCanvas.height);
+
+        // Draw the pose overlay on top
+        tempCtx.drawImage(imageCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+        // Convert to blob and download
+        tempCanvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `image_with_overlay_${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+
+        console.log('Image with overlay exported successfully');
+    } catch (error) {
+        console.error('Error exporting image screenshot:', error);
+        alert(`Error exporting image: ${error.message}`);
+    }
+}
+
+// Export original image without overlay
+function exportImageOriginal() {
+    if (!imageDisplay || !imageDisplay.src) {
+        alert('No image available to export');
+        return;
+    }
+
+    try {
+        // Create a temporary canvas
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = imageDisplay.naturalWidth;
+        tempCanvas.height = imageDisplay.naturalHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // Draw only the image without overlay
+        tempCtx.drawImage(imageDisplay, 0, 0, tempCanvas.width, tempCanvas.height);
+
+        // Convert to blob and download
+        tempCanvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `image_original_${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+
+        console.log('Original image exported successfully');
+    } catch (error) {
+        console.error('Error exporting original image:', error);
+        alert(`Error exporting image: ${error.message}`);
     }
 }

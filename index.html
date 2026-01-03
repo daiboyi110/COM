@@ -81,12 +81,9 @@
                 <label>
                     <input type="checkbox" id="editModeImage"> Edit Joint Positions
                 </label>
-                <label>
+                <label id="editCalibrationImageLabel">
                     <input type="checkbox" id="editModeCalibrationImage"> Edit Calibration Points
                 </label>
-            </div>
-
-            <div class="compact-controls">
                 <label id="calibrationScaleLabelImage">
                     Calibration Scale (m):
                     <input type="number" id="calibrationScaleImage" value="1.0" step="0.01" min="0.01" style="width: 80px;">
@@ -102,6 +99,8 @@
                 <button id="exportImageExcel" class="btn-export">📗 Export Excel</button>
                 <button id="exportImageJson" class="btn-export">📄 Export JSON</button>
                 <button id="exportImageCsv" class="btn-export">📊 Export CSV</button>
+                <button id="exportImageScreenshot" class="btn-export">📷 Export Image with Overlay</button>
+                <button id="exportImageOriginal" class="btn-export">🖼️ Export Original Image</button>
             </div>
         </div>
 
@@ -181,12 +180,9 @@
                 <label>
                     <input type="checkbox" id="editModeVideo"> Edit Joint Positions
                 </label>
-                <label>
+                <label id="editCalibrationVideoLabel">
                     <input type="checkbox" id="editModeCalibrationVideo"> Edit Calibration Points
                 </label>
-            </div>
-
-            <div class="compact-controls">
                 <label id="calibrationScaleLabelVideo">
                     Calibration Scale (m):
                     <input type="number" id="calibrationScaleVideo" value="1.0" step="0.01" min="0.01" style="width: 80px;">
@@ -206,6 +202,8 @@
                 <button id="exportVideoExcel" class="btn-export">📗 Export Excel</button>
                 <button id="exportVideoJson" class="btn-export">📄 Export JSON</button>
                 <button id="exportVideoCsv" class="btn-export">📊 Export CSV</button>
+                <button id="exportFrameScreenshot" class="btn-export">📷 Export Frame with Overlay</button>
+                <button id="exportFrameOriginal" class="btn-export">🖼️ Export Original Frame</button>
                 <button id="clearDataBtn" class="btn-clear">🗑️ Clear Data</button>
             </div>
         </div>
