@@ -44,17 +44,6 @@ let draggedJointFrame = null; // For video: which frame is being edited
 let isEditMode = false; // Toggle edit mode on/off
 let isEditModeCalibration = false; // Toggle calibration point edit mode on/off
 
-// Line measurement tool variables
-let isLineMeasureMode = false;
-let lineMeasurePoints = []; // Array of {x, y, landmarkIndex} for line measurement
-let customLines = []; // Array of {start: {x, y}, end: {x, y}, distance, id}
-
-// Angle measurement tool variables
-let isAngleMeasureMode = false;
-let angleMeasureLines = []; // Array of selected line pairs for angle measurement
-let selectedLines = []; // Currently selected lines for angle measurement
-let customAngles = []; // Array of {line1, line2, angle, id}
-
 // Store filled landmarks (with mirroring) for edit mode click detection
 let lastFilledLandmarks2DVideo = null;
 let lastFilledLandmarks2DImage = null;
@@ -769,15 +758,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.checked) {
                 // Uncheck other modes
                 if (editModeImageCheckbox) editModeImageCheckbox.checked = false;
-                const lineMeasureCheckbox = document.getElementById('lineMeasureModeImage');
-                const angleMeasureCheckbox = document.getElementById('angleMeasureModeImage');
-                if (lineMeasureCheckbox) lineMeasureCheckbox.checked = false;
-                if (angleMeasureCheckbox) angleMeasureCheckbox.checked = false;
 
                 isEditMode = false;
                 isEditModeCalibration = true;
-                isLineMeasureMode = false;
-                isAngleMeasureMode = false;
                 imageCanvas.classList.add('editable');
                 console.log('Calibration edit mode enabled for image');
             } else {
@@ -786,112 +769,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 isDragging = false;
                 draggedCalibrationPoint = null;
                 console.log('Calibration edit mode disabled for image');
-            }
-        });
-    }
-
-    // Line measurement mode - Image
-    const lineMeasureModeImageCheckbox = document.getElementById('lineMeasureModeImage');
-    if (lineMeasureModeImageCheckbox) {
-        lineMeasureModeImageCheckbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                // Uncheck other modes
-                if (editModeImageCheckbox) editModeImageCheckbox.checked = false;
-                if (editModeCalibrationImageCheckbox) editModeCalibrationImageCheckbox.checked = false;
-                const angleMeasureCheckbox = document.getElementById('angleMeasureModeImage');
-                if (angleMeasureCheckbox) angleMeasureCheckbox.checked = false;
-
-                isEditMode = false;
-                isEditModeCalibration = false;
-                isLineMeasureMode = true;
-                isAngleMeasureMode = false;
-                lineMeasurePoints = [];
-                imageCanvas.classList.add('editable');
-                console.log('Line measure mode enabled for image');
-            } else {
-                isLineMeasureMode = false;
-                lineMeasurePoints = [];
-                imageCanvas.classList.remove('editable');
-                console.log('Line measure mode disabled for image');
-            }
-        });
-    }
-
-    // Line measurement mode - Video
-    const lineMeasureModeVideoCheckbox = document.getElementById('lineMeasureModeVideo');
-    if (lineMeasureModeVideoCheckbox) {
-        lineMeasureModeVideoCheckbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                // Uncheck other modes
-                if (editModeVideoCheckbox) editModeVideoCheckbox.checked = false;
-                if (editModeCalibrationVideoCheckbox) editModeCalibrationVideoCheckbox.checked = false;
-                const angleMeasureCheckbox = document.getElementById('angleMeasureModeVideo');
-                if (angleMeasureCheckbox) angleMeasureCheckbox.checked = false;
-
-                isEditMode = false;
-                isEditModeCalibration = false;
-                isLineMeasureMode = true;
-                isAngleMeasureMode = false;
-                lineMeasurePoints = [];
-                canvas.classList.add('editable');
-                console.log('Line measure mode enabled for video');
-            } else {
-                isLineMeasureMode = false;
-                lineMeasurePoints = [];
-                canvas.classList.remove('editable');
-                console.log('Line measure mode disabled for video');
-            }
-        });
-    }
-
-    // Angle measurement mode - Image
-    const angleMeasureModeImageCheckbox = document.getElementById('angleMeasureModeImage');
-    if (angleMeasureModeImageCheckbox) {
-        angleMeasureModeImageCheckbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                // Uncheck other modes
-                if (editModeImageCheckbox) editModeImageCheckbox.checked = false;
-                if (editModeCalibrationImageCheckbox) editModeCalibrationImageCheckbox.checked = false;
-                if (lineMeasureModeImageCheckbox) lineMeasureModeImageCheckbox.checked = false;
-
-                isEditMode = false;
-                isEditModeCalibration = false;
-                isLineMeasureMode = false;
-                isAngleMeasureMode = true;
-                selectedLines = [];
-                imageCanvas.classList.add('editable');
-                console.log('Angle measure mode enabled for image');
-            } else {
-                isAngleMeasureMode = false;
-                selectedLines = [];
-                imageCanvas.classList.remove('editable');
-                console.log('Angle measure mode disabled for image');
-            }
-        });
-    }
-
-    // Angle measurement mode - Video
-    const angleMeasureModeVideoCheckbox = document.getElementById('angleMeasureModeVideo');
-    if (angleMeasureModeVideoCheckbox) {
-        angleMeasureModeVideoCheckbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                // Uncheck other modes
-                if (editModeVideoCheckbox) editModeVideoCheckbox.checked = false;
-                if (editModeCalibrationVideoCheckbox) editModeCalibrationVideoCheckbox.checked = false;
-                if (lineMeasureModeVideoCheckbox) lineMeasureModeVideoCheckbox.checked = false;
-
-                isEditMode = false;
-                isEditModeCalibration = false;
-                isLineMeasureMode = false;
-                isAngleMeasureMode = true;
-                selectedLines = [];
-                canvas.classList.add('editable');
-                console.log('Angle measure mode enabled for video');
-            } else {
-                isAngleMeasureMode = false;
-                selectedLines = [];
-                canvas.classList.remove('editable');
-                console.log('Angle measure mode disabled for video');
             }
         });
     }
@@ -1771,58 +1648,6 @@ function drawPose(landmarks, landmarks3D) {
         const midHip = extendedLandmarks2D[34];
         drawCoordinateSystem(ctx, canvas.width, canvas.height, analysisModeVideo, calibrationPoint1Video, calibrationPoint2Video, midHip);
     }
-
-    // Draw custom measurement lines
-    customLines.forEach((line, index) => {
-        ctx.beginPath();
-        ctx.strokeStyle = selectedLines.includes(line) ? '#FFFF00' : '#00FF00'; // Yellow if selected, green otherwise
-        ctx.lineWidth = 3;
-        ctx.moveTo(line.start.x, line.start.y);
-        ctx.lineTo(line.end.x, line.end.y);
-        ctx.stroke();
-
-        // Draw distance label at midpoint
-        const midX = (line.start.x + line.end.x) / 2;
-        const midY = (line.start.y + line.end.y) / 2;
-        ctx.fillStyle = '#FFFFFF';
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 3;
-        ctx.font = `bold ${displayFontSize}px Arial`;
-        const distText = `${line.distance.toFixed(3)} ${line.unit}`;
-        ctx.strokeText(distText, midX + 10, midY - 10);
-        ctx.fillText(distText, midX + 10, midY - 10);
-    });
-
-    // Draw current line being measured
-    if (isLineMeasureMode && lineMeasurePoints.length === 1) {
-        ctx.beginPath();
-        ctx.strokeStyle = '#FF00FF'; // Magenta for in-progress line
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
-        ctx.arc(lineMeasurePoints[0].x, lineMeasurePoints[0].y, 5, 0, 2 * Math.PI);
-        ctx.stroke();
-        ctx.setLineDash([]);
-    }
-
-    // Draw custom angle measurements
-    customAngles.forEach((angleData, index) => {
-        // Find intersection or midpoint between the two lines
-        const midX1 = (angleData.line1.start.x + angleData.line1.end.x) / 2;
-        const midY1 = (angleData.line1.start.y + angleData.line1.end.y) / 2;
-        const midX2 = (angleData.line2.start.x + angleData.line2.end.x) / 2;
-        const midY2 = (angleData.line2.start.y + angleData.line2.end.y) / 2;
-        const labelX = (midX1 + midX2) / 2;
-        const labelY = (midY1 + midY2) / 2;
-
-        // Draw angle label
-        ctx.fillStyle = '#FFFF00';
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 3;
-        ctx.font = `bold ${displayFontSize}px Arial`;
-        const angleText = `${angleData.angle.toFixed(1)}°`;
-        ctx.strokeText(angleText, labelX + 10, labelY + 10);
-        ctx.fillText(angleText, labelX + 10, labelY + 10);
-    });
 }
 
 // Draw calibration points for 2D analysis
@@ -2522,57 +2347,6 @@ function downloadFile(content, filename, contentType) {
 
 // ===== JOINT EDITING FUNCTIONS =====
 
-// Helper function to calculate distance from a point to a line segment
-function pointToLineDistance(px, py, x1, y1, x2, y2) {
-    const A = px - x1;
-    const B = py - y1;
-    const C = x2 - x1;
-    const D = y2 - y1;
-
-    const dot = A * C + B * D;
-    const lenSq = C * C + D * D;
-    let param = -1;
-    if (lenSq !== 0) param = dot / lenSq;
-
-    let xx, yy;
-
-    if (param < 0) {
-        xx = x1;
-        yy = y1;
-    } else if (param > 1) {
-        xx = x2;
-        yy = y2;
-    } else {
-        xx = x1 + param * C;
-        yy = y1 + param * D;
-    }
-
-    const dx = px - xx;
-    const dy = py - yy;
-    return Math.sqrt(dx * dx + dy * dy);
-}
-
-// Helper function to calculate angle between two lines
-function calculateAngleBetweenLines(line1, line2) {
-    // Calculate direction vectors
-    const dx1 = line1.end.x - line1.start.x;
-    const dy1 = line1.end.y - line1.start.y;
-    const dx2 = line2.end.x - line2.start.x;
-    const dy2 = line2.end.y - line2.start.y;
-
-    // Calculate dot product and magnitudes
-    const dot = dx1 * dx2 + dy1 * dy2;
-    const mag1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
-    const mag2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-
-    // Calculate angle in degrees
-    const cosAngle = dot / (mag1 * mag2);
-    const angleRad = Math.acos(Math.max(-1, Math.min(1, cosAngle)));
-    const angleDeg = angleRad * (180 / Math.PI);
-
-    return angleDeg;
-}
-
 function handleMouseDown(e) {
     const targetCanvas = e.target;
     const rect = targetCanvas.getBoundingClientRect();
@@ -2614,103 +2388,6 @@ function handleMouseDown(e) {
             console.log('Started dragging calibration point 2');
             return;
         }
-    }
-
-    // Handle line measurement mode
-    if (isLineMeasureMode) {
-        console.log('Line measure mode - adding point at', mouseX, mouseY);
-        lineMeasurePoints.push({ x: mouseX, y: mouseY });
-
-        // If we have 2 points, create a line
-        if (lineMeasurePoints.length === 2) {
-            const start = lineMeasurePoints[0];
-            const end = lineMeasurePoints[1];
-
-            // Calculate distance in pixels
-            const pixelDistance = Math.sqrt(
-                Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
-            );
-
-            // Convert to meters using calibration scale (only in 2D mode)
-            let realDistance = pixelDistance;
-            if (analysisMode === '2D') {
-                const point1 = isImageMode ? calibrationPoint1Image : calibrationPoint1Video;
-                const point2 = isImageMode ? calibrationPoint2Image : calibrationPoint2Video;
-                const calibrationScale = isImageMode ? calibrationScaleImage : calibrationScaleVideo;
-
-                const p1x = point1.x * targetCanvas.width;
-                const p1y = point1.y * targetCanvas.height;
-                const p2x = point2.x * targetCanvas.width;
-                const p2y = point2.y * targetCanvas.height;
-
-                const calibrationPixelLength = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
-                const pixelsPerMeter = calibrationPixelLength / calibrationScale;
-                realDistance = pixelDistance / pixelsPerMeter;
-            }
-
-            // Store the line
-            const lineId = Date.now();
-            customLines.push({
-                id: lineId,
-                start: { x: start.x, y: start.y },
-                end: { x: end.x, y: end.y },
-                distance: realDistance,
-                unit: analysisMode === '2D' ? 'm' : 'px'
-            });
-
-            // Reset points for next measurement
-            lineMeasurePoints = [];
-
-            // Redraw
-            if (isImageMode) {
-                redrawImagePose();
-            } else {
-                processPoseFrame();
-            }
-
-            console.log(`Created line with distance: ${realDistance.toFixed(3)} ${analysisMode === '2D' ? 'm' : 'px'}`);
-        }
-        return;
-    }
-
-    // Handle angle measurement mode - select existing lines
-    if (isAngleMeasureMode) {
-        // Check if clicked near any existing custom line or skeleton connection
-        const CLICK_THRESHOLD = 15;
-
-        // Check custom lines first
-        for (const line of customLines) {
-            const distToLine = pointToLineDistance(mouseX, mouseY, line.start.x, line.start.y, line.end.x, line.end.y);
-            if (distToLine < CLICK_THRESHOLD) {
-                selectedLines.push(line);
-                console.log('Selected custom line for angle measurement');
-
-                // If we have 2 lines selected, calculate angle
-                if (selectedLines.length === 2) {
-                    const angle = calculateAngleBetweenLines(selectedLines[0], selectedLines[1]);
-                    customAngles.push({
-                        id: Date.now(),
-                        line1: selectedLines[0],
-                        line2: selectedLines[1],
-                        angle: angle
-                    });
-
-                    selectedLines = [];
-
-                    // Redraw
-                    if (isImageMode) {
-                        redrawImagePose();
-                    } else {
-                        processPoseFrame();
-                    }
-
-                    console.log(`Created angle measurement: ${angle.toFixed(1)}°`);
-                }
-                return;
-            }
-        }
-
-        return;
     }
 
     // Only check pose landmarks if in edit mode
@@ -3218,58 +2895,6 @@ function drawImagePose(landmarks, landmarks3D) {
         const midHip = extendedLandmarks2D[34];
         drawCoordinateSystem(imageCtx, imageCanvas.width, imageCanvas.height, analysisModeImage, calibrationPoint1Image, calibrationPoint2Image, midHip);
     }
-
-    // Draw custom measurement lines
-    customLines.forEach((line, index) => {
-        imageCtx.beginPath();
-        imageCtx.strokeStyle = selectedLines.includes(line) ? '#FFFF00' : '#00FF00'; // Yellow if selected, green otherwise
-        imageCtx.lineWidth = 3;
-        imageCtx.moveTo(line.start.x, line.start.y);
-        imageCtx.lineTo(line.end.x, line.end.y);
-        imageCtx.stroke();
-
-        // Draw distance label at midpoint
-        const midX = (line.start.x + line.end.x) / 2;
-        const midY = (line.start.y + line.end.y) / 2;
-        imageCtx.fillStyle = '#FFFFFF';
-        imageCtx.strokeStyle = '#000000';
-        imageCtx.lineWidth = 3;
-        imageCtx.font = `bold ${displayFontSize}px Arial`;
-        const distText = `${line.distance.toFixed(3)} ${line.unit}`;
-        imageCtx.strokeText(distText, midX + 10, midY - 10);
-        imageCtx.fillText(distText, midX + 10, midY - 10);
-    });
-
-    // Draw current line being measured
-    if (isLineMeasureMode && lineMeasurePoints.length === 1) {
-        imageCtx.beginPath();
-        imageCtx.strokeStyle = '#FF00FF'; // Magenta for in-progress line
-        imageCtx.lineWidth = 2;
-        imageCtx.setLineDash([5, 5]);
-        imageCtx.arc(lineMeasurePoints[0].x, lineMeasurePoints[0].y, 5, 0, 2 * Math.PI);
-        imageCtx.stroke();
-        imageCtx.setLineDash([]);
-    }
-
-    // Draw custom angle measurements
-    customAngles.forEach((angleData, index) => {
-        // Find intersection or midpoint between the two lines
-        const midX1 = (angleData.line1.start.x + angleData.line1.end.x) / 2;
-        const midY1 = (angleData.line1.start.y + angleData.line1.end.y) / 2;
-        const midX2 = (angleData.line2.start.x + angleData.line2.end.x) / 2;
-        const midY2 = (angleData.line2.start.y + angleData.line2.end.y) / 2;
-        const labelX = (midX1 + midX2) / 2;
-        const labelY = (midY1 + midY2) / 2;
-
-        // Draw angle label
-        imageCtx.fillStyle = '#FFFF00';
-        imageCtx.strokeStyle = '#000000';
-        imageCtx.lineWidth = 3;
-        imageCtx.font = `bold ${displayFontSize}px Arial`;
-        const angleText = `${angleData.angle.toFixed(1)}°`;
-        imageCtx.strokeText(angleText, labelX + 10, labelY + 10);
-        imageCtx.fillText(angleText, labelX + 10, labelY + 10);
-    });
 }
 
 // Export image pose data as JSON
