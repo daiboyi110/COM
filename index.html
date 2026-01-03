@@ -97,10 +97,7 @@
 
             <div class="compact-controls">
                 <button id="exportImageExcel" class="btn-export">📗 Export Excel</button>
-                <button id="exportImageJson" class="btn-export">📄 Export JSON</button>
-                <button id="exportImageCsv" class="btn-export">📊 Export CSV</button>
                 <button id="exportImageScreenshot" class="btn-export">📷 Export Image with Overlay</button>
-                <button id="exportImageOriginal" class="btn-export">🖼️ Export Original Image</button>
             </div>
         </div>
 
@@ -122,18 +119,6 @@
                 </label>
                 <label>
                     <input type="radio" name="sexVideo" value="female"> Female
-                </label>
-                <label>
-                    <input type="radio" name="processingSpeed" value="5" checked> 5 FPS
-                </label>
-                <label>
-                    <input type="radio" name="processingSpeed" value="10"> 10 FPS
-                </label>
-                <label>
-                    <input type="radio" name="processingSpeed" value="15"> 15 FPS
-                </label>
-                <label>
-                    <input type="radio" name="processingSpeed" value="30"> 30 FPS
                 </label>
             </div>
 
@@ -195,15 +180,13 @@
                 <span><strong>Frame:</strong> <span id="frameNumber">0</span> / <span id="totalFrames">0</span></span>
                 <span><strong>Joints:</strong> <span id="jointCount">0</span></span>
                 <span><strong>Frames w/ Data:</strong> <span id="capturedFrames">0</span></span>
+                <span><strong>Processing FPS:</strong> <span id="processingFPS">0</span></span>
                 <span id="frameStep" class="frame-step" style="display: none;">Frame stepping...</span>
             </div>
 
             <div class="compact-controls">
                 <button id="exportVideoExcel" class="btn-export">📗 Export Excel</button>
-                <button id="exportVideoJson" class="btn-export">📄 Export JSON</button>
-                <button id="exportVideoCsv" class="btn-export">📊 Export CSV</button>
                 <button id="exportFrameScreenshot" class="btn-export">📷 Export Frame with Overlay</button>
-                <button id="exportFrameOriginal" class="btn-export">🖼️ Export Original Frame</button>
                 <button id="clearDataBtn" class="btn-clear">🗑️ Clear Data</button>
             </div>
         </div>

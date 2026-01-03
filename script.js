@@ -6,15 +6,17 @@ let imageCanvas;
 let imageCtx;
 let pose;
 let fps = 30; // Default, will be detected
-let frameCount = 0;
 let isProcessing = false;
 let showPose = true;
 let showJointNumbers = true;
 let showCoordinates = false;
 let showCoordinateSystem = false;
-let processingInterval = 1000 / 5; // Default 5 FPS (200ms) - video plays at full speed
 let processingTimer = null;
 let poseDataArray = []; // Store all captured pose data
+let lastProcessTime = 0;
+let processedFrameCount = 0;
+let fpsStartTime = 0;
+let currentFPS = 0;
 
 // Image mode variables
 let showPoseImage = true;
@@ -342,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const showCoordinatesCheckbox = document.getElementById('showCoordinates');
     const showCoordinateSystemCheckbox = document.getElementById('showCoordinateSystem');
     const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
-    // Processing speed is now handled via radio buttons - see event listeners below
+    // Processing at maximum video framerate
 
     // Image controls
     const showPoseImageCheckbox = document.getElementById('showPoseImage');
@@ -778,20 +780,7 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mouseup', handleMouseUp);
     canvas.addEventListener('mouseleave', handleMouseUp);
 
-    // Processing speed control - Radio buttons
-    document.querySelectorAll('input[name="processingSpeed"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            const targetFPS = parseInt(e.target.value);
-            processingInterval = 1000 / targetFPS;
-            console.log(`Processing speed set to ${targetFPS} FPS (${processingInterval}ms interval)`);
-
-            // Restart processing with new interval if video is playing
-            if (!video.paused) {
-                stopPoseProcessing();
-                startPoseProcessing();
-            }
-        });
-    });
+    // Processing speed removed - now using video's native framerate via requestAnimationFrame
 
     // Previous frame
     prevFrameBtn.addEventListener('click', () => {
@@ -825,18 +814,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Video export button handlers
     document.getElementById('exportVideoExcel').addEventListener('click', exportAsExcel);
-    document.getElementById('exportVideoJson').addEventListener('click', exportAsJson);
-    document.getElementById('exportVideoCsv').addEventListener('click', exportAsCsv);
     document.getElementById('exportFrameScreenshot').addEventListener('click', exportFrameScreenshot);
-    document.getElementById('exportFrameOriginal').addEventListener('click', exportFrameOriginal);
     document.getElementById('clearDataBtn').addEventListener('click', clearPoseData);
 
     // Image export button handlers
     document.getElementById('exportImageExcel').addEventListener('click', exportImageAsExcel);
-    document.getElementById('exportImageJson').addEventListener('click', exportImageAsJson);
-    document.getElementById('exportImageCsv').addEventListener('click', exportImageAsCsv);
     document.getElementById('exportImageScreenshot').addEventListener('click', exportImageScreenshot);
-    document.getElementById('exportImageOriginal').addEventListener('click', exportImageOriginal);
 
     // Analysis mode radio buttons - Video
     const calibrationScaleLabelVideo = document.getElementById('calibrationScaleLabelVideo');
@@ -1160,28 +1143,48 @@ async function processPoseFrame() {
     }
 }
 
-// Start pose processing using interval (doesn't block video playback)
+// Start pose processing using requestAnimationFrame for maximum framerate
 function startPoseProcessing() {
     stopPoseProcessing(); // Clear any existing timer
 
     if (!showPose) return;
 
-    // Use setInterval to process frames independently of video playback
-    processingTimer = setInterval(() => {
+    // Reset FPS counter
+    processedFrameCount = 0;
+    fpsStartTime = performance.now();
+
+    // Use requestAnimationFrame for maximum framerate processing
+    function processFrame() {
         if (!video.paused && !video.ended && showPose) {
             processPoseFrame().catch(err => console.error('Pose processing error:', err));
+
+            // Calculate and update FPS display
+            processedFrameCount++;
+            const elapsed = (performance.now() - fpsStartTime) / 1000;
+            if (elapsed >= 1) {
+                currentFPS = Math.round(processedFrameCount / elapsed);
+                const fpsDisplay = document.getElementById('processingFPS');
+                if (fpsDisplay) {
+                    fpsDisplay.textContent = currentFPS;
+                }
+                processedFrameCount = 0;
+                fpsStartTime = performance.now();
+            }
+
+            processingTimer = requestAnimationFrame(processFrame);
         } else {
             stopPoseProcessing();
         }
-    }, processingInterval);
+    }
 
-    console.log(`Pose processing started at ${1000/processingInterval} FPS`);
+    processingTimer = requestAnimationFrame(processFrame);
+    console.log('Pose processing started at maximum framerate');
 }
 
 // Stop pose processing
 function stopPoseProcessing() {
     if (processingTimer) {
-        clearInterval(processingTimer);
+        cancelAnimationFrame(processingTimer);
         processingTimer = null;
     }
 }
