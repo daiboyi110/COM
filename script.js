@@ -924,28 +924,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Body side selection handlers
-    document.querySelectorAll('input[name="bodySideVideo"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            bodySideVideo = e.target.value;
-            console.log(`Video body side selection changed to: ${bodySideVideo}`);
-
-            if (!video.paused) {
-                clearCanvas();
-            } else {
-                processPoseFrame();
-            }
-        });
-    });
-
-    document.querySelectorAll('input[name="bodySideImage"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            bodySideImage = e.target.value;
-            console.log(`Image body side selection changed to: ${bodySideImage}`);
-
-            redrawImagePose();
-        });
-    });
+    // Body side is now always 'full' - bilateral mirroring is always enabled
+    // bodySideVideo and bodySideImage remain set to 'full'
 
     // Calibration scale input handlers
     const calibrationScaleVideoInput = document.getElementById('calibrationScaleVideo');
