@@ -17,6 +17,8 @@ let lastProcessTime = 0;
 let processedFrameCount = 0;
 let fpsStartTime = 0;
 let currentFPS = 0;
+let targetFPS = 30; // Target FPS for processing (30 or 60)
+let minFrameInterval = 1000 / 30; // Minimum interval between frames (ms)
 
 // Image mode variables
 let showPoseImage = true;
@@ -174,6 +176,12 @@ const POSE_CONNECTIONS = [
 const FILTERED_POSE_CONNECTIONS = POSE_CONNECTIONS.filter(([startIdx, endIdx]) => {
     return !EXCLUDED_LANDMARKS.includes(startIdx) && !EXCLUDED_LANDMARKS.includes(endIdx);
 });
+
+// Helper function to convert landmark name for display (Right -> R, Left -> L)
+function getDisplayName(name) {
+    if (!name) return '';
+    return name.replace(/Right_/g, 'R_').replace(/Left_/g, 'L_');
+}
 
 // Helper function to determine if a landmark is on the left side
 function isLeftSideLandmark(index) {
@@ -914,6 +922,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Body side is now always 'full' - bilateral mirroring is always enabled
     // bodySideVideo and bodySideImage remain set to 'full'
 
+    // Target FPS selection radio buttons
+    document.querySelectorAll('input[name="targetFPS"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            targetFPS = parseInt(e.target.value);
+            minFrameInterval = 1000 / targetFPS;
+            console.log(`Target FPS changed to: ${targetFPS} FPS`);
+
+            // Restart processing with new FPS if video is playing
+            if (!video.paused) {
+                stopPoseProcessing();
+                startPoseProcessing();
+            }
+        });
+    });
+
     // Calibration scale input handlers
     const calibrationScaleVideoInput = document.getElementById('calibrationScaleVideo');
     const calibrationScaleImageInput = document.getElementById('calibrationScaleImage');
@@ -1143,7 +1166,7 @@ async function processPoseFrame() {
     }
 }
 
-// Start pose processing using requestAnimationFrame for maximum framerate
+// Start pose processing using requestAnimationFrame with FPS throttling
 function startPoseProcessing() {
     stopPoseProcessing(); // Clear any existing timer
 
@@ -1152,23 +1175,31 @@ function startPoseProcessing() {
     // Reset FPS counter
     processedFrameCount = 0;
     fpsStartTime = performance.now();
+    lastProcessTime = performance.now();
 
-    // Use requestAnimationFrame for maximum framerate processing
+    // Use requestAnimationFrame with FPS throttling
     function processFrame() {
         if (!video.paused && !video.ended && showPose) {
-            processPoseFrame().catch(err => console.error('Pose processing error:', err));
+            const now = performance.now();
+            const elapsed = now - lastProcessTime;
 
-            // Calculate and update FPS display
-            processedFrameCount++;
-            const elapsed = (performance.now() - fpsStartTime) / 1000;
-            if (elapsed >= 1) {
-                currentFPS = Math.round(processedFrameCount / elapsed);
-                const fpsDisplay = document.getElementById('processingFPS');
-                if (fpsDisplay) {
-                    fpsDisplay.textContent = currentFPS;
+            // Only process if enough time has passed based on target FPS
+            if (elapsed >= minFrameInterval) {
+                processPoseFrame().catch(err => console.error('Pose processing error:', err));
+                lastProcessTime = now;
+
+                // Calculate and update FPS display
+                processedFrameCount++;
+                const fpsElapsed = (now - fpsStartTime) / 1000;
+                if (fpsElapsed >= 1) {
+                    currentFPS = Math.round(processedFrameCount / fpsElapsed);
+                    const fpsDisplay = document.getElementById('processingFPS');
+                    if (fpsDisplay) {
+                        fpsDisplay.textContent = currentFPS;
+                    }
+                    processedFrameCount = 0;
+                    fpsStartTime = now;
                 }
-                processedFrameCount = 0;
-                fpsStartTime = performance.now();
             }
 
             processingTimer = requestAnimationFrame(processFrame);
@@ -1178,7 +1209,7 @@ function startPoseProcessing() {
     }
 
     processingTimer = requestAnimationFrame(processFrame);
-    console.log('Pose processing started at maximum framerate');
+    console.log(`Pose processing started at ${targetFPS} FPS`);
 }
 
 // Stop pose processing
@@ -1574,7 +1605,7 @@ function drawPose(landmarks, landmarks3D) {
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 3;
             ctx.font = `bold ${displayFontSize}px Arial`;
-            const jointName = LANDMARK_NAMES[index];
+            const jointName = getDisplayName(LANDMARK_NAMES[index]);
             ctx.strokeText(jointName, x + 10, textY);
             ctx.fillText(jointName, x + 10, textY);
             textY -= (displayFontSize + 8);
@@ -2821,7 +2852,7 @@ function drawImagePose(landmarks, landmarks3D) {
             imageCtx.strokeStyle = '#000000';
             imageCtx.lineWidth = 3;
             imageCtx.font = `bold ${displayFontSize}px Arial`;
-            const jointName = LANDMARK_NAMES[index];
+            const jointName = getDisplayName(LANDMARK_NAMES[index]);
             imageCtx.strokeText(jointName, x + 10, textY);
             imageCtx.fillText(jointName, x + 10, textY);
             textY -= (displayFontSize + 8);
