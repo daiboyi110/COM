@@ -61,6 +61,10 @@ let calibrationScaleImage = 1.0; // Scale length in meters for image
 // Font size for displaying joint names and coordinates
 let displayFontSize = 28; // Default font size in pixels
 
+// Original file names for exports
+let originalVideoFileName = 'video';
+let originalImageFileName = 'image';
+
 // MediaPipe Pose landmark names (33 landmarks + 2 calculated)
 const LANDMARK_NAMES = [
     'Nose',
@@ -395,6 +399,9 @@ document.addEventListener('DOMContentLoaded', () => {
     videoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Store original filename (without extension)
+            originalVideoFileName = file.name.replace(/\.[^/.]+$/, '');
+
             const url = URL.createObjectURL(file);
             video.src = url;
             videoSection.style.display = 'block';
@@ -419,6 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.target.files[0];
         if (file) {
             console.log('Image file selected:', file.name);
+            // Store original filename (without extension)
+            originalImageFileName = file.name.replace(/\.[^/.]+$/, '');
+
             const url = URL.createObjectURL(file);
             imageDisplay.src = url;
             imageSection.style.display = 'block';
@@ -820,6 +830,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Video export button handlers
     document.getElementById('exportVideoExcel').addEventListener('click', exportAsExcel);
     document.getElementById('exportFrameScreenshot').addEventListener('click', exportFrameScreenshot);
+    document.getElementById('exportVideoWithOverlay').addEventListener('click', exportVideoWithOverlay);
     document.getElementById('clearDataBtn').addEventListener('click', clearPoseData);
 
     // Image export button handlers
@@ -1220,7 +1231,9 @@ function onPoseResults(results) {
     }
 
     drawPose(results.poseLandmarks, results.poseWorldLandmarks);
-    document.getElementById('jointCount').textContent = results.poseLandmarks.length;
+    // Count displayed joints: 50 total - 13 excluded = 37 displayed
+    const displayedJointCount = LANDMARK_NAMES.length - EXCLUDED_LANDMARKS.length;
+    document.getElementById('jointCount').textContent = displayedJointCount;
 
     // Calculate extended landmarks including midpoints, segment COMs, and total body COM
     const { midpoints2D, midpoints3D } = calculateMidpoints(results.poseLandmarks, results.poseWorldLandmarks);
@@ -2259,49 +2272,20 @@ function exportAsExcel() {
         XLSX.utils.book_append_sheet(wb, metadataSheet, 'Metadata');
         console.log('Metadata sheet created');
 
-        // ===== 2D Display Coordinates Sheet (with COM) =====
-        const header2DDisplay = ['Frame', 'Timestamp'];
+        // Create header based on analysis mode
+        const header = ['Frame', 'Timestamp'];
         LANDMARK_NAMES.forEach((name, index) => {
             // Skip excluded landmarks
             if (EXCLUDED_LANDMARKS.includes(index)) {
                 return;
             }
-            header2DDisplay.push(`${name}_X`, `${name}_Y`);
-        });
-        const data2DDisplayRows = [header2DDisplay];
-
-        // ===== 3D Display Coordinates Sheet (with COM) =====
-        const header3DDisplay = ['Frame', 'Timestamp'];
-        LANDMARK_NAMES.forEach((name, index) => {
-            // Skip excluded landmarks
-            if (EXCLUDED_LANDMARKS.includes(index)) {
-                return;
+            if (analysisModeVideo === '2D') {
+                header.push(`${name}_X`, `${name}_Y`);
+            } else {
+                header.push(`${name}_X`, `${name}_Y`, `${name}_Z`);
             }
-            header3DDisplay.push(`${name}_X`, `${name}_Y`, `${name}_Z`);
         });
-        const data3DDisplayRows = [header3DDisplay];
-
-        // ===== 2D Original Coordinates Sheet =====
-        const header2DOrig = ['Frame', 'Timestamp'];
-        LANDMARK_NAMES.forEach((name, index) => {
-            // Skip excluded landmarks and calculated points (only base 33 landmarks)
-            if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
-                return;
-            }
-            header2DOrig.push(`${name}_X`, `${name}_Y`);
-        });
-        const data2DOrigRows = [header2DOrig];
-
-        // ===== 3D Original Coordinates Sheet =====
-        const header3DOrig = ['Frame', 'Timestamp'];
-        LANDMARK_NAMES.forEach((name, index) => {
-            // Skip excluded landmarks and calculated points (only base 33 landmarks)
-            if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
-                return;
-            }
-            header3DOrig.push(`${name}_X`, `${name}_Y`, `${name}_Z`);
-        });
-        const data3DOrigRows = [header3DOrig];
+        const dataRows = [header];
 
         // Process each frame
         poseDataArray.forEach(frameData => {
@@ -2319,134 +2303,68 @@ function exportAsExcel() {
                 video.videoHeight
             );
 
-            // 2D Display Coordinates Row (includes all 50 landmarks with COM)
-            const row2DDisplay = [
+            // Create row with frame and timestamp
+            const row = [
                 frameData.frame,
                 parseFloat(frameData.timestamp.toFixed(3))
             ];
 
-            extendedLandmarks2D.forEach((landmark, index) => {
-                // Skip excluded landmarks
-                if (EXCLUDED_LANDMARKS.includes(index)) {
-                    return;
-                }
+            // Add coordinates based on analysis mode
+            if (analysisModeVideo === '2D') {
+                extendedLandmarks2D.forEach((landmark, index) => {
+                    // Skip excluded landmarks
+                    if (EXCLUDED_LANDMARKS.includes(index)) {
+                        return;
+                    }
 
-                const displayCoord = displayCoords[index];
+                    const displayCoord = displayCoords[index];
 
-                if (landmark && landmark.visibility >= 0.3 && displayCoord) {
-                    row2DDisplay.push(
-                        parseFloat(displayCoord.x.toFixed(6)),
-                        parseFloat(displayCoord.y.toFixed(6))
-                    );
-                } else {
-                    row2DDisplay.push('', '');
-                }
-            });
+                    if (landmark && landmark.visibility >= 0.3 && displayCoord) {
+                        row.push(
+                            parseFloat(displayCoord.x.toFixed(6)),
+                            parseFloat(displayCoord.y.toFixed(6))
+                        );
+                    } else {
+                        row.push('', '');
+                    }
+                });
+            } else {
+                // 3D mode
+                extendedLandmarks3D.forEach((landmark, index) => {
+                    // Skip excluded landmarks
+                    if (EXCLUDED_LANDMARKS.includes(index)) {
+                        return;
+                    }
 
-            data2DDisplayRows.push(row2DDisplay);
+                    const displayCoord = displayCoords[index];
 
-            // 3D Display Coordinates Row (includes all 50 landmarks with COM)
-            const row3DDisplay = [
-                frameData.frame,
-                parseFloat(frameData.timestamp.toFixed(3))
-            ];
+                    if (landmark && displayCoord && displayCoord.z !== undefined) {
+                        row.push(
+                            parseFloat(displayCoord.x.toFixed(6)),
+                            parseFloat(displayCoord.y.toFixed(6)),
+                            parseFloat(displayCoord.z.toFixed(6))
+                        );
+                    } else {
+                        row.push('', '', '');
+                    }
+                });
+            }
 
-            extendedLandmarks3D.forEach((landmark, index) => {
-                // Skip excluded landmarks
-                if (EXCLUDED_LANDMARKS.includes(index)) {
-                    return;
-                }
-
-                const displayCoord = displayCoords[index];
-
-                if (landmark && displayCoord && displayCoord.z !== undefined) {
-                    row3DDisplay.push(
-                        parseFloat(displayCoord.x.toFixed(6)),
-                        parseFloat(displayCoord.y.toFixed(6)),
-                        parseFloat(displayCoord.z.toFixed(6))
-                    );
-                } else {
-                    row3DDisplay.push('', '', '');
-                }
-            });
-
-            data3DDisplayRows.push(row3DDisplay);
-
-            // 2D Original Coordinates Row (MediaPipe normalized, only base 33 landmarks)
-            const row2DOrig = [
-                frameData.frame,
-                parseFloat(frameData.timestamp.toFixed(3))
-            ];
-
-            frameData.landmarks2D.forEach((lm2d, index) => {
-                // Skip excluded landmarks and calculated points
-                if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
-                    return;
-                }
-
-                if (lm2d.visibility >= 0.3) {
-                    row2DOrig.push(
-                        parseFloat(lm2d.x.toFixed(6)),
-                        parseFloat(lm2d.y.toFixed(6))
-                    );
-                } else {
-                    row2DOrig.push('', '');
-                }
-            });
-
-            data2DOrigRows.push(row2DOrig);
-
-            // 3D Original Coordinates Row (MediaPipe world, only base 33 landmarks)
-            const row3DOrig = [
-                frameData.frame,
-                parseFloat(frameData.timestamp.toFixed(3))
-            ];
-
-            frameData.landmarks2D.forEach((lm2d, index) => {
-                // Skip excluded landmarks and calculated points
-                if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
-                    return;
-                }
-
-                const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-
-                if (lm2d.visibility >= 0.3) {
-                    // Original MediaPipe 3D (Y positive = down)
-                    row3DOrig.push(
-                        parseFloat(lm3d.x.toFixed(6)),
-                        parseFloat(lm3d.y.toFixed(6)),
-                        parseFloat(lm3d.z.toFixed(6))
-                    );
-                } else {
-                    row3DOrig.push('', '', '');
-                }
-            });
-
-            data3DOrigRows.push(row3DOrig);
+            dataRows.push(row);
         });
 
-        // Create and append sheets
-        const sheet2DDisplay = XLSX.utils.aoa_to_sheet(data2DDisplayRows);
-        XLSX.utils.book_append_sheet(wb, sheet2DDisplay, '2D Display Coordinates');
-        console.log('2D Display Coordinates sheet created with', data2DDisplayRows.length - 1, 'frames');
+        // Create and append sheet
+        const sheetName = analysisModeVideo === '2D' ? 'Data' : 'Data';
+        const sheet = XLSX.utils.aoa_to_sheet(dataRows);
+        XLSX.utils.book_append_sheet(wb, sheet, sheetName);
+        console.log(`${analysisModeVideo} data sheet created with`, dataRows.length - 1, 'frames');
 
-        const sheet3DDisplay = XLSX.utils.aoa_to_sheet(data3DDisplayRows);
-        XLSX.utils.book_append_sheet(wb, sheet3DDisplay, '3D Display Coordinates');
-        console.log('3D Display Coordinates sheet created with', data3DDisplayRows.length - 1, 'frames');
-
-        const sheet2DOrig = XLSX.utils.aoa_to_sheet(data2DOrigRows);
-        XLSX.utils.book_append_sheet(wb, sheet2DOrig, '2D Original Coordinates');
-        console.log('2D Original Coordinates sheet created');
-
-        const sheet3DOrig = XLSX.utils.aoa_to_sheet(data3DOrigRows);
-        XLSX.utils.book_append_sheet(wb, sheet3DOrig, '3D Original Coordinates');
-        console.log('3D Original Coordinates sheet created');
-
-        // Download the file
+        // Download the file with appropriate filename
+        const filename = analysisModeVideo === '2D' ? `${originalVideoFileName}_2D.xlsx` : `${originalVideoFileName}_3D.xlsx`;
         console.log('Attempting to write Excel file...');
-        XLSX.writeFile(wb, 'pose_data.xlsx');
-        console.log(`Successfully exported ${poseDataArray.length} frames to Excel`);
-        alert(`Excel file downloaded successfully! (${poseDataArray.length} frames with all 50 landmarks including COM)`);
+        XLSX.writeFile(wb, filename);
+        console.log(`Successfully exported ${poseDataArray.length} frames to ${filename}`);
+        alert(`Excel file downloaded successfully!\n${analysisModeVideo} data with ${poseDataArray.length} frames and all 50 landmarks including COM`);
 
     } catch (error) {
         console.error('Error exporting to Excel:', error);
@@ -2785,7 +2703,9 @@ function onImagePoseResults(results) {
         landmarks3D: results.poseWorldLandmarks || []
     };
 
-    document.getElementById('jointCountImage').textContent = results.poseLandmarks.length;
+    // Count displayed joints: 50 total - 13 excluded = 37 displayed
+    const displayedJointCount = LANDMARK_NAMES.length - EXCLUDED_LANDMARKS.length;
+    document.getElementById('jointCountImage').textContent = displayedJointCount;
 
     // Draw pose on image
     redrawImagePose();
@@ -3206,120 +3126,70 @@ function exportImageAsExcel() {
             imageDisplay.naturalHeight
         );
 
-        // ===== 2D Display Coordinates Sheet (with COM) =====
-        const header2DDisplay = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Visibility'];
-        const data2DDisplay = [header2DDisplay];
+        // Create header based on analysis mode
+        const header = ['Joint_Index', 'Joint_Name'];
+        if (analysisModeImage === '2D') {
+            header.push('X', 'Y', 'Visibility');
+        } else {
+            header.push('X', 'Y', 'Z', 'Visibility');
+        }
 
-        extendedLandmarks2D.forEach((landmark, index) => {
-            // Skip excluded landmarks
-            if (EXCLUDED_LANDMARKS.includes(index)) {
-                return;
-            }
+        const data = [header];
 
-            const displayCoord = displayCoords[index];
+        // Add data based on analysis mode
+        if (analysisModeImage === '2D') {
+            // Export 2D coordinates only
+            extendedLandmarks2D.forEach((landmark, index) => {
+                // Skip excluded landmarks
+                if (EXCLUDED_LANDMARKS.includes(index)) {
+                    return;
+                }
 
-            if (landmark && landmark.visibility >= 0.3 && displayCoord) {
-                data2DDisplay.push([
-                    index,
-                    LANDMARK_NAMES[index],
-                    parseFloat(displayCoord.x.toFixed(6)),
-                    parseFloat(displayCoord.y.toFixed(6)),
-                    parseFloat(landmark.visibility.toFixed(3))
-                ]);
-            }
-        });
+                const displayCoord = displayCoords[index];
 
-        const sheet2DDisplay = XLSX.utils.aoa_to_sheet(data2DDisplay);
-        XLSX.utils.book_append_sheet(wb, sheet2DDisplay, '2D Display Coordinates');
-        console.log('2D Display Coordinates sheet created with', data2DDisplay.length - 1, 'landmarks');
+                if (landmark && landmark.visibility >= 0.3 && displayCoord) {
+                    data.push([
+                        index,
+                        LANDMARK_NAMES[index],
+                        parseFloat(displayCoord.x.toFixed(6)),
+                        parseFloat(displayCoord.y.toFixed(6)),
+                        parseFloat(landmark.visibility.toFixed(3))
+                    ]);
+                }
+            });
+        } else {
+            // Export 3D coordinates only
+            extendedLandmarks3D.forEach((landmark, index) => {
+                // Skip excluded landmarks
+                if (EXCLUDED_LANDMARKS.includes(index)) {
+                    return;
+                }
 
-        // ===== 3D Display Coordinates Sheet (with COM) =====
-        const header3DDisplay = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Z', 'Visibility'];
-        const data3DDisplay = [header3DDisplay];
+                const displayCoord = displayCoords[index];
 
-        extendedLandmarks3D.forEach((landmark, index) => {
-            // Skip excluded landmarks
-            if (EXCLUDED_LANDMARKS.includes(index)) {
-                return;
-            }
+                if (landmark && displayCoord && displayCoord.z !== undefined) {
+                    data.push([
+                        index,
+                        LANDMARK_NAMES[index],
+                        parseFloat(displayCoord.x.toFixed(6)),
+                        parseFloat(displayCoord.y.toFixed(6)),
+                        parseFloat(displayCoord.z.toFixed(6)),
+                        parseFloat(landmark.visibility.toFixed(3))
+                    ]);
+                }
+            });
+        }
 
-            const displayCoord = displayCoords[index];
+        const dataSheet = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, dataSheet, 'Data');
+        console.log(`${analysisModeImage} coordinates sheet created with`, data.length - 1, 'landmarks');
 
-            if (landmark && displayCoord && displayCoord.z !== undefined) {
-                data3DDisplay.push([
-                    index,
-                    LANDMARK_NAMES[index],
-                    parseFloat(displayCoord.x.toFixed(6)),
-                    parseFloat(displayCoord.y.toFixed(6)),
-                    parseFloat(displayCoord.z.toFixed(6)),
-                    parseFloat(landmark.visibility.toFixed(3))
-                ]);
-            }
-        });
-
-        const sheet3DDisplay = XLSX.utils.aoa_to_sheet(data3DDisplay);
-        XLSX.utils.book_append_sheet(wb, sheet3DDisplay, '3D Display Coordinates');
-        console.log('3D Display Coordinates sheet created with', data3DDisplay.length - 1, 'landmarks');
-
-        // ===== 2D Original Coordinates Sheet (MediaPipe normalized, base 33 only) =====
-        const header2DOrig = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Visibility'];
-        const data2DOrig = [header2DOrig];
-
-        imagePoseData.landmarks2D.forEach((lm2d, index) => {
-            // Skip excluded landmarks and calculated points
-            if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
-                return;
-            }
-
-            if (lm2d.visibility >= 0.3) {
-                data2DOrig.push([
-                    index,
-                    LANDMARK_NAMES[index],
-                    parseFloat(lm2d.x.toFixed(6)),
-                    parseFloat(lm2d.y.toFixed(6)),
-                    parseFloat(lm2d.visibility.toFixed(3))
-                ]);
-            }
-        });
-
-        const sheet2DOrig = XLSX.utils.aoa_to_sheet(data2DOrig);
-        XLSX.utils.book_append_sheet(wb, sheet2DOrig, '2D Original Coordinates');
-        console.log('2D Original Coordinates sheet created');
-
-        // ===== 3D Original Coordinates Sheet (MediaPipe world, base 33 only) =====
-        const header3DOrig = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Z', 'Visibility'];
-        const data3DOrig = [header3DOrig];
-
-        imagePoseData.landmarks2D.forEach((lm2d, index) => {
-            // Skip excluded landmarks and calculated points
-            if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
-                return;
-            }
-
-            const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-
-            if (lm2d.visibility >= 0.3) {
-                // Original MediaPipe 3D (Y positive = down)
-                data3DOrig.push([
-                    index,
-                    LANDMARK_NAMES[index],
-                    parseFloat(lm3d.x.toFixed(6)),
-                    parseFloat(lm3d.y.toFixed(6)),
-                    parseFloat(lm3d.z.toFixed(6)),
-                    parseFloat(lm2d.visibility.toFixed(3))
-                ]);
-            }
-        });
-
-        const sheet3DOrig = XLSX.utils.aoa_to_sheet(data3DOrig);
-        XLSX.utils.book_append_sheet(wb, sheet3DOrig, '3D Original Coordinates');
-        console.log('3D Original Coordinates sheet created');
-
-        // Download the file
-        console.log('Attempting to write Excel file...');
-        XLSX.writeFile(wb, 'image_pose_data.xlsx');
-        console.log('Successfully exported image pose data to Excel');
-        alert('Image pose data exported successfully with all 50 landmarks including COM!');
+        // Download the file with mode-specific filename
+        const filename = analysisModeImage === '2D' ? `${originalImageFileName}_2D.xlsx` : `${originalImageFileName}_3D.xlsx`;
+        console.log('Attempting to write Excel file:', filename);
+        XLSX.writeFile(wb, filename);
+        console.log(`Successfully exported image pose data to ${filename}`);
+        alert(`Image pose data exported successfully with all 50 landmarks including COM!\nFile: ${filename}`);
 
     } catch (error) {
         console.error('Error exporting image to Excel:', error);
@@ -3352,7 +3222,7 @@ function exportFrameScreenshot() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `frame_with_overlay_${Date.now()}.png`;
+            a.download = `${originalVideoFileName}_frame_overlay.png`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -3402,6 +3272,123 @@ function exportFrameOriginal() {
     }
 }
 
+// Export video with overlay
+async function exportVideoWithOverlay() {
+    if (!video || !video.videoWidth || poseDataArray.length === 0) {
+        alert('No video data available to export. Please process the video first.');
+        return;
+    }
+
+    try {
+        // Check if MediaRecorder is supported
+        if (typeof MediaRecorder === 'undefined') {
+            alert('Video recording is not supported in your browser. Please use Chrome, Firefox, or Edge.');
+            return;
+        }
+
+        // Detect original video FPS (use detected fps or default to 30)
+        const videoFPS = fps || 30;
+
+        alert(`Video export started at ${videoFPS} fps. This may take a while depending on video length. Please wait...`);
+
+        // Create a canvas to render frames
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = video.videoWidth;
+        exportCanvas.height = video.videoHeight;
+        const exportCtx = exportCanvas.getContext('2d');
+
+        // Create a video stream from the canvas at original framerate
+        const stream = exportCanvas.captureStream(videoFPS);
+        const mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'video/webm;codecs=vp9',
+            videoBitsPerSecond: 8000000 // 8 Mbps for better quality
+        });
+
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+                chunks.push(e.data);
+            }
+        };
+
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${originalVideoFileName}_overlay.webm`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert(`Video export completed at ${videoFPS} fps!`);
+        };
+
+        // Start recording
+        mediaRecorder.start();
+
+        // Reset video to beginning
+        video.currentTime = 0;
+        await new Promise(resolve => {
+            video.onseeked = resolve;
+        });
+
+        // Process each frame at original framerate
+        const frameDuration = 1 / videoFPS;
+        const videoEndTime = video.duration;
+        let frameCount = 0;
+
+        for (let time = 0; time < videoEndTime; time += frameDuration) {
+            video.currentTime = time;
+            await new Promise(resolve => {
+                video.onseeked = resolve;
+            });
+
+            // Draw video frame
+            exportCtx.drawImage(video, 0, 0, exportCanvas.width, exportCanvas.height);
+
+            // Find pose data for this frame
+            const frameIndex = Math.round(time * videoFPS);
+            const frameData = poseDataArray.find(data => data.frame === frameIndex);
+
+            if (frameData) {
+                // Draw pose overlay
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = exportCanvas.width;
+                tempCanvas.height = exportCanvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                // Temporarily draw pose on temp canvas
+                const oldCanvas = canvas;
+                const oldCtx = ctx;
+                canvas = tempCanvas;
+                ctx = tempCtx;
+
+                drawPose(frameData.landmarks2D, frameData.landmarks3D);
+
+                canvas = oldCanvas;
+                ctx = oldCtx;
+
+                // Draw the overlay on export canvas
+                exportCtx.drawImage(tempCanvas, 0, 0);
+            }
+
+            // Wait for next frame at original framerate
+            await new Promise(resolve => setTimeout(resolve, 1000 / videoFPS));
+            frameCount++;
+        }
+
+        console.log(`Exported ${frameCount} frames at ${videoFPS} fps`);
+
+        // Stop recording
+        mediaRecorder.stop();
+
+    } catch (error) {
+        console.error('Error exporting video with overlay:', error);
+        alert(`Error exporting video: ${error.message}`);
+    }
+}
+
 // Export image as screenshot with overlay
 function exportImageScreenshot() {
     if (!imageDisplay || !imageDisplay.src) {
@@ -3427,7 +3414,7 @@ function exportImageScreenshot() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `image_with_overlay_${Date.now()}.png`;
+            a.download = `${originalImageFileName}_overlay.png`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

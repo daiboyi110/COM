@@ -1,5 +1,9 @@
 # Center of Mass (COM) Visualization
 
+**Author:** Boyi Dai
+**Contact:** [daiboyi@gmail.com](mailto:daiboyi@gmail.com)
+**Last Updated:** January 2026
+
 A web-based application for analyzing human pose and calculating center of mass in videos and images using MediaPipe Pose estimation. Upload videos or images, visualize body landmarks, calculate segment and total-body center of mass, and export detailed biomechanical data.
 
 ## Features
@@ -13,7 +17,7 @@ A web-based application for analyzing human pose and calculating center of mass 
 - **Coordinate System Visualization**: Display 2D or 3D coordinate axes with origin markers
 - **Real-time Visual Overlay**: See detected skeleton, joints, and COM overlaid on video/image
 - **Calibrated Measurements**: Scale 2D analysis to real-world units using calibration points
-- **Data Export**: Export pose data to Excel with multiple coordinate systems and export images with overlays
+- **Data Export**: Export pose data to Excel, export images/frames with overlays, and export videos with overlays rendered on every frame
 - **Full-Size Display**: View media at original resolution with doubled font size for better visibility
 
 ## Pose Estimation Technology
@@ -25,13 +29,20 @@ This application uses **MediaPipe Pose** by Google for pose estimation:
 - Includes **visibility scores** for each landmark
 - Works on both CPU and GPU for real-time performance
 
-### Extended Landmarks
-The application extends the 33 base landmarks by calculating:
+### Displayed Landmarks
+Of the 33 base landmarks detected by MediaPipe:
+- **20 base landmarks are displayed**: Face details (nose, eyes, mouth) and finger landmarks (pinky, thumb) are hidden for cleaner visualization
+- **13 base landmarks are excluded** from display: nose, eye landmarks, mouth landmarks, and finger landmarks
+
+The application extends these 20 displayed base landmarks by calculating:
 - **2 midpoints**: Mid-shoulder and mid-hip
 - **14 segment centers of mass**: Upper arms (L/R), forearms (L/R), hands (L/R), thighs (L/R), shanks (L/R), feet (L/R), head+neck, trunk
 - **1 total-body center of mass**: Weighted combination of all segments
 
-**Total tracked points**: 50 (33 original + 17 calculated)
+**Total displayed points**: 37 (20 base landmarks + 17 calculated)
+**Total tracked points**: 50 (all 33 base landmarks + 17 calculated - used for data export)
+
+**Note**: Segment and total-body COM calculations use only the 20 displayed base landmarks. The 13 excluded landmarks (face details and fingers) do not contribute to COM calculations.
 
 ## Analysis Modes
 
@@ -54,7 +65,7 @@ The application extends the 33 base landmarks by calculating:
 
 ## Sex-Specific Center of Mass Models
 
-The application uses different segment mass percentages for males and females based on biomechanical research:
+The application uses different segment mass percentages and center of mass locations for males and females based on biomechanical research by de Leva (1996)[^1]:
 
 ### Male Model
 - Head+Neck: 8.26% of total body mass
@@ -146,19 +157,33 @@ If pose estimation is inaccurate, you can manually adjust landmarks:
 ### 8. Export Data
 
 **Export Excel** (📗):
-- Creates an XLSX file with multiple sheets:
-  - **2D Display Coordinates**: Pixel coordinates with origin at left-bottom
-  - **3D Display Coordinates**: 3D world coordinates with origin at mid-hip
-  - **2D Original Coordinates**: MediaPipe normalized coordinates (0-1 range, origin at top-left)
-  - **3D Original Coordinates**: MediaPipe 3D world coordinates (origin at mid-hip)
+- Creates an XLSX file based on your selected analysis mode (2D or 3D)
+- **2D Mode**: Exports only 2D coordinates (X, Y)
+  - File name: `originalfilename_2D.xlsx`
+  - Coordinates in calibrated meters with origin at left-bottom corner
+- **3D Mode**: Exports only 3D coordinates (X, Y, Z)
+  - File name: `originalfilename_3D.xlsx`
+  - Coordinates in meters with origin at mid-hip
+- Contains two sheets:
+  - **Metadata**: Video/image info, analysis mode, sex selection, calibration scale
+  - **Data**: All 50 landmarks including calculated COMs
 - Each row represents one frame (video) or the single frame (image)
-- Columns: Frame, Timestamp, then X/Y/Z coordinates for all 50 landmarks
-- Includes all 33 base landmarks + 17 calculated points (midpoints, segment COMs, total-body COM)
+- Columns: Joint_Index, Joint_Name, X, Y (and Z for 3D), Visibility
+- **Includes edited coordinates**: Exported data reflects any manual joint position edits you made
 
-**Export Image with Overlay** (📷):
+**Export Frame/Image with Overlay** (📷):
 - Captures current frame/image with all overlays (skeleton, landmarks, coordinates, COM, axes)
-- Saves as PNG file with transparent background for overlays
+- File name: `originalfilename_overlay.png` (for single frame) or `originalfilename_frame_overlay.png` (for video frame)
+- Saves as PNG file with visual overlays burned into the image
 - Useful for presentations, reports, or documentation
+
+**Export Video with Overlay** (🎬) - Video only:
+- Exports the entire video with pose overlays rendered on every frame
+- File name: `originalfilename_overlay.webm`
+- Format: WebM video (VP9 codec, 8 Mbps)
+- Maintains original video framerate (automatically detected)
+- Processing time depends on video length and framerate
+- Overlays include skeleton, landmarks, coordinates, COM markers as displayed
 
 ### 9. Video-Specific Features
 
@@ -215,27 +240,49 @@ Y↑ (up)
 
 ## Excel Export Format
 
-### Sheet 1: 2D Display Coordinates
-Columns: `Frame | Timestamp | Nose_X | Nose_Y | L_Eye_Inner_X | L_Eye_Inner_Y | ... | Total_Body_COM_X | Total_Body_COM_Y`
+Excel files are exported with filenames based on the original file and analysis mode:
+- **2D mode**: `originalfilename_2D.xlsx`
+- **3D mode**: `originalfilename_3D.xlsx`
+
+Each workbook contains two sheets:
+
+### Sheet 1: Metadata
+Contains analysis parameters:
+- Video/Image dimensions
+- Number of detected joints
+- Analysis mode (2D or 3D)
+- Sex selection (male or female)
+- Calibration scale (meters)
+- Export date/time
+
+### Sheet 2: Data
+Columns depend on analysis mode:
+
+**2D Mode**:
+- Columns: `Joint_Index | Joint_Name | X | Y | Visibility`
 - Origin: Left-bottom corner
-- Units: Meters (calibrated)
+- Units: Meters (calibrated using calibration points)
+- Each row = one joint
+- Video exports: Multiple frames, each with all 50 landmarks
+- Image exports: Single frame with all 50 landmarks
 
-### Sheet 2: 3D Display Coordinates
-Columns: `Frame | Timestamp | Nose_X | Nose_Y | Nose_Z | L_Eye_Inner_X | L_Eye_Inner_Y | L_Eye_Inner_Z | ... | Total_Body_COM_X | Total_Body_COM_Y | Total_Body_COM_Z`
-- Origin: Mid-hip
-- Units: Meters
-- Y-axis is inverted (positive = up)
+**3D Mode**:
+- Columns: `Joint_Index | Joint_Name | X | Y | Z | Visibility`
+- Origin: Mid-hip landmark
+- Units: Meters (MediaPipe world coordinates)
+- Y-axis: Positive = up (inverted from MediaPipe convention)
+- Z-axis: Positive = forward toward camera
+- Each row = one joint
+- Video exports: Multiple frames, each with all 50 landmarks
+- Image exports: Single frame with all 50 landmarks
 
-### Sheet 3: 2D Original Coordinates
-- MediaPipe's original normalized 2D coordinates
-- Origin: Top-left corner
-- Range: 0.0 to 1.0 (normalized to image dimensions)
+**All 50 landmarks are included**:
+- 33 base MediaPipe landmarks (including 13 excluded from display)
+- 2 calculated midpoints (Mid_Shoulder, Mid_Hip)
+- 14 segment COMs
+- 1 total-body COM
 
-### Sheet 4: 3D Original Coordinates
-- MediaPipe's original 3D world coordinates
-- Origin: Mid-hip
-- Units: Meters
-- Y-axis: Positive = down (MediaPipe convention)
+**Note**: Coordinates reflect any manual edits made using the "Edit Joint Positions" feature.
 
 ## Landmark Names
 
@@ -301,10 +348,29 @@ All processing happens **locally in your browser**. No video, image, or pose dat
 - Motion capture for animation reference
 - Physical therapy progress tracking
 
-## Citation
+## Citations
 
-If you use this tool for research, please cite MediaPipe:
+If you use this tool for research, please cite:
+
+### Segment Inertial Parameters
+[^1]: de Leva P. (1996). Adjustments to Zatsiorsky-Seluyanov's segment inertia parameters. *Journal of Biomechanics*, 29(9):1223-1230. doi: [10.1016/0021-9290(95)00178-6](https://doi.org/10.1016/0021-9290(95)00178-6)
+
+```bibtex
+@article{deleva1996,
+  title={Adjustments to Zatsiorsky-Seluyanov's segment inertia parameters},
+  author={de Leva, Paolo},
+  journal={Journal of Biomechanics},
+  volume={29},
+  number={9},
+  pages={1223--1230},
+  year={1996},
+  doi={10.1016/0021-9290(95)00178-6},
+  pmid={8872282}
+}
 ```
+
+### MediaPipe Pose Estimation
+```bibtex
 @article{mediapipe2019,
   title={MediaPipe: A Framework for Building Perception Pipelines},
   author={Lugaresi, Camillo and Tang, Jiuqiang and Nash, Hadon and McClanahan, Chris and Uboweja, Esha and Hays, Michael and Zhang, Fan and Chang, Chuo-Ling and Yong, Ming Guang and Lee, Juhyun and others},
