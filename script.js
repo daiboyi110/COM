@@ -46,6 +46,17 @@ let draggedJointFrame = null; // For video: which frame is being edited
 let isEditMode = false; // Toggle edit mode on/off
 let isEditModeCalibration = false; // Toggle calibration point edit mode on/off
 
+// Line measurement tool variables
+let isLineMeasureMode = false;
+let lineMeasurePoints = []; // Array of {x, y, landmarkIndex} for line measurement
+let customLines = []; // Array of {start: {x, y}, end: {x, y}, distance, id}
+
+// Angle measurement tool variables
+let isAngleMeasureMode = false;
+let angleMeasureLines = []; // Array of selected line pairs for angle measurement
+let selectedLines = []; // Currently selected lines for angle measurement
+let customAngles = []; // Array of {line1, line2, angle, id}
+
 // Store filled landmarks (with mirroring) for edit mode click detection
 let lastFilledLandmarks2DVideo = null;
 let lastFilledLandmarks2DImage = null;
@@ -758,12 +769,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (editModeCalibrationImageCheckbox) {
         editModeCalibrationImageCheckbox.addEventListener('change', (e) => {
             if (e.target.checked) {
-                // Uncheck joint edit mode
-                if (editModeImageCheckbox) {
-                    editModeImageCheckbox.checked = false;
-                }
+                // Uncheck other modes
+                if (editModeImageCheckbox) editModeImageCheckbox.checked = false;
+                const lineMeasureCheckbox = document.getElementById('lineMeasureModeImage');
+                const angleMeasureCheckbox = document.getElementById('angleMeasureModeImage');
+                if (lineMeasureCheckbox) lineMeasureCheckbox.checked = false;
+                if (angleMeasureCheckbox) angleMeasureCheckbox.checked = false;
+
                 isEditMode = false;
                 isEditModeCalibration = true;
+                isLineMeasureMode = false;
+                isAngleMeasureMode = false;
                 imageCanvas.classList.add('editable');
                 console.log('Calibration edit mode enabled for image');
             } else {
