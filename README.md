@@ -1,111 +1,318 @@
-# Video Pose Estimation App
+# Center of Mass (COM) Visualization
 
-A web-based application for analyzing human pose in videos using real-time pose estimation. Upload videos, play them frame-by-frame, and export 3D joint location data.
+A web-based application for analyzing human pose and calculating center of mass in videos and images using MediaPipe Pose estimation. Upload videos or images, visualize body landmarks, calculate segment and total-body center of mass, and export detailed biomechanical data.
 
 ## Features
 
-- **Video Playback**: Play videos at their original sampling rate and resolution
-- **Frame-by-Frame Navigation**: Step through videos one frame at a time using intuitive controls
-- **Real-time Pose Estimation**: Automatic detection of 33 body joints using MediaPipe Pose
-- **3D Joint Tracking**: Extract both 2D (pixel coordinates) and 3D (world coordinates) joint positions
-- **Visual Overlay**: See detected skeleton and joints overlaid on the video in real-time
-- **Data Export**: Export collected pose data in JSON or CSV format
-- **Keyboard Controls**: Efficient navigation using keyboard shortcuts
+- **Video & Image Analysis**: Process both video files and static images
+- **MediaPipe Pose Estimation**: Automatic detection of 33 body landmarks using Google's MediaPipe Pose
+- **2D & 3D Analysis Modes**: Choose between 2D pixel-based or 3D world coordinate analysis
+- **Center of Mass Calculation**: Calculate segment COM and total-body COM with sex-specific models
+- **Bilateral Symmetry Mirroring**: Automatically estimate missing landmarks using opposite side data
+- **Interactive Editing**: Manually adjust joint positions and calibration points
+- **Coordinate System Visualization**: Display 2D or 3D coordinate axes with origin markers
+- **Real-time Visual Overlay**: See detected skeleton, joints, and COM overlaid on video/image
+- **Calibrated Measurements**: Scale 2D analysis to real-world units using calibration points
+- **Data Export**: Export pose data to Excel with multiple coordinate systems and export images with overlays
+- **Full-Size Display**: View media at original resolution with doubled font size for better visibility
+
+## Pose Estimation Technology
+
+### MediaPipe Pose
+This application uses **MediaPipe Pose** by Google for pose estimation:
+- Detects **33 body landmarks** including face, torso, arms, and legs
+- Provides both **2D normalized coordinates** (x, y) and **3D world coordinates** (x, y, z)
+- Includes **visibility scores** for each landmark
+- Works on both CPU and GPU for real-time performance
+
+### Extended Landmarks
+The application extends the 33 base landmarks by calculating:
+- **2 midpoints**: Mid-shoulder and mid-hip
+- **14 segment centers of mass**: Upper arms (L/R), forearms (L/R), hands (L/R), thighs (L/R), shanks (L/R), feet (L/R), head+neck, trunk
+- **1 total-body center of mass**: Weighted combination of all segments
+
+**Total tracked points**: 50 (33 original + 17 calculated)
+
+## Analysis Modes
+
+### 2D Analysis
+- **Coordinate System**: Origin at **left-bottom corner** of the image/video
+  - **X-axis**: Points right (positive direction)
+  - **Y-axis**: Points up (positive direction)
+- **Units**: Normalized by calibration distance (meters)
+  - Coordinates are calculated as: `(pixel distance) / (calibration distance in pixels) × (calibration scale in meters)`
+  - Default calibration scale: 1.0 meter
+- **Use Case**: Analyzing movement in a single plane (e.g., sagittal or frontal plane analysis)
+
+### 3D Analysis
+- **Coordinate System**: Origin at **mid-hip** landmark
+  - **X-axis**: Points right (positive direction)
+  - **Y-axis**: Points up (positive direction)
+  - **Z-axis**: Points forward toward camera (positive direction)
+- **Units**: Meters (real-world coordinates provided by MediaPipe)
+- **Use Case**: Full 3D spatial analysis with depth information
+
+## Sex-Specific Center of Mass Models
+
+The application uses different segment mass percentages for males and females based on biomechanical research:
+
+### Male Model
+- Head+Neck: 8.26% of total body mass
+- Trunk: 43.46%
+- Upper Arm: 2.71% (each)
+- Forearm: 1.62% (each)
+- Hand: 0.61% (each)
+- Thigh: 14.16% (each)
+- Shank: 4.33% (each)
+- Foot: 1.37% (each)
+
+### Female Model
+- Head+Neck: 8.20% of total body mass
+- Trunk: 42.57%
+- Upper Arm: 2.55% (each)
+- Forearm: 1.38% (each)
+- Hand: 0.56% (each)
+- Thigh: 14.78% (each)
+- Shank: 4.81% (each)
+- Foot: 1.29% (each)
+
+**Total Body COM**: Calculated as weighted average of all 12 segment COMs based on their mass percentages.
 
 ## How to Use
 
-1. **Open the App**: Open `index.html` in a modern web browser (Chrome, Firefox, Edge, or Safari)
+### 1. Open the Application
+Open `index.html` in a modern web browser (Chrome, Firefox, Edge, or Safari recommended)
 
-2. **Upload a Video**: Click "Choose Video File" and select a video file from your computer
+### 2. Upload Media
+- Click **"📹 Upload Video"** to select a video file (MP4, WebM, etc.)
+- Click **"🖼️ Upload Image"** to select an image file (JPG, PNG, etc.)
 
-3. **Control Playback**:
-   - Click the play button (▶) or press **Space** to play/pause
-   - Use **⏮** and **⏭** buttons or **arrow keys** to navigate frame-by-frame
-   - Drag the timeline slider to jump to specific points
+### 3. Configure Analysis Settings
 
-4. **View Pose Detection**:
-   - The skeleton will be automatically drawn over detected people
-   - Toggle "Show Skeleton" to hide/show the overlay
-   - Toggle "Enable Pose Detection" to turn pose detection on/off
+**Analysis Mode**:
+- Select **2D** for planar analysis with calibrated units
+- Select **3D** for spatial analysis with depth information
 
-5. **Export Data**:
-   - Click "Export as JSON" for structured 3D data with metadata
-   - Click "Export as CSV" for spreadsheet-compatible format
-   - Data includes frame number, timestamp, and all 33 joint positions in 2D and 3D
+**Sex Selection**:
+- Select **Male** or **Female** to use appropriate segment mass percentages for COM calculation
 
-## Keyboard Shortcuts
+### 4. Display Options
 
-- **Space**: Play/Pause
-- **Left Arrow**: Previous frame
-- **Right Arrow**: Next frame
+**Show Pose**: Toggle skeleton and landmark visualization
 
-## Joint Data Structure
+**Names**: Display landmark names (abbreviated: R_Knee, L_Ankle, etc.)
 
-The app tracks 33 body landmarks:
+**Coordinates**: Display coordinate values next to landmark names
+- Format: `Landmark_Name (x, y)` for 2D or `Landmark_Name (x, y, z)` for 3D
+- Coordinates appear inline with the landmark name
 
-- Face: nose, eyes, ears, mouth
-- Torso: shoulders, hips
-- Arms: elbows, wrists, hands, fingers
-- Legs: knees, ankles, feet, toes
+**Coordinate System**: Display coordinate axes showing origin and positive directions
 
-### Exported Data Format
+**Full Size**: Display media at original resolution and double font size for better readability
 
-**JSON Export**:
-```json
-{
-  "metadata": {
-    "totalFrames": 120,
-    "fps": 30,
-    "duration": 4.0,
-    "videoWidth": 1920,
-    "videoHeight": 1080
-  },
-  "poseData": [
-    {
-      "frame": 0,
-      "timestamp": 0.0,
-      "landmarks2D": [...],
-      "landmarks3D": [...]
-    }
-  ]
-}
+**Font Size Slider**: Adjust base font size (12-60px) for all text labels
+
+### 5. Calibration (2D Mode Only)
+
+For accurate real-world measurements in 2D mode:
+
+1. Check **"Edit Calibration Points"**
+2. Two cyan points labeled "Calibration 1" and "Calibration 2" will appear
+3. Drag these points to match a known distance in the image (e.g., a meter stick, door height)
+4. Enter the real-world distance in the **"Calibration Scale (m)"** field
+5. Uncheck "Edit Calibration Points" when done
+
+All 2D coordinates will now be scaled to meters based on your calibration.
+
+### 6. Edit Joint Positions
+
+If pose estimation is inaccurate, you can manually adjust landmarks:
+
+1. Check **"Edit Joint Positions"**
+2. Green dots will become draggable
+3. Click and drag any green dot (joint) to reposition it
+4. COM calculations will update automatically based on new positions
+5. Uncheck "Edit Joint Positions" when done
+
+**Note**: Only joints with visibility > 0.5 can be edited. Edited positions persist until you reload the media.
+
+### 7. Video Playback Controls
+
+- **▶ Play / ⏸ Pause**: Start/stop video playback
+- **⏮ Previous Frame / ⏭ Next Frame**: Step through video frame-by-frame
+- **Video Progress Bar**: Click or drag to jump to specific time
+- **Processing FPS**: Shows actual pose processing framerate (runs at maximum speed)
+
+### 8. Export Data
+
+**Export Excel** (📗):
+- Creates an XLSX file with multiple sheets:
+  - **2D Display Coordinates**: Pixel coordinates with origin at left-bottom
+  - **3D Display Coordinates**: 3D world coordinates with origin at mid-hip
+  - **2D Original Coordinates**: MediaPipe normalized coordinates (0-1 range, origin at top-left)
+  - **3D Original Coordinates**: MediaPipe 3D world coordinates (origin at mid-hip)
+- Each row represents one frame (video) or the single frame (image)
+- Columns: Frame, Timestamp, then X/Y/Z coordinates for all 50 landmarks
+- Includes all 33 base landmarks + 17 calculated points (midpoints, segment COMs, total-body COM)
+
+**Export Image with Overlay** (📷):
+- Captures current frame/image with all overlays (skeleton, landmarks, coordinates, COM, axes)
+- Saves as PNG file with transparent background for overlays
+- Useful for presentations, reports, or documentation
+
+### 9. Video-Specific Features
+
+**Clear Data** (🗑️): Removes all collected frame data and resets analysis
+
+**Frame Counter**: Shows current frame / total frames
+
+**Time Display**: Shows current playback time
+
+**Frames w/ Data**: Shows how many frames have been processed
+
+## Display Legend
+
+The application uses color-coded circles to distinguish different point types:
+
+- 🟢 **Green**: Regular joints (MediaPipe detected landmarks)
+- 🟡 **Yellow**: Segment centers of mass (14 calculated points)
+- 🔴 **Red**: Total-body center of mass (1 calculated point)
+
+The legend appears at the bottom of both video and image analysis sections.
+
+## Coordinate Systems Explained
+
+### 2D Coordinate System
 ```
-
-**CSV/Excel Export**:
-- Each **row** represents one frame of video
-- Each **column** represents X, Y, Z coordinates for a specific joint
-- Format: `Frame, Timestamp, Nose_X, Nose_Y, Nose_Z, Left_Shoulder_X, Left_Shoulder_Y, Left_Shoulder_Z, ...`
-- 33 joints × 3 coordinates = 99 data columns + Frame + Timestamp
-- Coordinates are 3D world coordinates in meters (centered at hip)
-
-Example columns:
+Y↑ (up)
+│
+│     ● Landmark (x, y)
+│
+└────────→ X (right)
+(0,0) Left-bottom corner
 ```
-Frame, Timestamp, Nose_X, Nose_Y, Nose_Z, Left_Eye_Inner_X, Left_Eye_Inner_Y, Left_Eye_Inner_Z,
-Left_Eye_X, Left_Eye_Y, Left_Eye_Z, Left_Shoulder_X, Left_Shoulder_Y, Left_Shoulder_Z,
-Right_Shoulder_X, Right_Shoulder_Y, Right_Shoulder_Z, Left_Elbow_X, Left_Elbow_Y, Left_Elbow_Z,
-Right_Elbow_X, Right_Elbow_Y, Right_Elbow_Z, Left_Wrist_X, Left_Wrist_Y, Left_Wrist_Z, ...
+- Origin: Left-bottom corner of image/video
+- X increases to the right
+- Y increases upward
+- Units: Meters (scaled by calibration distance)
+
+### 3D Coordinate System
 ```
+      Y↑ (up)
+      │
+      │  ● Landmark (x, y, z)
+      │ /
+      │/
+      ●─────→ X (right)
+   Mid-hip  ↙
+           Z (forward)
+```
+- Origin: Mid-hip landmark (index 34)
+- X increases to the right
+- Y increases upward (inverted from MediaPipe's original down direction)
+- Z increases forward toward the camera
+- Units: Meters (MediaPipe world coordinates)
+
+## Excel Export Format
+
+### Sheet 1: 2D Display Coordinates
+Columns: `Frame | Timestamp | Nose_X | Nose_Y | L_Eye_Inner_X | L_Eye_Inner_Y | ... | Total_Body_COM_X | Total_Body_COM_Y`
+- Origin: Left-bottom corner
+- Units: Meters (calibrated)
+
+### Sheet 2: 3D Display Coordinates
+Columns: `Frame | Timestamp | Nose_X | Nose_Y | Nose_Z | L_Eye_Inner_X | L_Eye_Inner_Y | L_Eye_Inner_Z | ... | Total_Body_COM_X | Total_Body_COM_Y | Total_Body_COM_Z`
+- Origin: Mid-hip
+- Units: Meters
+- Y-axis is inverted (positive = up)
+
+### Sheet 3: 2D Original Coordinates
+- MediaPipe's original normalized 2D coordinates
+- Origin: Top-left corner
+- Range: 0.0 to 1.0 (normalized to image dimensions)
+
+### Sheet 4: 3D Original Coordinates
+- MediaPipe's original 3D world coordinates
+- Origin: Mid-hip
+- Units: Meters
+- Y-axis: Positive = down (MediaPipe convention)
+
+## Landmark Names
+
+The application uses abbreviated names for compact display:
+- **L_** prefix: Left side (e.g., L_Shoulder, L_Knee)
+- **R_** prefix: Right side (e.g., R_Shoulder, R_Knee)
+- Full name examples: Nose, L_Eye, R_Elbow, L_Wrist, R_Hip, L_Ankle, R_Foot
+
+### Complete Landmark List (50 points)
+**Face (8)**: Nose, L_Eye_Inner, L_Eye, L_Eye_Outer, R_Eye_Inner, R_Eye, R_Eye_Outer, L_Ear, R_Ear, Mouth_Left, Mouth_Right
+
+**Body (22)**: L_Shoulder, R_Shoulder, L_Elbow, R_Elbow, L_Wrist, R_Wrist, L_Pinky, R_Pinky, L_Index, R_Index, L_Thumb, R_Thumb, L_Hip, R_Hip, L_Knee, R_Knee, L_Ankle, R_Ankle, L_Heel, R_Heel, L_Foot_Index, R_Foot_Index
+
+**Calculated Midpoints (2)**: Mid_Shoulder, Mid_Hip
+
+**Segment COMs (14)**: L_Upper_Arm_COM, R_Upper_Arm_COM, L_Forearm_COM, R_Forearm_COM, L_Hand_COM, R_Hand_COM, L_Thigh_COM, R_Thigh_COM, L_Shank_COM, R_Shank_COM, L_Foot_COM, R_Foot_COM, Head_Neck_COM, Trunk_COM
+
+**Total Body COM (1)**: Total_Body_COM
 
 ## Technical Details
 
-- **Pose Estimation**: MediaPipe Pose (Google)
-- **3D Coordinates**: World landmarks in meters from hip center
-- **2D Coordinates**: Normalized to video dimensions (0-1 range)
-- **Landmark Count**: 33 body keypoints per frame
+- **Pose Estimation**: MediaPipe Pose v0.5+ (Google)
+- **3D Coordinates**: World landmarks in meters from mid-hip center
+- **2D Coordinates**: Calibrated to meters using reference distance
+- **Landmark Count**: 33 base + 17 calculated = 50 total points per frame
 - **Browser Compatibility**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+- **Processing**: Client-side only (no data uploaded to servers)
+- **Video Processing**: Maximum framerate (no throttling)
+- **Visibility Threshold**: 0.3 (landmarks with visibility < 0.3 are hidden)
 
 ## Files
 
 - `index.html` - Main application interface
-- `style.css` - Styling and responsive layout
-- `app.js` - Core functionality and pose estimation logic
+- `styles.css` - Styling and responsive layout
+- `script.js` - Core functionality, pose estimation, COM calculation, and export logic
 
 ## Requirements
 
 - Modern web browser with JavaScript enabled
-- Internet connection (for MediaPipe CDN libraries)
-- Video file in a browser-supported format (MP4, WebM, etc.)
+- Internet connection (for MediaPipe and SheetJS CDN libraries)
+- Video file in browser-supported format (MP4, WebM, MOV, etc.)
+- Image file in browser-supported format (JPG, PNG, BMP, etc.)
 
-## Privacy
+## Privacy & Security
 
-All processing happens locally in your browser. No video data is uploaded to any server.
+All processing happens **locally in your browser**. No video, image, or pose data is uploaded to any server. MediaPipe models are loaded from CDN but all computation is client-side.
+
+## Limitations
+
+- **Single Person Detection**: MediaPipe Pose detects only one person per frame (the most prominent person)
+- **Visibility Requirements**: Landmarks must have visibility ≥ 0.3 to be displayed
+- **2D Calibration**: Requires manual calibration point placement for accurate measurements
+- **3D Accuracy**: 3D depth estimation is monocular (single camera) and may have accuracy limitations
+- **Browser Memory**: Very long videos may consume significant memory
+
+## Use Cases
+
+- Biomechanical analysis of human movement
+- Gait analysis and postural assessment
+- Sports performance analysis
+- Rehabilitation monitoring
+- Ergonomics research
+- Motion capture for animation reference
+- Physical therapy progress tracking
+
+## Citation
+
+If you use this tool for research, please cite MediaPipe:
+```
+@article{mediapipe2019,
+  title={MediaPipe: A Framework for Building Perception Pipelines},
+  author={Lugaresi, Camillo and Tang, Jiuqiang and Nash, Hadon and McClanahan, Chris and Uboweja, Esha and Hays, Michael and Zhang, Fan and Chang, Chuo-Ling and Yong, Ming Guang and Lee, Juhyun and others},
+  journal={arXiv preprint arXiv:1906.08172},
+  year={2019}
+}
+```
+
+## License
+
+This application uses MediaPipe (Apache 2.0 License) and SheetJS Community Edition (Apache 2.0 License).
