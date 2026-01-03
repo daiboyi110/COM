@@ -1920,6 +1920,89 @@ function savePoseData(landmarks2D, landmarks3D) {
     document.getElementById('capturedFrames').textContent = poseDataArray.length;
 }
 
+// Helper function to calculate all extended landmarks (including COM) with display coordinates
+function calculateExtendedLandmarksForExport(landmarks2D, landmarks3D, sex, bodySide, analysisMode, calibrationPoint1, calibrationPoint2, calibrationScale, canvasWidth, canvasHeight) {
+    // Step 1: Fill missing landmarks with mirroring
+    const { filled2D, filled3D } = fillMissingLandmarksWithMirrors(landmarks2D, landmarks3D);
+
+    // Step 2: Calculate midpoints
+    const { midpoints2D, midpoints3D } = calculateMidpoints(filled2D, filled3D);
+
+    // Step 3: Extend landmarks array with midpoints
+    const extendedLandmarks2D = [...filled2D];
+    const extendedLandmarks3D = filled3D ? [...filled3D] : [];
+    if (midpoints2D[33]) extendedLandmarks2D[33] = midpoints2D[33];
+    if (midpoints2D[34]) extendedLandmarks2D[34] = midpoints2D[34];
+    if (midpoints3D[33]) extendedLandmarks3D[33] = midpoints3D[33];
+    if (midpoints3D[34]) extendedLandmarks3D[34] = midpoints3D[34];
+
+    // Step 4: Calculate segment COMs
+    const { segmentCOMs2D, segmentCOMs3D } = calculateSegmentCOMs(extendedLandmarks2D, extendedLandmarks3D, sex);
+
+    // Add segment COMs to extended landmarks (indices 35-48)
+    for (let i = 35; i <= 48; i++) {
+        if (segmentCOMs2D[i]) extendedLandmarks2D[i] = segmentCOMs2D[i];
+        if (segmentCOMs3D[i]) extendedLandmarks3D[i] = segmentCOMs3D[i];
+    }
+
+    // Step 5: Calculate total body COM
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex, bodySide);
+
+    // Add total body COM to extended landmarks (index 49)
+    if (totalBodyCOM2D) extendedLandmarks2D[49] = totalBodyCOM2D;
+    if (totalBodyCOM3D) extendedLandmarks3D[49] = totalBodyCOM3D;
+
+    // Step 6: Calculate display coordinates for all extended landmarks
+    const displayCoords = [];
+
+    extendedLandmarks2D.forEach((landmark, index) => {
+        if (!landmark) {
+            displayCoords.push(null);
+            return;
+        }
+
+        let displayCoord = { x: 0, y: 0 };
+
+        if (analysisMode === '3D' && extendedLandmarks3D && extendedLandmarks3D[index]) {
+            // 3D mode: use 3D world coordinates with negated Y
+            const lm3d = extendedLandmarks3D[index];
+            displayCoord = {
+                x: parseFloat(lm3d.x.toFixed(6)),
+                y: parseFloat((-lm3d.y).toFixed(6)),
+                z: parseFloat(lm3d.z.toFixed(6))
+            };
+        } else if (analysisMode === '2D') {
+            // 2D mode: normalized by calibration distance
+            const pixelX = landmark.x * canvasWidth;
+            const pixelY = (1 - landmark.y) * canvasHeight; // Transform Y to make positive direction upward
+
+            // Calculate calibration distance in pixels
+            const p1x = calibrationPoint1.x * canvasWidth;
+            const p1y = calibrationPoint1.y * canvasHeight;
+            const p2x = calibrationPoint2.x * canvasWidth;
+            const p2y = calibrationPoint2.y * canvasHeight;
+            const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
+
+            // Calculate scale factor (pixels per meter)
+            const pixelsPerMeter = calibDistance / calibrationScale;
+
+            // Normalize by pixels per meter to get meters
+            displayCoord = {
+                x: parseFloat((pixelX / pixelsPerMeter).toFixed(6)),
+                y: parseFloat((pixelY / pixelsPerMeter).toFixed(6))
+            };
+        }
+
+        displayCoords.push(displayCoord);
+    });
+
+    return {
+        extendedLandmarks2D,
+        extendedLandmarks3D,
+        displayCoords
+    };
+}
+
 // Helper function to calculate display coordinates (as shown on video/figure)
 function calculateDisplayCoordinates(landmarks2D, landmarks3D, analysisMode, calibrationPoint1, calibrationPoint2, canvasWidth, canvasHeight) {
     const displayCoords = [];
@@ -2169,92 +2252,80 @@ function exportAsExcel() {
             ['Video Width', video.videoWidth],
             ['Video Height', video.videoHeight],
             ['Analysis Mode', analysisModeVideo],
+            ['Sex', sexSelectionVideo],
+            ['Calibration Scale (m)', calibrationScaleVideo],
             ['Export Date', new Date().toISOString()]
         ]);
         XLSX.utils.book_append_sheet(wb, metadataSheet, 'Metadata');
         console.log('Metadata sheet created');
 
-        // ===== 3D World Coordinates Sheet =====
-        const header3D = ['Frame', 'Timestamp'];
+        // ===== 2D Display Coordinates Sheet (with COM) =====
+        const header2DDisplay = ['Frame', 'Timestamp'];
         LANDMARK_NAMES.forEach((name, index) => {
             // Skip excluded landmarks
             if (EXCLUDED_LANDMARKS.includes(index)) {
                 return;
             }
-            header3D.push(`${name}_X`, `${name}_Y`, `${name}_Z`);
+            header2DDisplay.push(`${name}_X`, `${name}_Y`);
         });
-        const data3DRows = [header3D];
+        const data2DDisplayRows = [header2DDisplay];
 
-        // Each row is one frame - 3D data
-        poseDataArray.forEach(frameData => {
-            const row = [
-                frameData.frame,
-                parseFloat(frameData.timestamp.toFixed(3))
-            ];
-
-            frameData.landmarks2D.forEach((lm2d, index) => {
-                // Skip excluded landmarks
-                if (EXCLUDED_LANDMARKS.includes(index)) {
-                    return;
-                }
-
-                const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
-
-                // Check if landmark is visible
-                if (lm2d.visibility > 0.5) {
-                    // Negate Y to make positive direction upward (conventional)
-                    row.push(
-                        parseFloat(lm3d.x.toFixed(6)),
-                        parseFloat((-lm3d.y).toFixed(6)),
-                        parseFloat(lm3d.z.toFixed(6))
-                    );
-                } else {
-                    // Landmark not visible, use empty values
-                    row.push('', '', '');
-                }
-            });
-
-            data3DRows.push(row);
-        });
-
-        const sheet3D = XLSX.utils.aoa_to_sheet(data3DRows);
-        XLSX.utils.book_append_sheet(wb, sheet3D, '3D World Coordinates');
-        console.log('3D World Coordinates sheet created with', data3DRows.length - 1, 'frames');
-
-        // ===== Display Coordinates Sheet =====
-        const headerDisplay = ['Frame', 'Timestamp'];
+        // ===== 3D Display Coordinates Sheet (with COM) =====
+        const header3DDisplay = ['Frame', 'Timestamp'];
         LANDMARK_NAMES.forEach((name, index) => {
             // Skip excluded landmarks
             if (EXCLUDED_LANDMARKS.includes(index)) {
                 return;
             }
-            if (analysisModeVideo === '2D') {
-                headerDisplay.push(`${name}_Display_X`, `${name}_Display_Y`);
-            } else {
-                headerDisplay.push(`${name}_Display_X`, `${name}_Display_Y`, `${name}_Display_Z`);
-            }
+            header3DDisplay.push(`${name}_X`, `${name}_Y`, `${name}_Z`);
         });
-        const dataDisplayRows = [headerDisplay];
+        const data3DDisplayRows = [header3DDisplay];
 
-        // Each row is one frame - display data
+        // ===== 2D Original Coordinates Sheet =====
+        const header2DOrig = ['Frame', 'Timestamp'];
+        LANDMARK_NAMES.forEach((name, index) => {
+            // Skip excluded landmarks and calculated points (only base 33 landmarks)
+            if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
+                return;
+            }
+            header2DOrig.push(`${name}_X`, `${name}_Y`);
+        });
+        const data2DOrigRows = [header2DOrig];
+
+        // ===== 3D Original Coordinates Sheet =====
+        const header3DOrig = ['Frame', 'Timestamp'];
+        LANDMARK_NAMES.forEach((name, index) => {
+            // Skip excluded landmarks and calculated points (only base 33 landmarks)
+            if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
+                return;
+            }
+            header3DOrig.push(`${name}_X`, `${name}_Y`, `${name}_Z`);
+        });
+        const data3DOrigRows = [header3DOrig];
+
+        // Process each frame
         poseDataArray.forEach(frameData => {
-            const row = [
-                frameData.frame,
-                parseFloat(frameData.timestamp.toFixed(3))
-            ];
-
-            // Calculate display coordinates for this frame
-            const displayCoords = calculateDisplayCoordinates(
+            // Calculate extended landmarks (with mirroring, midpoints, COMs) and display coordinates
+            const { extendedLandmarks2D, extendedLandmarks3D, displayCoords } = calculateExtendedLandmarksForExport(
                 frameData.landmarks2D,
                 frameData.landmarks3D,
+                sexSelectionVideo,
+                bodySideVideo,
                 analysisModeVideo,
                 calibrationPoint1Video,
                 calibrationPoint2Video,
+                calibrationScaleVideo,
                 video.videoWidth,
                 video.videoHeight
             );
 
-            frameData.landmarks2D.forEach((lm2d, index) => {
+            // 2D Display Coordinates Row (includes all 50 landmarks with COM)
+            const row2DDisplay = [
+                frameData.frame,
+                parseFloat(frameData.timestamp.toFixed(3))
+            ];
+
+            extendedLandmarks2D.forEach((landmark, index) => {
                 // Skip excluded landmarks
                 if (EXCLUDED_LANDMARKS.includes(index)) {
                     return;
@@ -2262,64 +2333,124 @@ function exportAsExcel() {
 
                 const displayCoord = displayCoords[index];
 
-                // Check if landmark is visible
-                if (lm2d.visibility > 0.5) {
-                    // Add display coordinates
-                    if (analysisModeVideo === '2D') {
-                        row.push(
-                            parseFloat(displayCoord.x.toFixed(6)),
-                            parseFloat(displayCoord.y.toFixed(6))
-                        );
-                    } else {
-                        row.push(
-                            parseFloat(displayCoord.x.toFixed(6)),
-                            parseFloat(displayCoord.y.toFixed(6)),
-                            parseFloat(displayCoord.z.toFixed(6))
-                        );
-                    }
+                if (landmark && landmark.visibility >= 0.3 && displayCoord) {
+                    row2DDisplay.push(
+                        parseFloat(displayCoord.x.toFixed(6)),
+                        parseFloat(displayCoord.y.toFixed(6))
+                    );
                 } else {
-                    // Landmark not visible, use empty values
-                    if (analysisModeVideo === '2D') {
-                        row.push('', '');
-                    } else {
-                        row.push('', '', '');
-                    }
+                    row2DDisplay.push('', '');
                 }
             });
 
-            dataDisplayRows.push(row);
-        });
+            data2DDisplayRows.push(row2DDisplay);
 
-        const sheetDisplay = XLSX.utils.aoa_to_sheet(dataDisplayRows);
-        XLSX.utils.book_append_sheet(wb, sheetDisplay, 'Display Coordinates');
-        console.log('Display Coordinates sheet created with', dataDisplayRows.length - 1, 'frames');
-
-        // Summary by frame sheet
-        const summaryRows = [['Frame', 'Timestamp', 'Detected_Joints', 'Avg_Visibility']];
-
-        poseDataArray.forEach(frameData => {
-            const avgVisibility = frameData.landmarks2D.reduce((sum, lm) => sum + lm.visibility, 0) / frameData.landmarks2D.length;
-            summaryRows.push([
+            // 3D Display Coordinates Row (includes all 50 landmarks with COM)
+            const row3DDisplay = [
                 frameData.frame,
-                parseFloat(frameData.timestamp.toFixed(3)),
-                frameData.landmarks2D.length,
-                parseFloat(avgVisibility.toFixed(3))
-            ]);
+                parseFloat(frameData.timestamp.toFixed(3))
+            ];
+
+            extendedLandmarks3D.forEach((landmark, index) => {
+                // Skip excluded landmarks
+                if (EXCLUDED_LANDMARKS.includes(index)) {
+                    return;
+                }
+
+                const displayCoord = displayCoords[index];
+
+                if (landmark && displayCoord && displayCoord.z !== undefined) {
+                    row3DDisplay.push(
+                        parseFloat(displayCoord.x.toFixed(6)),
+                        parseFloat(displayCoord.y.toFixed(6)),
+                        parseFloat(displayCoord.z.toFixed(6))
+                    );
+                } else {
+                    row3DDisplay.push('', '', '');
+                }
+            });
+
+            data3DDisplayRows.push(row3DDisplay);
+
+            // 2D Original Coordinates Row (MediaPipe normalized, only base 33 landmarks)
+            const row2DOrig = [
+                frameData.frame,
+                parseFloat(frameData.timestamp.toFixed(3))
+            ];
+
+            frameData.landmarks2D.forEach((lm2d, index) => {
+                // Skip excluded landmarks and calculated points
+                if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
+                    return;
+                }
+
+                if (lm2d.visibility >= 0.3) {
+                    row2DOrig.push(
+                        parseFloat(lm2d.x.toFixed(6)),
+                        parseFloat(lm2d.y.toFixed(6))
+                    );
+                } else {
+                    row2DOrig.push('', '');
+                }
+            });
+
+            data2DOrigRows.push(row2DOrig);
+
+            // 3D Original Coordinates Row (MediaPipe world, only base 33 landmarks)
+            const row3DOrig = [
+                frameData.frame,
+                parseFloat(frameData.timestamp.toFixed(3))
+            ];
+
+            frameData.landmarks2D.forEach((lm2d, index) => {
+                // Skip excluded landmarks and calculated points
+                if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
+                    return;
+                }
+
+                const lm3d = frameData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+
+                if (lm2d.visibility >= 0.3) {
+                    // Original MediaPipe 3D (Y positive = down)
+                    row3DOrig.push(
+                        parseFloat(lm3d.x.toFixed(6)),
+                        parseFloat(lm3d.y.toFixed(6)),
+                        parseFloat(lm3d.z.toFixed(6))
+                    );
+                } else {
+                    row3DOrig.push('', '', '');
+                }
+            });
+
+            data3DOrigRows.push(row3DOrig);
         });
 
-        const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
-        XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
-        console.log('Summary sheet created');
+        // Create and append sheets
+        const sheet2DDisplay = XLSX.utils.aoa_to_sheet(data2DDisplayRows);
+        XLSX.utils.book_append_sheet(wb, sheet2DDisplay, '2D Display Coordinates');
+        console.log('2D Display Coordinates sheet created with', data2DDisplayRows.length - 1, 'frames');
+
+        const sheet3DDisplay = XLSX.utils.aoa_to_sheet(data3DDisplayRows);
+        XLSX.utils.book_append_sheet(wb, sheet3DDisplay, '3D Display Coordinates');
+        console.log('3D Display Coordinates sheet created with', data3DDisplayRows.length - 1, 'frames');
+
+        const sheet2DOrig = XLSX.utils.aoa_to_sheet(data2DOrigRows);
+        XLSX.utils.book_append_sheet(wb, sheet2DOrig, '2D Original Coordinates');
+        console.log('2D Original Coordinates sheet created');
+
+        const sheet3DOrig = XLSX.utils.aoa_to_sheet(data3DOrigRows);
+        XLSX.utils.book_append_sheet(wb, sheet3DOrig, '3D Original Coordinates');
+        console.log('3D Original Coordinates sheet created');
 
         // Download the file
         console.log('Attempting to write Excel file...');
         XLSX.writeFile(wb, 'pose_data.xlsx');
         console.log(`Successfully exported ${poseDataArray.length} frames to Excel`);
-        alert(`Excel file downloaded successfully! (${poseDataArray.length} frames)`);
+        alert(`Excel file downloaded successfully! (${poseDataArray.length} frames with all 50 landmarks including COM)`);
 
     } catch (error) {
         console.error('Error exporting to Excel:', error);
-        alert(`Error creating Excel file: ${error.message}\n\nPlease try exporting as CSV instead.`);
+        alert(`Error creating Excel file: ${error.message}\n\nCheck console for details.`);
     }
 }
 
@@ -3054,112 +3185,145 @@ function exportImageAsExcel() {
             ['Image Height', imageDisplay.naturalHeight],
             ['Detected Joints', imagePoseData.landmarks2D.length],
             ['Analysis Mode', analysisModeImage],
+            ['Sex', sexSelectionImage],
+            ['Calibration Scale (m)', calibrationScaleImage],
             ['Export Date', new Date().toISOString()]
         ]);
         XLSX.utils.book_append_sheet(wb, metadataSheet, 'Metadata');
         console.log('Metadata sheet created');
 
-        // Calculate display coordinates
-        const displayCoords = calculateDisplayCoordinates(
+        // Calculate extended landmarks (with mirroring, midpoints, COMs) and display coordinates
+        const { extendedLandmarks2D, extendedLandmarks3D, displayCoords } = calculateExtendedLandmarksForExport(
             imagePoseData.landmarks2D,
             imagePoseData.landmarks3D,
+            sexSelectionImage,
+            bodySideImage,
             analysisModeImage,
             calibrationPoint1Image,
             calibrationPoint2Image,
+            calibrationScaleImage,
             imageDisplay.naturalWidth,
             imageDisplay.naturalHeight
         );
 
-        // ===== 3D World Coordinates Sheet =====
-        const header3D = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Z', 'Visibility'];
-        const poseDataRows3D = [header3D];
+        // ===== 2D Display Coordinates Sheet (with COM) =====
+        const header2DDisplay = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Visibility'];
+        const data2DDisplay = [header2DDisplay];
 
-        // Only include visible landmarks that are displayed (exclude EXCLUDED_LANDMARKS)
-        imagePoseData.landmarks2D.forEach((lm2d, index) => {
-            // Skip excluded landmarks (not displayed on screen)
+        extendedLandmarks2D.forEach((landmark, index) => {
+            // Skip excluded landmarks
             if (EXCLUDED_LANDMARKS.includes(index)) {
                 return;
             }
-            // Only include landmarks with sufficient visibility
-            if (lm2d.visibility > 0.5) {
-                const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
 
-                // Negate Y to make positive direction upward (conventional)
-                const row = [
+            const displayCoord = displayCoords[index];
+
+            if (landmark && landmark.visibility >= 0.3 && displayCoord) {
+                data2DDisplay.push([
+                    index,
+                    LANDMARK_NAMES[index],
+                    parseFloat(displayCoord.x.toFixed(6)),
+                    parseFloat(displayCoord.y.toFixed(6)),
+                    parseFloat(landmark.visibility.toFixed(3))
+                ]);
+            }
+        });
+
+        const sheet2DDisplay = XLSX.utils.aoa_to_sheet(data2DDisplay);
+        XLSX.utils.book_append_sheet(wb, sheet2DDisplay, '2D Display Coordinates');
+        console.log('2D Display Coordinates sheet created with', data2DDisplay.length - 1, 'landmarks');
+
+        // ===== 3D Display Coordinates Sheet (with COM) =====
+        const header3DDisplay = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Z', 'Visibility'];
+        const data3DDisplay = [header3DDisplay];
+
+        extendedLandmarks3D.forEach((landmark, index) => {
+            // Skip excluded landmarks
+            if (EXCLUDED_LANDMARKS.includes(index)) {
+                return;
+            }
+
+            const displayCoord = displayCoords[index];
+
+            if (landmark && displayCoord && displayCoord.z !== undefined) {
+                data3DDisplay.push([
+                    index,
+                    LANDMARK_NAMES[index],
+                    parseFloat(displayCoord.x.toFixed(6)),
+                    parseFloat(displayCoord.y.toFixed(6)),
+                    parseFloat(displayCoord.z.toFixed(6)),
+                    parseFloat(landmark.visibility.toFixed(3))
+                ]);
+            }
+        });
+
+        const sheet3DDisplay = XLSX.utils.aoa_to_sheet(data3DDisplay);
+        XLSX.utils.book_append_sheet(wb, sheet3DDisplay, '3D Display Coordinates');
+        console.log('3D Display Coordinates sheet created with', data3DDisplay.length - 1, 'landmarks');
+
+        // ===== 2D Original Coordinates Sheet (MediaPipe normalized, base 33 only) =====
+        const header2DOrig = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Visibility'];
+        const data2DOrig = [header2DOrig];
+
+        imagePoseData.landmarks2D.forEach((lm2d, index) => {
+            // Skip excluded landmarks and calculated points
+            if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
+                return;
+            }
+
+            if (lm2d.visibility >= 0.3) {
+                data2DOrig.push([
+                    index,
+                    LANDMARK_NAMES[index],
+                    parseFloat(lm2d.x.toFixed(6)),
+                    parseFloat(lm2d.y.toFixed(6)),
+                    parseFloat(lm2d.visibility.toFixed(3))
+                ]);
+            }
+        });
+
+        const sheet2DOrig = XLSX.utils.aoa_to_sheet(data2DOrig);
+        XLSX.utils.book_append_sheet(wb, sheet2DOrig, '2D Original Coordinates');
+        console.log('2D Original Coordinates sheet created');
+
+        // ===== 3D Original Coordinates Sheet (MediaPipe world, base 33 only) =====
+        const header3DOrig = ['Joint_Index', 'Joint_Name', 'X', 'Y', 'Z', 'Visibility'];
+        const data3DOrig = [header3DOrig];
+
+        imagePoseData.landmarks2D.forEach((lm2d, index) => {
+            // Skip excluded landmarks and calculated points
+            if (EXCLUDED_LANDMARKS.includes(index) || index >= 33) {
+                return;
+            }
+
+            const lm3d = imagePoseData.landmarks3D[index] || { x: 0, y: 0, z: 0 };
+
+            if (lm2d.visibility >= 0.3) {
+                // Original MediaPipe 3D (Y positive = down)
+                data3DOrig.push([
                     index,
                     LANDMARK_NAMES[index],
                     parseFloat(lm3d.x.toFixed(6)),
-                    parseFloat((-lm3d.y).toFixed(6)),
+                    parseFloat(lm3d.y.toFixed(6)),
                     parseFloat(lm3d.z.toFixed(6)),
                     parseFloat(lm2d.visibility.toFixed(3))
-                ];
-
-                poseDataRows3D.push(row);
+                ]);
             }
         });
 
-        const poseSheet3D = XLSX.utils.aoa_to_sheet(poseDataRows3D);
-        XLSX.utils.book_append_sheet(wb, poseSheet3D, '3D World Coordinates');
-        console.log('3D World Coordinates sheet created with', poseDataRows3D.length - 1, 'joints');
-
-        // ===== Display Coordinates Sheet =====
-        const headerDisplay = ['Joint_Index', 'Joint_Name'];
-        if (analysisModeImage === '2D') {
-            headerDisplay.push('Display_X', 'Display_Y');
-        } else {
-            headerDisplay.push('Display_X', 'Display_Y', 'Display_Z');
-        }
-        headerDisplay.push('Visibility');
-        const poseDataRowsDisplay = [headerDisplay];
-
-        // Only include visible landmarks that are displayed (exclude EXCLUDED_LANDMARKS)
-        imagePoseData.landmarks2D.forEach((lm2d, index) => {
-            // Skip excluded landmarks (not displayed on screen)
-            if (EXCLUDED_LANDMARKS.includes(index)) {
-                return;
-            }
-            // Only include landmarks with sufficient visibility
-            if (lm2d.visibility > 0.5) {
-                const displayCoord = displayCoords[index];
-
-                const row = [
-                    index,
-                    LANDMARK_NAMES[index]
-                ];
-
-                // Add display coordinates
-                if (analysisModeImage === '2D') {
-                    row.push(
-                        parseFloat(displayCoord.x.toFixed(6)),
-                        parseFloat(displayCoord.y.toFixed(6))
-                    );
-                } else {
-                    row.push(
-                        parseFloat(displayCoord.x.toFixed(6)),
-                        parseFloat(displayCoord.y.toFixed(6)),
-                        parseFloat(displayCoord.z.toFixed(6))
-                    );
-                }
-
-                row.push(parseFloat(lm2d.visibility.toFixed(3)));
-
-                poseDataRowsDisplay.push(row);
-            }
-        });
-
-        const poseSheetDisplay = XLSX.utils.aoa_to_sheet(poseDataRowsDisplay);
-        XLSX.utils.book_append_sheet(wb, poseSheetDisplay, 'Display Coordinates');
-        console.log('Display Coordinates sheet created with', poseDataRowsDisplay.length - 1, 'joints');
+        const sheet3DOrig = XLSX.utils.aoa_to_sheet(data3DOrig);
+        XLSX.utils.book_append_sheet(wb, sheet3DOrig, '3D Original Coordinates');
+        console.log('3D Original Coordinates sheet created');
 
         // Download the file
         console.log('Attempting to write Excel file...');
         XLSX.writeFile(wb, 'image_pose_data.xlsx');
         console.log('Successfully exported image pose data to Excel');
-        alert('Image pose data exported successfully!');
+        alert('Image pose data exported successfully with all 50 landmarks including COM!');
 
     } catch (error) {
         console.error('Error exporting image to Excel:', error);
-        alert(`Error creating Excel file: ${error.message}\n\nPlease try exporting as CSV instead.`);
+        alert(`Error creating Excel file: ${error.message}\n\nCheck console for details.`);
     }
 }
 
