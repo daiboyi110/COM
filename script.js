@@ -840,7 +840,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Analysis mode radio buttons - Video
     const calibrationScaleLabelVideo = document.getElementById('calibrationScaleLabelVideo');
-    const editCalibrationVideoLabel = document.getElementById('editCalibrationVideoLabel');
     document.querySelectorAll('input[name="analysisModeVideo"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             analysisModeVideo = e.target.value;
@@ -876,7 +875,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Analysis mode radio buttons - Image
     const calibrationScaleLabelImage = document.getElementById('calibrationScaleLabelImage');
-    const editCalibrationImageLabel = document.getElementById('editCalibrationImageLabel');
     document.querySelectorAll('input[name="analysisModeImage"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             analysisModeImage = e.target.value;
