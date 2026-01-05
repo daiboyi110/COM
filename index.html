@@ -17,29 +17,8 @@
     <div class="container">
         <h1>Center of Mass (COM) Visualization</h1>
 
-        <div style="text-align: center; margin-bottom: 15px; padding: 10px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffc107;">
-            <p style="margin: 0; color: #856404; font-size: 14px; font-weight: 600;">
-                💡 <strong>Tip:</strong> For optimal performance, press <strong>Ctrl+F5</strong> to refresh the page before loading a new video or image.
-            </p>
-        </div>
-
-        <div class="upload-section">
-            <label class="upload-btn">
-                📹 Upload Video
-                <input type="file" id="videoInput" accept="video/*" style="display: none;">
-            </label>
-            <label class="upload-btn">
-                🖼️ Upload Image
-                <input type="file" id="imageInput" accept="image/*" style="display: none;">
-            </label>
-        </div>
 
         <div id="imageSection" style="display: none;">
-            <div class="section-header">
-                <h2>Image Analysis</h2>
-                <button id="closeImageBtn" class="btn-close">✕ Close Image</button>
-            </div>
-
             <div class="video-layout-container">
                 <!-- Left Sidebar -->
                 <div class="video-left-controls">
@@ -127,6 +106,18 @@
                 <!-- Right Sidebar -->
                 <div class="video-right-controls">
                     <div class="side-control-group">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Upload</h3>
+                        <label class="upload-btn" style="width: 100%; margin-bottom: 8px;">
+                            📹 Upload Video
+                            <input type="file" id="videoInput" accept="video/*" style="display: none;">
+                        </label>
+                        <label class="upload-btn" style="width: 100%;">
+                            🖼️ Upload Image
+                            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                        </label>
+                    </div>
+
+                    <div class="side-control-group">
                         <h3 style="margin: 0 0 10px 0; font-size: 16px;">Image Info</h3>
                         <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
                             <span><strong>Image:</strong> <span id="imageInfo">Loading...</span></span>
@@ -144,11 +135,6 @@
         </div>
 
         <div id="videoSection" style="display: none;">
-            <div class="section-header">
-                <h2>Video Analysis</h2>
-                <button id="closeVideoBtn" class="btn-close">✕ Close Video</button>
-            </div>
-
             <div class="video-layout-container">
                 <!-- Left Sidebar -->
                 <div class="video-left-controls">
@@ -246,6 +232,18 @@
 
                 <!-- Right Sidebar -->
                 <div class="video-right-controls">
+                    <div class="side-control-group">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Upload</h3>
+                        <label class="upload-btn" style="width: 100%; margin-bottom: 8px; text-align: center; padding: 10px;">
+                            📹 Upload Video
+                            <input type="file" id="videoInput2" accept="video/*" style="display: none;">
+                        </label>
+                        <label class="upload-btn" style="width: 100%; text-align: center; padding: 10px;">
+                            🖼️ Upload Image
+                            <input type="file" id="imageInput2" accept="image/*" style="display: none;">
+                        </label>
+                    </div>
+
                     <div class="side-control-group">
                         <h3 style="margin: 0 0 10px 0; font-size: 16px;">Video Info</h3>
                         <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
