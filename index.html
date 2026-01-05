@@ -40,77 +40,106 @@
                 <button id="closeImageBtn" class="btn-close">✕ Close Image</button>
             </div>
 
-            <div class="compact-controls">
-                <label>
-                    <input type="radio" name="analysisModeImage" value="2D" checked> 2D
-                </label>
-                <label>
-                    <input type="radio" name="analysisModeImage" value="3D"> 3D
-                </label>
-                <label>
-                    <input type="radio" name="sexImage" value="male" checked> Male
-                </label>
-                <label>
-                    <input type="radio" name="sexImage" value="female"> Female
-                </label>
-            </div>
+            <div class="video-layout-container">
+                <!-- Left Sidebar -->
+                <div class="video-left-controls">
+                    <div class="side-control-group">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Analysis Mode</h3>
+                        <label>
+                            <input type="radio" name="analysisModeImage" value="2D" checked> 2D
+                        </label>
+                        <label>
+                            <input type="radio" name="analysisModeImage" value="3D"> 3D
+                        </label>
+                    </div>
 
-            <div class="video-wrapper">
-                <img id="imageDisplay">
-                <canvas id="imageCanvas"></canvas>
-            </div>
+                    <div class="side-control-group">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Sex Selection</h3>
+                        <label>
+                            <input type="radio" name="sexImage" value="male" checked> Male
+                        </label>
+                        <label>
+                            <input type="radio" name="sexImage" value="female"> Female
+                        </label>
+                    </div>
 
-            <div class="legend">
-                <strong>Legend:</strong>
-                <span class="legend-item"><span class="legend-circle green"></span> Joints</span>
-                <span class="legend-item"><span class="legend-circle yellow"></span> Segment COM</span>
-                <span class="legend-item"><span class="legend-circle red"></span> Total-body COM</span>
-            </div>
+                    <div class="side-control-group">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Display Options</h3>
+                        <label>
+                            <input type="checkbox" id="showPoseImage" checked> Show Pose
+                        </label>
+                        <label>
+                            <input type="checkbox" id="showJointNumbersImage" checked> Names
+                        </label>
+                        <label>
+                            <input type="checkbox" id="showCoordinatesImage"> Coordinates
+                        </label>
+                        <label>
+                            <input type="checkbox" id="showCoordinateSystemImage"> Coordinate System
+                        </label>
+                        <label>
+                            <input type="checkbox" id="fullSizeImage"> Full Size
+                        </label>
+                    </div>
 
-            <div class="compact-controls">
-                <label>
-                    <input type="checkbox" id="showPoseImage" checked> Show Pose
-                </label>
-                <label>
-                    <input type="checkbox" id="showJointNumbersImage" checked> Names
-                </label>
-                <label>
-                    <input type="checkbox" id="showCoordinatesImage"> Coordinates
-                </label>
-                <label>
-                    <input type="checkbox" id="showCoordinateSystemImage"> Coordinate System
-                </label>
-                <label>
-                    <input type="checkbox" id="fullSizeImage"> Full Size
-                </label>
-                <label>
-                    Font Size:
-                    <input type="range" id="fontSizeSlider" min="12" max="60" value="28" step="2" style="width: 100px; vertical-align: middle;">
-                    <span id="fontSizeValue">28</span>px
-                </label>
-            </div>
+                    <div class="side-control-group">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Font Size</h3>
+                        <label style="flex-direction: row; align-items: center; gap: 8px;">
+                            <input type="range" id="fontSizeSlider" min="12" max="60" value="28" step="2" style="flex: 1;">
+                            <span id="fontSizeValue" style="min-width: 35px;">28</span>px
+                        </label>
+                    </div>
 
-            <div class="compact-controls">
-                <label>
-                    <input type="checkbox" id="editModeImage"> Edit Joint Positions
-                </label>
-                <label id="editCalibrationImageLabel">
-                    <input type="checkbox" id="editModeCalibrationImage"> Edit Calibration Points
-                </label>
-                <label id="calibrationScaleLabelImage">
-                    Calibration Scale (m):
-                    <input type="number" id="calibrationScaleImage" value="1.0" step="0.01" min="0.01" style="width: 80px;">
-                </label>
-            </div>
+                    <div class="side-control-group">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Edit Mode</h3>
+                        <label>
+                            <input type="checkbox" id="editModeImage"> Edit Joint Positions
+                        </label>
+                        <label id="editCalibrationImageLabel">
+                            <input type="checkbox" id="editModeCalibrationImage"> Edit Calibration Points
+                        </label>
+                    </div>
 
-            <div class="info" style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <span><strong>Image:</strong> <span id="imageInfo">Loading...</span></span>
-                <span><strong>Points Displayed:</strong> <span id="jointCountImage">0</span></span>
-            </div>
+                    <div class="side-control-group" id="calibrationScaleLabelImage">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Calibration Scale</h3>
+                        <label style="flex-direction: row; align-items: center; gap: 8px;">
+                            <input type="number" id="calibrationScaleImage" value="1.0" step="0.01" min="0.01" style="flex: 1;">
+                            <span>m</span>
+                        </label>
+                    </div>
+                </div>
 
-            <div class="compact-controls">
-                <button id="exportImageExcel" class="btn-export">📗 Export Excel</button>
-                <button id="exportImageScreenshot" class="btn-export">📷 Export Image with Overlay</button>
+                <!-- Center Column (Image) -->
+                <div class="video-center-column">
+                    <div class="video-wrapper">
+                        <img id="imageDisplay">
+                        <canvas id="imageCanvas"></canvas>
+                    </div>
+
+                    <div class="legend">
+                        <strong>Legend:</strong>
+                        <span class="legend-item"><span class="legend-circle green"></span> Joints</span>
+                        <span class="legend-item"><span class="legend-circle yellow"></span> Segment COM</span>
+                        <span class="legend-item"><span class="legend-circle red"></span> Total-body COM</span>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar -->
+                <div class="video-right-controls">
+                    <div class="side-control-group">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Image Info</h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
+                            <span><strong>Image:</strong> <span id="imageInfo">Loading...</span></span>
+                            <span><strong>Points:</strong> <span id="jointCountImage">0</span></span>
+                        </div>
+                    </div>
+
+                    <div class="side-control-group">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Export</h3>
+                        <button id="exportImageExcel" class="btn-export" style="width: 100%; margin-bottom: 8px;">📗 Export Excel</button>
+                        <button id="exportImageScreenshot" class="btn-export" style="width: 100%;">📷 Export Image</button>
+                    </div>
+                </div>
             </div>
         </div>
 
