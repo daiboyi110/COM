@@ -59,6 +59,16 @@ h1 {
     transform: translateY(0);
 }
 
+.upload-btn[href] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-btn[href]:hover {
+    background: #5a6268;
+}
+
 #videoInput, #imageInput {
     padding: 10px;
     font-size: 16px;
