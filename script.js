@@ -6,17 +6,13 @@ let imageCanvas;
 let imageCtx;
 let pose;
 let fps = 30; // Default, will be detected
-let isProcessing = false;
+let frameCount = 0; // Total frame count for video
 let showPose = true;
 let showJointNumbers = true;
 let showCoordinates = false;
 let showCoordinateSystem = false;
 let processingTimer = null;
 let poseDataArray = []; // Store all captured pose data
-let lastProcessTime = 0;
-let processedFrameCount = 0;
-let fpsStartTime = 0;
-let currentFPS = 0;
 
 // Image mode variables
 let showPoseImage = true;

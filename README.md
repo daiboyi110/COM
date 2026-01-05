@@ -178,7 +178,6 @@ If pose estimation is inaccurate, you can manually adjust landmarks:
 - **▶ Play / ⏸ Pause**: Start/stop video playback
 - **⏮ Previous Frame / ⏭ Next Frame**: Step through video frame-by-frame
 - **Video Progress Bar**: Click or drag to jump to specific time
-- **Processing FPS**: Shows the detected video framerate (automatically detected from video file)
 
 ### 8. Export Data
 
@@ -324,7 +323,7 @@ The application uses abbreviated names for compact display:
 
 **Calculated Midpoints (2)**: Mid_Shoulder, Mid_Hip
 
-**Segment COMs (14)**: L_Upper_Arm_COM, R_Upper_Arm_COM, L_Forearm_COM, R_Forearm_COM, L_Hand_COM, R_Hand_COM, L_Thigh_COM, R_Thigh_COM, L_Shank_COM, R_Shank_COM, L_Foot_COM, R_Foot_COM, Head_Neck_COM, Trunk_COM
+**Segment COMs (14)**: L_Upper_Arm_COM, R_Upper_Arm_COM, L_Forearm_COM, R_Forearm_COM, L_Hand_COM, R_Hand_COM, L_Thigh_COM, R_Thigh_COM, L_Shank_COM, R_Shank_COM, L_Foot_COM, R_Foot_COM, Head_COM, Trunk_COM
 
 **Total Body COM (1)**: Total_Body_COM
 
