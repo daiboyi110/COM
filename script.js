@@ -328,11 +328,12 @@ document.addEventListener('DOMContentLoaded', () => {
     imageCtx = imageCanvas.getContext('2d');
 
     const videoInput = document.getElementById('videoInput');
-    const videoInput2 = document.getElementById('videoInput2');
     const imageInput = document.getElementById('imageInput');
-    const imageInput2 = document.getElementById('imageInput2');
     const videoSection = document.getElementById('videoSection');
     const imageSection = document.getElementById('imageSection');
+    const uploadSection = document.getElementById('uploadSection');
+    const videoRightSidebar = document.getElementById('videoRightSidebar');
+    const imageRightSidebar = document.getElementById('imageRightSidebar');
     const playBtn = document.getElementById('playBtn');
     const pauseBtn = document.getElementById('pauseBtn');
     const prevFrameBtn = document.getElementById('prevFrameBtn');
@@ -411,6 +412,35 @@ document.addEventListener('DOMContentLoaded', () => {
             video.src = url;
             videoSection.style.display = 'block';
 
+            // Move upload section to video right sidebar
+            if (uploadSection && videoRightSidebar) {
+                // Create upload control group if it doesn't exist
+                let uploadGroup = videoRightSidebar.querySelector('.upload-control-group');
+                if (!uploadGroup) {
+                    uploadGroup = document.createElement('div');
+                    uploadGroup.className = 'side-control-group upload-control-group';
+                    uploadGroup.innerHTML = '<h3 style="margin: 0 0 10px 0; font-size: 16px;">Upload</h3>';
+                    videoRightSidebar.insertBefore(uploadGroup, videoRightSidebar.firstChild);
+                }
+                // Move upload section content to sidebar
+                uploadGroup.appendChild(uploadSection);
+                uploadSection.style.margin = '0';
+                uploadSection.style.padding = '0';
+                uploadSection.style.background = 'transparent';
+                uploadSection.style.display = 'flex';
+                uploadSection.style.flexDirection = 'column';
+                uploadSection.style.gap = '8px';
+
+                // Adjust upload button styles for sidebar
+                const uploadButtons = uploadSection.querySelectorAll('.upload-btn');
+                uploadButtons.forEach(btn => {
+                    btn.style.width = '100%';
+                    btn.style.textAlign = 'center';
+                    btn.style.padding = '10px';
+                    btn.style.marginBottom = '0';
+                });
+            }
+
             // Close image section if open
             if (imageSection.style.display !== 'none') {
                 imageSection.style.display = 'none';
@@ -445,6 +475,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = URL.createObjectURL(file);
             imageDisplay.src = url;
             imageSection.style.display = 'block';
+
+            // Move upload section to image right sidebar
+            if (uploadSection && imageRightSidebar) {
+                // Create upload control group if it doesn't exist
+                let uploadGroup = imageRightSidebar.querySelector('.upload-control-group');
+                if (!uploadGroup) {
+                    uploadGroup = document.createElement('div');
+                    uploadGroup.className = 'side-control-group upload-control-group';
+                    uploadGroup.innerHTML = '<h3 style="margin: 0 0 10px 0; font-size: 16px;">Upload</h3>';
+                    imageRightSidebar.insertBefore(uploadGroup, imageRightSidebar.firstChild);
+                }
+                // Move upload section content to sidebar
+                uploadGroup.appendChild(uploadSection);
+                uploadSection.style.margin = '0';
+                uploadSection.style.padding = '0';
+                uploadSection.style.background = 'transparent';
+                uploadSection.style.display = 'flex';
+                uploadSection.style.flexDirection = 'column';
+                uploadSection.style.gap = '8px';
+
+                // Adjust upload button styles for sidebar
+                const uploadButtons = uploadSection.querySelectorAll('.upload-btn');
+                uploadButtons.forEach(btn => {
+                    btn.style.width = '100%';
+                    btn.style.textAlign = 'center';
+                    btn.style.padding = '10px';
+                    btn.style.marginBottom = '0';
+                });
+            }
 
             // Close video section if open
             if (videoSection.style.display !== 'none') {
@@ -485,33 +544,6 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
     });
-
-    // Duplicate upload button event listeners (for sidebar buttons)
-    if (videoInput2) {
-        videoInput2.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                // Create a new FileList-like object and trigger the original input
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                videoInput.files = dataTransfer.files;
-                videoInput.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        });
-    }
-
-    if (imageInput2) {
-        imageInput2.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                // Create a new FileList-like object and trigger the original input
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                imageInput.files = dataTransfer.files;
-                imageInput.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        });
-    }
 
     // Close image button (removed from UI, keeping for compatibility)
     if (closeImageBtn) {

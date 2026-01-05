@@ -17,6 +17,16 @@
     <div class="container">
         <h1>Center of Mass (COM) Visualization</h1>
 
+        <div class="upload-section" id="uploadSection">
+            <label class="upload-btn">
+                📹 Upload Video
+                <input type="file" id="videoInput" accept="video/*" style="display: none;">
+            </label>
+            <label class="upload-btn">
+                🖼️ Upload Image
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            </label>
+        </div>
 
         <div id="imageSection" style="display: none;">
             <div class="video-layout-container">
@@ -104,19 +114,7 @@
                 </div>
 
                 <!-- Right Sidebar -->
-                <div class="video-right-controls">
-                    <div class="side-control-group">
-                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Upload</h3>
-                        <label class="upload-btn" style="width: 100%; margin-bottom: 8px;">
-                            📹 Upload Video
-                            <input type="file" id="videoInput" accept="video/*" style="display: none;">
-                        </label>
-                        <label class="upload-btn" style="width: 100%;">
-                            🖼️ Upload Image
-                            <input type="file" id="imageInput" accept="image/*" style="display: none;">
-                        </label>
-                    </div>
-
+                <div class="video-right-controls" id="imageRightSidebar">
                     <div class="side-control-group">
                         <h3 style="margin: 0 0 10px 0; font-size: 16px;">Image Info</h3>
                         <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
@@ -231,19 +229,7 @@
                 </div>
 
                 <!-- Right Sidebar -->
-                <div class="video-right-controls">
-                    <div class="side-control-group">
-                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Upload</h3>
-                        <label class="upload-btn" style="width: 100%; margin-bottom: 8px; text-align: center; padding: 10px;">
-                            📹 Upload Video
-                            <input type="file" id="videoInput2" accept="video/*" style="display: none;">
-                        </label>
-                        <label class="upload-btn" style="width: 100%; text-align: center; padding: 10px;">
-                            🖼️ Upload Image
-                            <input type="file" id="imageInput2" accept="image/*" style="display: none;">
-                        </label>
-                    </div>
-
+                <div class="video-right-controls" id="videoRightSidebar">
                     <div class="side-control-group">
                         <h3 style="margin: 0 0 10px 0; font-size: 16px;">Video Info</h3>
                         <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
