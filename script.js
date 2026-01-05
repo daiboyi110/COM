@@ -261,7 +261,7 @@ function mirrorLandmark(landmark) {
     if (!landmark) return null;
 
     // Add small random noise (±0.5% of coordinate value) to avoid complete overlap
-    const noise = () => (Math.random() - 0.5) * 0.01;
+    const noise = () => (Math.random() - 0.5) * 0.1;
 
     return {
         x: landmark.x + noise(),     // Add small noise to X
@@ -378,8 +378,18 @@ document.addEventListener('DOMContentLoaded', () => {
         editCalibrationImageLabel.style.display = 'inline-block';
     }
 
-    // Initialize MediaPipe Pose
-    initializePose();
+    // Initialize MediaPipe Pose after ensuring libraries are loaded
+    if (typeof window.Pose !== 'undefined') {
+        console.log('MediaPipe Pose library detected, initializing...');
+        initializePose();
+    } else {
+        console.log('MediaPipe Pose library not yet loaded, waiting...');
+        // Wait for window load event to ensure all external scripts are loaded
+        window.addEventListener('load', () => {
+            console.log('Window loaded, initializing MediaPipe Pose...');
+            initializePose();
+        });
+    }
 
     // Handle video upload
     videoInput.addEventListener('change', (e) => {
@@ -419,6 +429,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.target.files[0];
         if (file) {
             console.log('Image file selected:', file.name);
+
+            // Reinitialize MediaPipe Pose for image processing
+            console.log('Reinitializing MediaPipe Pose before loading new image...');
+            if (pose) {
+                pose.close();
+            }
+            initializePose();
+
             // Store original filename (without extension)
             originalImageFileName = file.name.replace(/\.[^/.]+$/, '');
 
@@ -522,6 +540,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // When video metadata is loaded
     video.addEventListener('loadedmetadata', async () => {
+        // Ensure playback rate is normal (1.0x)
+        video.playbackRate = 1.0;
+
         // Detect FPS using requestVideoFrameCallback if available
         await detectFPS();
 
@@ -547,8 +568,12 @@ document.addEventListener('DOMContentLoaded', () => {
             drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo);
         }
 
-        // Process first frame
-        processPoseFrame();
+        // Process first frame after a short delay to ensure pose is initialized
+        console.log('Video metadata loaded, processing first frame...');
+        setTimeout(() => {
+            console.log('Attempting to process first frame, pose initialized:', !!pose);
+            processPoseFrame();
+        }, 100);
     });
 
     // Update display as video plays
@@ -559,12 +584,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Play button
     playBtn.addEventListener('click', () => {
+        video.playbackRate = 1.0; // Ensure normal playback speed
         video.play();
     });
 
     // Pause button
     pauseBtn.addEventListener('click', () => {
         video.pause();
+    });
+
+    // Monitor and enforce consistent playback rate
+    video.addEventListener('ratechange', () => {
+        if (video.playbackRate !== 1.0) {
+            console.warn(`Playback rate changed to ${video.playbackRate}, resetting to 1.0`);
+            video.playbackRate = 1.0;
+        }
     });
 
     // Video play/pause events
@@ -580,9 +614,17 @@ document.addEventListener('DOMContentLoaded', () => {
     showPoseCheckbox.addEventListener('change', (e) => {
         showPose = e.target.checked;
         if (!video.paused) {
-            clearCanvas();
+            // If video is playing and Show Pose is enabled, start processing
+            if (showPose) {
+                startPoseProcessing();
+            } else {
+                // If Show Pose is disabled, stop processing and clear canvas
+                stopPoseProcessing();
+                clearCanvas();
+            }
         } else {
-            processPoseFrame();
+            // If video is paused, just redraw current frame
+            redrawCurrentFrame();
         }
     });
 
@@ -591,7 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!video.paused) {
             clearCanvas();
         } else {
-            processPoseFrame();
+            redrawCurrentFrame();
         }
     });
 
@@ -600,7 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!video.paused) {
             clearCanvas();
         } else {
-            processPoseFrame();
+            redrawCurrentFrame();
         }
     });
 
@@ -609,7 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!video.paused) {
             clearCanvas();
         } else {
-            processPoseFrame();
+            redrawCurrentFrame();
         }
     });
 
@@ -1036,47 +1078,141 @@ function formatTime(seconds) {
 
 async function detectFPS() {
     return new Promise((resolve) => {
+        console.log('Starting comprehensive FPS detection...');
+
+        // Method 1: Try to get FPS from video metadata (most reliable if available)
+        const videoElement = video;
+        let detectedFPS = null;
+
+        // Check for metadata hints
+        if (videoElement.mozDecodedFrames !== undefined && videoElement.mozPresentedFrames !== undefined) {
+            // Firefox-specific metadata
+            const startTime = performance.now();
+            const startFrames = videoElement.mozPresentedFrames;
+
+            setTimeout(() => {
+                const elapsed = (performance.now() - startTime) / 1000;
+                const framesPassed = videoElement.mozPresentedFrames - startFrames;
+                if (framesPassed > 0 && elapsed > 0) {
+                    detectedFPS = Math.round(framesPassed / elapsed);
+                    console.log(`Firefox metadata FPS: ${detectedFPS}`);
+                }
+            }, 1000);
+        }
+
+        // Method 2: Use requestVideoFrameCallback with improved sampling
         if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
-            // Use requestVideoFrameCallback for accurate FPS detection
-            let lastTime = null;
             let frameTimes = [];
+            let frameTimestamps = [];
             let callbackCount = 0;
-            const maxCallbacks = 10;
+            const maxCallbacks = 30; // Increased from 10 to 30 for better accuracy
+            let startTimestamp = null;
+            let startFrame = null;
 
             const measureFrame = (now, metadata) => {
-                if (lastTime !== null) {
-                    const frameDuration = (now - lastTime) / 1000; // Convert to seconds
-                    frameTimes.push(frameDuration);
+                if (startTimestamp === null) {
+                    startTimestamp = now;
+                    startFrame = metadata.presentedFrames || 0;
+                } else {
+                    // Calculate instantaneous frame time
+                    if (frameTimestamps.length > 0) {
+                        const frameDuration = (now - frameTimestamps[frameTimestamps.length - 1]) / 1000;
+                        if (frameDuration > 0 && frameDuration < 0.1) { // Filter outliers (> 100ms)
+                            frameTimes.push(frameDuration);
+                        }
+                    }
+                    frameTimestamps.push(now);
                 }
-                lastTime = now;
+
                 callbackCount++;
 
                 if (callbackCount < maxCallbacks && !video.paused) {
                     video.requestVideoFrameCallback(measureFrame);
                 } else {
-                    // Calculate average FPS
-                    if (frameTimes.length > 0) {
-                        const avgFrameDuration = frameTimes.reduce((a, b) => a + b) / frameTimes.length;
-                        fps = Math.round(1 / avgFrameDuration);
-                        // Clamp to common FPS values
-                        if (fps >= 59 && fps <= 61) fps = 60;
+                    // Calculate FPS using multiple methods
+                    let calculatedFPS = null;
+
+                    // Method A: Average frame duration
+                    if (frameTimes.length > 5) {
+                        // Remove outliers (top and bottom 10%)
+                        frameTimes.sort((a, b) => a - b);
+                        const trimCount = Math.floor(frameTimes.length * 0.1);
+                        const trimmedTimes = frameTimes.slice(trimCount, frameTimes.length - trimCount);
+
+                        const avgFrameDuration = trimmedTimes.reduce((a, b) => a + b) / trimmedTimes.length;
+                        const fpsFromAvg = Math.round(1 / avgFrameDuration);
+                        console.log(`FPS from average frame duration: ${fpsFromAvg}`);
+                        calculatedFPS = fpsFromAvg;
+                    }
+
+                    // Method B: Total time / total frames (more reliable)
+                    if (metadata && metadata.presentedFrames !== undefined && startFrame !== null) {
+                        const totalFrames = metadata.presentedFrames - startFrame;
+                        const totalTime = (now - startTimestamp) / 1000;
+                        if (totalFrames > 0 && totalTime > 0) {
+                            const fpsFromTotal = Math.round(totalFrames / totalTime);
+                            console.log(`FPS from total frames/time: ${fpsFromTotal}`);
+                            // Prefer this method if available
+                            calculatedFPS = fpsFromTotal;
+                        }
+                    }
+
+                    if (calculatedFPS) {
+                        fps = calculatedFPS;
+                        // Snap to common FPS values with tighter tolerance
+                        if (fps >= 119 && fps <= 121) fps = 120;
+                        else if (fps >= 89 && fps <= 91) fps = 90;
+                        else if (fps >= 59 && fps <= 61) fps = 60;
+                        else if (fps >= 49 && fps <= 51) fps = 50;
+                        else if (fps >= 47 && fps <= 49) fps = 48;
                         else if (fps >= 29 && fps <= 31) fps = 30;
+                        else if (fps >= 24 && fps <= 26) fps = 25;
                         else if (fps >= 23 && fps <= 25) fps = 24;
                     }
+
+                    console.log(`Final detected FPS: ${fps}`);
                     video.pause();
                     video.currentTime = 0;
                     resolve();
                 }
             };
 
+            // Start measurement from beginning of video
             video.currentTime = 0;
+            video.playbackRate = 1.0; // Ensure normal playback speed
             video.play().then(() => {
                 video.requestVideoFrameCallback(measureFrame);
+            }).catch(err => {
+                console.error('Error starting video for FPS detection:', err);
+                fps = 30; // Fallback
+                resolve();
             });
         } else {
-            // Fallback: assume standard FPS based on duration
-            // Most common: 30 fps, but could be 24, 25, 60
-            fps = 30; // Default assumption
+            // Fallback: Estimate from duration and attempt frame counting
+            console.log('requestVideoFrameCallback not supported, using fallback');
+
+            // Try to estimate based on common video properties
+            // Most web videos are 30fps, but 24, 25, 60 are also common
+            const duration = video.duration;
+
+            // Heuristic: videos with "clean" durations often indicate specific framerates
+            // For example, a 10.00 second video at 30fps = 300 frames
+            // while 10.00 seconds at 29.97fps = 299.7 frames
+            const possibleFPS = [24, 25, 29.97, 30, 50, 59.94, 60];
+            let bestMatch = 30;
+            let bestError = Infinity;
+
+            for (const testFPS of possibleFPS) {
+                const estimatedFrames = duration * testFPS;
+                const frameError = Math.abs(estimatedFrames - Math.round(estimatedFrames));
+                if (frameError < bestError) {
+                    bestError = frameError;
+                    bestMatch = Math.round(testFPS);
+                }
+            }
+
+            fps = bestMatch;
+            console.log(`Fallback FPS estimate: ${fps}`);
             resolve();
         }
     });
@@ -1107,8 +1243,22 @@ function stepFrame(direction) {
     // Show visual feedback
     showFrameStepIndicator();
 
-    // Process pose for this frame
-    setTimeout(() => processPoseFrame(), 100);
+    // Check if we have manually edited data for this frame
+    setTimeout(() => {
+        const currentFrame = Math.floor(video.currentTime * fps);
+        const savedFrameData = poseDataArray.find(d => d.frame === currentFrame);
+
+        if (savedFrameData && savedFrameData.manuallyEdited) {
+            // Use saved data only if frame was manually edited
+            clearCanvas();
+            if (showPose && savedFrameData.landmarks2D) {
+                drawPose(savedFrameData.landmarks2D, savedFrameData.landmarks3D);
+            }
+        } else {
+            // No manual edits, run MediaPipe detection
+            processPoseFrame();
+        }
+    }, 100);
 }
 
 function showFrameStepIndicator() {
@@ -1121,31 +1271,70 @@ function showFrameStepIndicator() {
     }
 }
 
+// Redraw current frame from saved data (only if manually edited) or run detection
+function redrawCurrentFrame() {
+    if (!video || !video.src) return;
+
+    const currentFrame = Math.floor(video.currentTime * fps);
+    const savedFrameData = poseDataArray.find(d => d.frame === currentFrame);
+
+    if (savedFrameData && savedFrameData.manuallyEdited) {
+        // Use saved data only if frame was manually edited
+        clearCanvas();
+        if (showPose && savedFrameData.landmarks2D) {
+            drawPose(savedFrameData.landmarks2D, savedFrameData.landmarks3D);
+        }
+    } else {
+        // No manual edits, run MediaPipe detection
+        processPoseFrame();
+    }
+}
+
 // Initialize MediaPipe Pose
 function initializePose() {
-    pose = new Pose({
-        locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
-        }
-    });
+    // Check if Pose is available in window object
+    if (typeof window.Pose === 'undefined') {
+        console.error('MediaPipe Pose library not loaded! Check if CDN is accessible.');
+        alert('Error: MediaPipe Pose library failed to load. Please check your internet connection and refresh the page (Ctrl+F5).');
+        return;
+    }
 
-    pose.setOptions({
-        modelComplexity: 0, // Use lite model for faster processing
-        smoothLandmarks: true,
-        enableSegmentation: false,
-        minDetectionConfidence: 0.3,
-        minTrackingConfidence: 0.3
-    });
+    try {
+        pose = new window.Pose({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+            }
+        });
 
-    pose.onResults(onPoseResults);
-    console.log('MediaPipe Pose initialized with lite model for better performance');
+        pose.setOptions({
+            modelComplexity: 1, // Use full model for better accuracy (0=lite, 1=full, 2=heavy)
+            smoothLandmarks: true,
+            enableSegmentation: false,
+            minDetectionConfidence: 0.5, // Increased for better detection quality
+            minTrackingConfidence: 0.5  // Increased for better tracking quality
+        });
+
+        pose.onResults(onPoseResults);
+        console.log('MediaPipe Pose initialized with full model for better landmark detection accuracy');
+    } catch (error) {
+        console.error('Error initializing MediaPipe Pose:', error);
+        alert('Error initializing pose detection: ' + error.message);
+    }
 }
 
 // Process a single frame for pose detection
 async function processPoseFrame() {
-    if (!pose || !video.videoWidth) return;
+    if (!pose) {
+        console.error('processPoseFrame: pose object is null/undefined');
+        return;
+    }
+    if (!video.videoWidth) {
+        console.error('processPoseFrame: video.videoWidth is 0 or undefined');
+        return;
+    }
 
     try {
+        console.log('Sending frame to MediaPipe Pose...');
         await pose.send({ image: video });
     } catch (error) {
         console.error('Error processing frame:', error);
@@ -1207,10 +1396,13 @@ function onPoseResults(results) {
     }
 
     // Video mode
+    console.log('onPoseResults called for video - showPose:', showPose, 'has landmarks:', !!results.poseLandmarks);
+
     clearCanvas();
 
     if (!showPose || !results.poseLandmarks) {
-        document.getElementById('jointCount').textContent = '0';
+        document.getElementById('jointCountVideo').textContent = '0';
+        console.log('No pose to show - showPose:', showPose, 'landmarks:', !!results.poseLandmarks);
         // Still draw calibration points in 2D mode even without pose
         if (analysisModeVideo === '2D') {
             const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
@@ -1220,10 +1412,14 @@ function onPoseResults(results) {
         return;
     }
 
+    console.log('Drawing pose with', results.poseLandmarks.length, 'landmarks');
+    console.log('First landmark visibility:', results.poseLandmarks[0]?.visibility);
+    console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
     drawPose(results.poseLandmarks, results.poseWorldLandmarks);
+    console.log('drawPose() completed');
     // Count displayed joints: 50 total - 13 excluded = 37 displayed
     const displayedJointCount = LANDMARK_NAMES.length - EXCLUDED_LANDMARKS.length;
-    document.getElementById('jointCount').textContent = displayedJointCount;
+    document.getElementById('jointCountVideo').textContent = displayedJointCount;
 
     // Calculate extended landmarks including midpoints, segment COMs, and total body COM
     const { midpoints2D, midpoints3D } = calculateMidpoints(results.poseLandmarks, results.poseWorldLandmarks);
@@ -1433,8 +1629,10 @@ function calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex, bodySide = 'fu
 
 // Draw pose skeleton and landmarks
 function drawPose(landmarks, landmarks3D) {
+    console.log('drawPose() called with', landmarks?.length, 'landmarks');
     const width = canvas.width;
     const height = canvas.height;
+    console.log('Drawing on canvas size:', width, 'x', height);
 
     // Calculate effective font size (double if Full Size is checked)
     const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
@@ -1886,16 +2084,17 @@ function clearCanvas() {
 }
 
 // Save pose data for export
-function savePoseData(landmarks2D, landmarks3D) {
+function savePoseData(landmarks2D, landmarks3D, manuallyEdited = false) {
     const currentTime = video.currentTime;
     const currentFrame = Math.floor(currentTime * fps);
 
-    // Check if we already have data for this frame (avoid duplicates)
+    // Check if we already have data for this frame
     const existingIndex = poseDataArray.findIndex(d => d.frame === currentFrame);
 
     const frameData = {
         frame: currentFrame,
         timestamp: currentTime,
+        manuallyEdited: manuallyEdited, // Flag to indicate if this frame has manual edits
         landmarks2D: landmarks2D.map((lm, index) => ({
             id: index,
             x: lm.x,
@@ -1913,6 +2112,10 @@ function savePoseData(landmarks2D, landmarks3D) {
     };
 
     if (existingIndex >= 0) {
+        // Preserve the manuallyEdited flag if it was already set to true
+        if (poseDataArray[existingIndex].manuallyEdited) {
+            frameData.manuallyEdited = true;
+        }
         poseDataArray[existingIndex] = frameData;
     } else {
         poseDataArray.push(frameData);
@@ -2631,6 +2834,9 @@ function handleMouseMove(e) {
                 }
             }
 
+            // Mark this frame as manually edited
+            frameData.manuallyEdited = true;
+
             // Redraw the current frame
             clearCanvas();
             if (showPose && frameData.landmarks2D) {
@@ -2711,6 +2917,12 @@ function redrawImagePose() {
         const fullSizeImageCheckbox = document.getElementById('fullSizeImage');
         const effectiveFontSize = fullSizeImageCheckbox && fullSizeImageCheckbox.checked ? displayFontSize * 2 : displayFontSize;
         drawCalibrationPoints(imageCtx, imageCanvas.width, imageCanvas.height, calibrationPoint1Image, calibrationPoint2Image, calibrationScaleImage, effectiveFontSize);
+    }
+
+    // Draw coordinate system if enabled (even without pose data)
+    if (showCoordinateSystemImage) {
+        const midHip = imagePoseData && imagePoseData.landmarks2D ? imagePoseData.landmarks2D[34] : null;
+        drawCoordinateSystem(imageCtx, imageCanvas.width, imageCanvas.height, analysisModeImage, calibrationPoint1Image, calibrationPoint2Image, midHip);
     }
 
     // Draw pose if available and enabled
