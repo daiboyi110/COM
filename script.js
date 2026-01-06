@@ -1794,8 +1794,8 @@ function drawPose(landmarks, landmarks3D) {
         // Filter connections based on left/right side checkboxes
         const startName = LANDMARK_NAMES[startIdx];
         const endName = LANDMARK_NAMES[endIdx];
-        const isLeftConnection = startName?.startsWith('L_') || endName?.startsWith('L_');
-        const isRightConnection = startName?.startsWith('R_') || endName?.startsWith('R_');
+        const isLeftConnection = startName?.startsWith('Left_') || endName?.startsWith('Left_');
+        const isRightConnection = startName?.startsWith('Right_') || endName?.startsWith('Right_');
 
         if (isLeftConnection && !showLeftSide) {
             return;
@@ -1855,8 +1855,8 @@ function drawPose(landmarks, landmarks3D) {
 
         // Filter based on left/right side checkboxes
         const landmarkName = LANDMARK_NAMES[index];
-        const isLeftSide = landmarkName?.startsWith('L_');
-        const isRightSide = landmarkName?.startsWith('R_');
+        const isLeftSide = landmarkName?.startsWith('Left_');
+        const isRightSide = landmarkName?.startsWith('Right_');
 
         if (isLeftSide && !showLeftSide) {
             return;
@@ -3135,8 +3135,8 @@ function drawImagePose(landmarks, landmarks3D) {
         // Filter connections based on left/right side checkboxes
         const startName = LANDMARK_NAMES[startIdx];
         const endName = LANDMARK_NAMES[endIdx];
-        const isLeftConnection = startName?.startsWith('L_') || endName?.startsWith('L_');
-        const isRightConnection = startName?.startsWith('R_') || endName?.startsWith('R_');
+        const isLeftConnection = startName?.startsWith('Left_') || endName?.startsWith('Left_');
+        const isRightConnection = startName?.startsWith('Right_') || endName?.startsWith('Right_');
 
         if (isLeftConnection && !showLeftSideImage) {
             return;
@@ -3196,8 +3196,8 @@ function drawImagePose(landmarks, landmarks3D) {
 
         // Filter based on left/right side checkboxes
         const landmarkName = LANDMARK_NAMES[index];
-        const isLeftSide = landmarkName?.startsWith('L_');
-        const isRightSide = landmarkName?.startsWith('R_');
+        const isLeftSide = landmarkName?.startsWith('Left_');
+        const isRightSide = landmarkName?.startsWith('Right_');
 
         if (isLeftSide && !showLeftSideImage) {
             return;
