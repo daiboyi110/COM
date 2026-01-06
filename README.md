@@ -30,19 +30,14 @@ This application uses **MediaPipe Pose** by Google for pose estimation:
 - Works on both CPU and GPU for real-time performance
 
 ### Displayed Landmarks
-Of the 33 base landmarks detected by MediaPipe:
-- **20 base landmarks are displayed**: Face details (nose, eyes, mouth) and finger landmarks (pinky, thumb) are hidden for cleaner visualization
-- **13 base landmarks are excluded** from display: nose, eye landmarks, mouth landmarks, and finger landmarks
+The application displays **37 total markers**:
+- **20 base landmarks**: Body landmarks including shoulders, elbows, wrists, hips, knees, ankles, heels, and foot indices
+- **17 calculated markers**:
+  - **2 midpoints**: Mid-shoulder and mid-hip
+  - **14 segment centers of mass**: Upper arms (L/R), forearms (L/R), hands (L/R), thighs (L/R), shanks (L/R), feet (L/R), head, trunk
+  - **1 total-body center of mass**: Weighted combination of all segments
 
-The application extends these 20 displayed base landmarks by calculating:
-- **2 midpoints**: Mid-shoulder and mid-hip
-- **14 segment centers of mass**: Upper arms (L/R), forearms (L/R), hands (L/R), thighs (L/R), shanks (L/R), feet (L/R), head+neck, trunk
-- **1 total-body center of mass**: Weighted combination of all segments
-
-**Total displayed points**: 37 (20 base landmarks + 17 calculated)
-**Total tracked points**: 50 (all 33 base landmarks + 17 calculated - used for data export)
-
-**Note**: Segment and total-body COM calculations use only the 20 displayed base landmarks. The 13 excluded landmarks (face details and fingers) do not contribute to COM calculations.
+**Note**: Face details (nose, eyes, mouth) and finger landmarks (pinky, thumb, index) are detected by MediaPipe but not displayed for cleaner visualization.
 
 ## Analysis Modes
 
@@ -191,7 +186,7 @@ If pose estimation is inaccurate, you can manually adjust landmarks:
   - Coordinates in meters with origin at mid-hip
 - Contains two sheets:
   - **Metadata**: Video/image info, analysis mode, sex selection, calibration scale
-  - **Data**: All 50 landmarks including calculated COMs
+  - **Data**: All 37 displayed markers including calculated COMs
 - Each row represents one frame (video) or the single frame (image)
 - Columns: Joint_Index, Joint_Name, X, Y (and Z for 3D), Visibility
 - **Includes edited coordinates**: Exported data reflects any manual joint position edits you made
@@ -288,8 +283,8 @@ Columns depend on analysis mode:
 - Origin: Left-bottom corner
 - Units: Meters (calibrated using calibration points)
 - Each row = one joint
-- Video exports: Multiple frames, each with all 50 landmarks
-- Image exports: Single frame with all 50 landmarks
+- Video exports: Multiple frames, each with all 37 displayed markers
+- Image exports: Single frame with all 37 displayed markers
 
 **3D Mode**:
 - Columns: `Joint_Index | Joint_Name | X | Y | Z | Visibility`
@@ -298,11 +293,11 @@ Columns depend on analysis mode:
 - Y-axis: Positive = up (inverted from MediaPipe convention)
 - Z-axis: Positive = forward toward camera
 - Each row = one joint
-- Video exports: Multiple frames, each with all 50 landmarks
-- Image exports: Single frame with all 50 landmarks
+- Video exports: Multiple frames, each with all 37 displayed markers
+- Image exports: Single frame with all 37 displayed markers
 
-**All 50 landmarks are included**:
-- 33 base MediaPipe landmarks (including 13 excluded from display)
+**All 37 displayed markers are included**:
+- 20 base body landmarks
 - 2 calculated midpoints (Mid_Shoulder, Mid_Hip)
 - 14 segment COMs
 - 1 total-body COM
@@ -316,10 +311,9 @@ The application uses abbreviated names for compact display:
 - **R_** prefix: Right side (e.g., R_Shoulder, R_Knee)
 - Full name examples: Nose, L_Eye, R_Elbow, L_Wrist, R_Hip, L_Ankle, R_Foot
 
-### Complete Landmark List (50 points)
-**Face (8)**: Nose, L_Eye_Inner, L_Eye, L_Eye_Outer, R_Eye_Inner, R_Eye, R_Eye_Outer, L_Ear, R_Ear, Mouth_Left, Mouth_Right
+### Complete Landmark List (37 displayed markers)
 
-**Body (22)**: L_Shoulder, R_Shoulder, L_Elbow, R_Elbow, L_Wrist, R_Wrist, L_Pinky, R_Pinky, L_Index, R_Index, L_Thumb, R_Thumb, L_Hip, R_Hip, L_Knee, R_Knee, L_Ankle, R_Ankle, L_Heel, R_Heel, L_Foot_Index, R_Foot_Index
+**Body Landmarks (20)**: L_Shoulder, R_Shoulder, L_Elbow, R_Elbow, L_Wrist, R_Wrist, L_Hip, R_Hip, L_Knee, R_Knee, L_Ankle, R_Ankle, L_Heel, R_Heel, L_Foot_Index, R_Foot_Index, L_Ear, R_Ear, Mouth_Left, Mouth_Right
 
 **Calculated Midpoints (2)**: Mid_Shoulder, Mid_Hip
 
@@ -332,7 +326,7 @@ The application uses abbreviated names for compact display:
 - **Pose Estimation**: MediaPipe Pose v0.5+ (Google)
 - **3D Coordinates**: World landmarks in meters from mid-hip center
 - **2D Coordinates**: Calibrated to meters using reference distance
-- **Landmark Count**: 33 base + 17 calculated = 50 total points per frame
+- **Displayed Markers**: 20 base landmarks + 17 calculated = 37 total markers per frame
 - **Browser Compatibility**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
 - **Processing**: Client-side only (no data uploaded to servers)
 - **Video Processing**: Maximum framerate (no throttling)
