@@ -7,10 +7,7 @@ let imageCtx;
 let pose;
 let fps = 30; // Default, will be detected
 let frameCount = 0; // Total frame count for video
-let showJoints = true;
-let showCOM = true;
-let showLeftSide = true;
-let showRightSide = true;
+let showPose = true;
 let showJointNumbers = true;
 let showCoordinates = false;
 let showCoordinateSystem = false;
@@ -18,10 +15,7 @@ let processingTimer = null;
 let poseDataArray = []; // Store all captured pose data
 
 // Image mode variables
-let showJointsImage = true;
-let showCOMImage = true;
-let showLeftSideImage = true;
-let showRightSideImage = true;
+let showPoseImage = true;
 let showJointNumbersImage = true;
 let showCoordinatesImage = false;
 let showCoordinateSystemImage = false;
@@ -340,10 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pauseBtn = document.getElementById('pauseBtn');
     const prevFrameBtn = document.getElementById('prevFrameBtn');
     const nextFrameBtn = document.getElementById('nextFrameBtn');
-    const showJointsCheckbox = document.getElementById('showJoints');
-    const showCOMCheckbox = document.getElementById('showCOM');
-    const showLeftSideCheckbox = document.getElementById('showLeftSide');
-    const showRightSideCheckbox = document.getElementById('showRightSide');
+    const showPoseCheckbox = document.getElementById('showPose');
     const showJointNumbersCheckbox = document.getElementById('showJointNumbers');
     const showCoordinatesCheckbox = document.getElementById('showCoordinates');
     const showCoordinateSystemCheckbox = document.getElementById('showCoordinateSystem');
@@ -351,10 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Processing at maximum video framerate
 
     // Image controls
-    const showJointsImageCheckbox = document.getElementById('showJointsImage');
-    const showCOMImageCheckbox = document.getElementById('showCOMImage');
-    const showLeftSideImageCheckbox = document.getElementById('showLeftSideImage');
-    const showRightSideImageCheckbox = document.getElementById('showRightSideImage');
+    const showPoseImageCheckbox = document.getElementById('showPoseImage');
     const showJointNumbersImageCheckbox = document.getElementById('showJointNumbersImage');
     const showCoordinatesImageCheckbox = document.getElementById('showCoordinatesImage');
     const showCoordinateSystemImageCheckbox = document.getElementById('showCoordinateSystemImage');
@@ -684,38 +672,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Checkbox controls
-    showJointsCheckbox.addEventListener('change', (e) => {
-        showJoints = e.target.checked;
+    showPoseCheckbox.addEventListener('change', (e) => {
+        showPose = e.target.checked;
         if (!video.paused) {
-            clearCanvas();
+            // If video is playing and Show Pose is enabled, start processing
+            if (showPose) {
+                startPoseProcessing();
+            } else {
+                // If Show Pose is disabled, stop processing and clear canvas
+                stopPoseProcessing();
+                clearCanvas();
+            }
         } else {
-            redrawCurrentFrame();
-        }
-    });
-
-    showCOMCheckbox.addEventListener('change', (e) => {
-        showCOM = e.target.checked;
-        if (!video.paused) {
-            clearCanvas();
-        } else {
-            redrawCurrentFrame();
-        }
-    });
-
-    showLeftSideCheckbox.addEventListener('change', (e) => {
-        showLeftSide = e.target.checked;
-        if (!video.paused) {
-            clearCanvas();
-        } else {
-            redrawCurrentFrame();
-        }
-    });
-
-    showRightSideCheckbox.addEventListener('change', (e) => {
-        showRightSide = e.target.checked;
-        if (!video.paused) {
-            clearCanvas();
-        } else {
+            // If video is paused, just redraw current frame
             redrawCurrentFrame();
         }
     });
@@ -758,23 +727,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Image checkbox controls
-    showJointsImageCheckbox.addEventListener('change', (e) => {
-        showJointsImage = e.target.checked;
-        redrawImagePose();
-    });
-
-    showCOMImageCheckbox.addEventListener('change', (e) => {
-        showCOMImage = e.target.checked;
-        redrawImagePose();
-    });
-
-    showLeftSideImageCheckbox.addEventListener('change', (e) => {
-        showLeftSideImage = e.target.checked;
-        redrawImagePose();
-    });
-
-    showRightSideImageCheckbox.addEventListener('change', (e) => {
-        showRightSideImage = e.target.checked;
+    showPoseImageCheckbox.addEventListener('change', (e) => {
+        showPoseImage = e.target.checked;
         redrawImagePose();
     });
 
@@ -1358,8 +1312,7 @@ function stepFrame(direction) {
         if (savedFrameData && savedFrameData.manuallyEdited) {
             // Use saved data only if frame was manually edited
             clearCanvas();
-            const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
-            if (shouldShowPose && savedFrameData.landmarks2D) {
+            if (showPose && savedFrameData.landmarks2D) {
                 drawPose(savedFrameData.landmarks2D, savedFrameData.landmarks3D);
             }
         } else {
@@ -1389,8 +1342,7 @@ function redrawCurrentFrame() {
     if (savedFrameData && savedFrameData.manuallyEdited) {
         // Use saved data only if frame was manually edited
         clearCanvas();
-        const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
-        if (shouldShowPose && savedFrameData.landmarks2D) {
+        if (showPose && savedFrameData.landmarks2D) {
             drawPose(savedFrameData.landmarks2D, savedFrameData.landmarks3D);
         }
     } else {
@@ -1454,9 +1406,7 @@ async function processPoseFrame() {
 function startPoseProcessing() {
     stopPoseProcessing(); // Clear any existing timer
 
-    // Check if any pose elements should be displayed
-    const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
-    if (!shouldShowPose) return;
+    if (!showPose) return;
 
     // Display the detected video FPS in the Processing FPS field
     const fpsDisplay = document.getElementById('processingFPS');
@@ -1468,7 +1418,7 @@ function startPoseProcessing() {
 
     // Use requestAnimationFrame but only process new video frames
     function processFrame() {
-        if (!video.paused && !video.ended && (showJoints || showCOM || showLeftSide || showRightSide)) {
+        if (!video.paused && !video.ended && showPose) {
             // Only process if video has advanced to a new frame
             // Video currentTime changes when a new frame is available
             const currentTime = video.currentTime;
@@ -1507,14 +1457,13 @@ function onPoseResults(results) {
     }
 
     // Video mode
-    const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
-    console.log('onPoseResults called for video - shouldShowPose:', shouldShowPose, 'has landmarks:', !!results.poseLandmarks);
+    console.log('onPoseResults called for video - showPose:', showPose, 'has landmarks:', !!results.poseLandmarks);
 
     clearCanvas();
 
-    if (!shouldShowPose || !results.poseLandmarks) {
+    if (!showPose || !results.poseLandmarks) {
         document.getElementById('jointCountVideo').textContent = '0';
-        console.log('No pose to show - shouldShowPose:', shouldShowPose, 'landmarks:', !!results.poseLandmarks);
+        console.log('No pose to show - showPose:', showPose, 'landmarks:', !!results.poseLandmarks);
         // Still draw calibration points in 2D mode even without pose
         if (analysisModeVideo === '2D') {
             const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
@@ -1829,35 +1778,8 @@ function drawPose(landmarks, landmarks3D) {
             return;
         }
 
-        // Determine landmark type
-        const isMidpoint = index === 33 || index === 34;
-        const isSegmentCOM = index >= 35 && index <= 48;
-        const isTotalBodyCOM = index === 49;
-        const isRegularJoint = !isMidpoint && !isSegmentCOM && !isTotalBodyCOM;
-
-        // Filter based on Show Joints checkbox
-        if (isRegularJoint && !showJoints) {
-            return;
-        }
-
-        // Filter based on Show COM checkbox (includes segment COMs and total body COM)
-        if ((isSegmentCOM || isTotalBodyCOM) && !showCOM) {
-            return;
-        }
-
-        // Skip landmarks based on body side selection (left/right filtering)
+        // Skip landmarks based on body side selection
         if (!shouldDisplayLandmark(index, bodySideVideo)) {
-            return;
-        }
-
-        // Additional filtering for left/right side checkboxes
-        const isLeftSide = LANDMARK_NAMES[index]?.startsWith('L_');
-        const isRightSide = LANDMARK_NAMES[index]?.startsWith('R_');
-
-        if (isLeftSide && !showLeftSide) {
-            return;
-        }
-        if (isRightSide && !showRightSide) {
             return;
         }
 
@@ -1871,6 +1793,10 @@ function drawPose(landmarks, landmarks3D) {
 
         // Draw joint circle - highlight if being dragged
         const isBeingDragged = isDragging && draggedJointIndex === index;
+        // Use different colors for different landmark types
+        const isMidpoint = index === 33 || index === 34;
+        const isSegmentCOM = index >= 35 && index <= 48;
+        const isTotalBodyCOM = index === 49;
 
         // Calculate sizes based on landmark type
         const regularJointSize = baseSize;
@@ -2869,8 +2795,7 @@ function handleMouseMove(e) {
             }
             clearCanvas();
             const frameData = getCurrentFramePoseData();
-            const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
-            if (shouldShowPose && frameData && frameData.landmarks2D) {
+            if (showPose && frameData && frameData.landmarks2D) {
                 drawPose(frameData.landmarks2D, frameData.landmarks3D);
             }
         }
@@ -2975,8 +2900,7 @@ function handleMouseMove(e) {
 
             // Redraw the current frame
             clearCanvas();
-            const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
-            if (shouldShowPose && frameData.landmarks2D) {
+            if (showPose && frameData.landmarks2D) {
                 drawPose(frameData.landmarks2D, frameData.landmarks3D);
             }
         }
@@ -3064,8 +2988,7 @@ function redrawImagePose() {
 
     // Draw pose if available and enabled
     if (!imagePoseData) return;
-    const shouldShowPoseImage = showJointsImage || showCOMImage || showLeftSideImage || showRightSideImage;
-    if (!shouldShowPoseImage) return;
+    if (!showPoseImage) return;
 
     // Draw pose
     drawImagePose(imagePoseData.landmarks2D, imagePoseData.landmarks3D);
@@ -3159,35 +3082,8 @@ function drawImagePose(landmarks, landmarks3D) {
             return;
         }
 
-        // Determine landmark type
-        const isMidpoint = index === 33 || index === 34;
-        const isSegmentCOM = index >= 35 && index <= 48;
-        const isTotalBodyCOM = index === 49;
-        const isRegularJoint = !isMidpoint && !isSegmentCOM && !isTotalBodyCOM;
-
-        // Filter based on Show Joints checkbox
-        if (isRegularJoint && !showJointsImage) {
-            return;
-        }
-
-        // Filter based on Show COM checkbox (includes segment COMs and total body COM)
-        if ((isSegmentCOM || isTotalBodyCOM) && !showCOMImage) {
-            return;
-        }
-
-        // Skip landmarks based on body side selection (left/right filtering)
+        // Skip landmarks based on body side selection
         if (!shouldDisplayLandmark(index, bodySideImage)) {
-            return;
-        }
-
-        // Additional filtering for left/right side checkboxes
-        const isLeftSide = LANDMARK_NAMES[index]?.startsWith('L_');
-        const isRightSide = LANDMARK_NAMES[index]?.startsWith('R_');
-
-        if (isLeftSide && !showLeftSideImage) {
-            return;
-        }
-        if (isRightSide && !showRightSideImage) {
             return;
         }
 
@@ -3201,6 +3097,10 @@ function drawImagePose(landmarks, landmarks3D) {
 
         // Draw joint circle - highlight if being dragged
         const isBeingDragged = isDragging && draggedJointIndex === index;
+        // Use different colors for different landmark types
+        const isMidpoint = index === 33 || index === 34;
+        const isSegmentCOM = index >= 35 && index <= 48;
+        const isTotalBodyCOM = index === 49;
 
         // Calculate sizes based on landmark type
         const regularJointSize = baseSize;
