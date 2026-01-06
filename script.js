@@ -1791,6 +1791,19 @@ function drawPose(landmarks, landmarks3D) {
             return;
         }
 
+        // Filter connections based on left/right side checkboxes
+        const startName = LANDMARK_NAMES[startIdx];
+        const endName = LANDMARK_NAMES[endIdx];
+        const isLeftConnection = startName?.startsWith('L_') || endName?.startsWith('L_');
+        const isRightConnection = startName?.startsWith('R_') || endName?.startsWith('R_');
+
+        if (isLeftConnection && !showLeftSide) {
+            return;
+        }
+        if (isRightConnection && !showRightSide) {
+            return;
+        }
+
         if (start && end && start.visibility > 0.3 && end.visibility > 0.3) {
             ctx.beginPath();
             ctx.moveTo(start.x * width, start.y * height);
@@ -3116,6 +3129,19 @@ function drawImagePose(landmarks, landmarks3D) {
 
         // Filter connections based on body side selection
         if (!shouldDisplayConnection(startIdx, endIdx, bodySideImage)) {
+            return;
+        }
+
+        // Filter connections based on left/right side checkboxes
+        const startName = LANDMARK_NAMES[startIdx];
+        const endName = LANDMARK_NAMES[endIdx];
+        const isLeftConnection = startName?.startsWith('L_') || endName?.startsWith('L_');
+        const isRightConnection = startName?.startsWith('R_') || endName?.startsWith('R_');
+
+        if (isLeftConnection && !showLeftSideImage) {
+            return;
+        }
+        if (isRightConnection && !showRightSideImage) {
             return;
         }
 
