@@ -1358,7 +1358,8 @@ function stepFrame(direction) {
         if (savedFrameData && savedFrameData.manuallyEdited) {
             // Use saved data only if frame was manually edited
             clearCanvas();
-            if (showPose && savedFrameData.landmarks2D) {
+            const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
+            if (shouldShowPose && savedFrameData.landmarks2D) {
                 drawPose(savedFrameData.landmarks2D, savedFrameData.landmarks3D);
             }
         } else {
@@ -1388,7 +1389,8 @@ function redrawCurrentFrame() {
     if (savedFrameData && savedFrameData.manuallyEdited) {
         // Use saved data only if frame was manually edited
         clearCanvas();
-        if (showPose && savedFrameData.landmarks2D) {
+        const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
+        if (shouldShowPose && savedFrameData.landmarks2D) {
             drawPose(savedFrameData.landmarks2D, savedFrameData.landmarks3D);
         }
     } else {
@@ -1452,7 +1454,9 @@ async function processPoseFrame() {
 function startPoseProcessing() {
     stopPoseProcessing(); // Clear any existing timer
 
-    if (!showPose) return;
+    // Check if any pose elements should be displayed
+    const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
+    if (!shouldShowPose) return;
 
     // Display the detected video FPS in the Processing FPS field
     const fpsDisplay = document.getElementById('processingFPS');
@@ -1464,7 +1468,7 @@ function startPoseProcessing() {
 
     // Use requestAnimationFrame but only process new video frames
     function processFrame() {
-        if (!video.paused && !video.ended && showPose) {
+        if (!video.paused && !video.ended && (showJoints || showCOM || showLeftSide || showRightSide)) {
             // Only process if video has advanced to a new frame
             // Video currentTime changes when a new frame is available
             const currentTime = video.currentTime;
@@ -1503,13 +1507,14 @@ function onPoseResults(results) {
     }
 
     // Video mode
-    console.log('onPoseResults called for video - showPose:', showPose, 'has landmarks:', !!results.poseLandmarks);
+    const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
+    console.log('onPoseResults called for video - shouldShowPose:', shouldShowPose, 'has landmarks:', !!results.poseLandmarks);
 
     clearCanvas();
 
-    if (!showPose || !results.poseLandmarks) {
+    if (!shouldShowPose || !results.poseLandmarks) {
         document.getElementById('jointCountVideo').textContent = '0';
-        console.log('No pose to show - showPose:', showPose, 'landmarks:', !!results.poseLandmarks);
+        console.log('No pose to show - shouldShowPose:', shouldShowPose, 'landmarks:', !!results.poseLandmarks);
         // Still draw calibration points in 2D mode even without pose
         if (analysisModeVideo === '2D') {
             const fullSizeVideoCheckbox = document.getElementById('fullSizeVideo');
@@ -2864,7 +2869,8 @@ function handleMouseMove(e) {
             }
             clearCanvas();
             const frameData = getCurrentFramePoseData();
-            if (showPose && frameData && frameData.landmarks2D) {
+            const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
+            if (shouldShowPose && frameData && frameData.landmarks2D) {
                 drawPose(frameData.landmarks2D, frameData.landmarks3D);
             }
         }
@@ -2969,7 +2975,8 @@ function handleMouseMove(e) {
 
             // Redraw the current frame
             clearCanvas();
-            if (showPose && frameData.landmarks2D) {
+            const shouldShowPose = showJoints || showCOM || showLeftSide || showRightSide;
+            if (shouldShowPose && frameData.landmarks2D) {
                 drawPose(frameData.landmarks2D, frameData.landmarks3D);
             }
         }
@@ -3057,7 +3064,8 @@ function redrawImagePose() {
 
     // Draw pose if available and enabled
     if (!imagePoseData) return;
-    if (!showPoseImage) return;
+    const shouldShowPoseImage = showJointsImage || showCOMImage || showLeftSideImage || showRightSideImage;
+    if (!shouldShowPoseImage) return;
 
     // Draw pose
     drawImagePose(imagePoseData.landmarks2D, imagePoseData.landmarks3D);
