@@ -872,13 +872,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (editModeVideoCheckbox) {
         editModeVideoCheckbox.addEventListener('change', (e) => {
             if (e.target.checked) {
-                // Uncheck calibration edit mode
-                if (editModeCalibrationVideoCheckbox) {
-                    editModeCalibrationVideoCheckbox.checked = false;
-                }
+                // Uncheck all other modes
+                if (editModeCalibrationVideoCheckbox) editModeCalibrationVideoCheckbox.checked = false;
+                if (drawLineModeVideoCheckbox) drawLineModeVideoCheckbox.checked = false;
+                if (drawAngleModeVideoCheckbox) drawAngleModeVideoCheckbox.checked = false;
+
                 isEditMode = true;
                 isEditModeCalibration = false;
+                isDrawLineMode = false;
+                isDrawAngleMode = false;
+                drawingPoints = [];
                 canvas.classList.add('editable');
+                canvas.style.cursor = 'default';
                 console.log('Edit mode enabled for video');
             } else {
                 isEditMode = false;
@@ -893,13 +898,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (editModeCalibrationVideoCheckbox) {
         editModeCalibrationVideoCheckbox.addEventListener('change', (e) => {
             if (e.target.checked) {
-                // Uncheck joint edit mode
-                if (editModeVideoCheckbox) {
-                    editModeVideoCheckbox.checked = false;
-                }
+                // Uncheck all other modes
+                if (editModeVideoCheckbox) editModeVideoCheckbox.checked = false;
+                if (drawLineModeVideoCheckbox) drawLineModeVideoCheckbox.checked = false;
+                if (drawAngleModeVideoCheckbox) drawAngleModeVideoCheckbox.checked = false;
+
                 isEditMode = false;
                 isEditModeCalibration = true;
+                isDrawLineMode = false;
+                isDrawAngleMode = false;
+                drawingPoints = [];
                 canvas.classList.add('editable');
+                canvas.style.cursor = 'default';
                 console.log('Calibration edit mode enabled for video');
             } else {
                 isEditModeCalibration = false;
