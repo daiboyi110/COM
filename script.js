@@ -46,6 +46,12 @@ let draggedJointFrame = null; // For video: which frame is being edited
 let isEditMode = false; // Toggle edit mode on/off
 let isEditModeCalibration = false; // Toggle calibration point edit mode on/off
 
+// Drawing tool variables
+let isDrawLineMode = false; // Toggle line drawing mode on/off
+let isDrawAngleMode = false; // Toggle angle drawing mode on/off
+let drawingPoints = []; // Store points for current drawing
+let completedDrawings = []; // Store all completed drawings with frame info
+
 // Store filled landmarks (with mirroring) for edit mode click detection
 let lastFilledLandmarks2DVideo = null;
 let lastFilledLandmarks2DImage = null;
@@ -925,6 +931,110 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Drawing mode event listeners
+    const drawLineModeVideoCheckbox = document.getElementById('drawLineModeVideo');
+    const drawAngleModeVideoCheckbox = document.getElementById('drawAngleModeVideo');
+    const drawLineModeImageCheckbox = document.getElementById('drawLineModeImage');
+    const drawAngleModeImageCheckbox = document.getElementById('drawAngleModeImage');
+
+    if (drawLineModeVideoCheckbox) {
+        drawLineModeVideoCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                // Uncheck all other modes
+                if (editModeVideoCheckbox) editModeVideoCheckbox.checked = false;
+                if (editModeCalibrationVideoCheckbox) editModeCalibrationVideoCheckbox.checked = false;
+                if (drawAngleModeVideoCheckbox) drawAngleModeVideoCheckbox.checked = false;
+
+                isEditMode = false;
+                isEditModeCalibration = false;
+                isDrawLineMode = true;
+                isDrawAngleMode = false;
+                drawingPoints = [];
+                canvas.style.cursor = 'crosshair';
+                if (video && video.src) video.pause();
+                console.log('Line drawing mode enabled for video');
+            } else {
+                isDrawLineMode = false;
+                drawingPoints = [];
+                canvas.style.cursor = 'default';
+                console.log('Line drawing mode disabled for video');
+            }
+        });
+    }
+
+    if (drawAngleModeVideoCheckbox) {
+        drawAngleModeVideoCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                // Uncheck all other modes
+                if (editModeVideoCheckbox) editModeVideoCheckbox.checked = false;
+                if (editModeCalibrationVideoCheckbox) editModeCalibrationVideoCheckbox.checked = false;
+                if (drawLineModeVideoCheckbox) drawLineModeVideoCheckbox.checked = false;
+
+                isEditMode = false;
+                isEditModeCalibration = false;
+                isDrawLineMode = false;
+                isDrawAngleMode = true;
+                drawingPoints = [];
+                canvas.style.cursor = 'crosshair';
+                if (video && video.src) video.pause();
+                console.log('Angle drawing mode enabled for video');
+            } else {
+                isDrawAngleMode = false;
+                drawingPoints = [];
+                canvas.style.cursor = 'default';
+                console.log('Angle drawing mode disabled for video');
+            }
+        });
+    }
+
+    if (drawLineModeImageCheckbox) {
+        drawLineModeImageCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                // Uncheck all other modes
+                if (editModeImageCheckbox) editModeImageCheckbox.checked = false;
+                if (editModeCalibrationImageCheckbox) editModeCalibrationImageCheckbox.checked = false;
+                if (drawAngleModeImageCheckbox) drawAngleModeImageCheckbox.checked = false;
+
+                isEditMode = false;
+                isEditModeCalibration = false;
+                isDrawLineMode = true;
+                isDrawAngleMode = false;
+                drawingPoints = [];
+                imageCanvas.style.cursor = 'crosshair';
+                console.log('Line drawing mode enabled for image');
+            } else {
+                isDrawLineMode = false;
+                drawingPoints = [];
+                imageCanvas.style.cursor = 'default';
+                console.log('Line drawing mode disabled for image');
+            }
+        });
+    }
+
+    if (drawAngleModeImageCheckbox) {
+        drawAngleModeImageCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                // Uncheck all other modes
+                if (editModeImageCheckbox) editModeImageCheckbox.checked = false;
+                if (editModeCalibrationImageCheckbox) editModeCalibrationImageCheckbox.checked = false;
+                if (drawLineModeImageCheckbox) drawLineModeImageCheckbox.checked = false;
+
+                isEditMode = false;
+                isEditModeCalibration = false;
+                isDrawLineMode = false;
+                isDrawAngleMode = true;
+                drawingPoints = [];
+                imageCanvas.style.cursor = 'crosshair';
+                console.log('Angle drawing mode enabled for image');
+            } else {
+                isDrawAngleMode = false;
+                drawingPoints = [];
+                imageCanvas.style.cursor = 'default';
+                console.log('Angle drawing mode disabled for image');
+            }
+        });
+    }
+
     // Mouse events for image canvas
     imageCanvas.addEventListener('mousedown', handleMouseDown);
     imageCanvas.addEventListener('mousemove', handleMouseMove);
@@ -1346,6 +1456,10 @@ function stepFrame(direction) {
 
     // Clamp to valid range
     video.currentTime = Math.max(0, Math.min(video.duration, newTime));
+
+    // Clear drawings for the previous frame
+    const newFrame = Math.floor(video.currentTime * fps);
+    completedDrawings = completedDrawings.filter(d => d.isImageMode || d.frame === newFrame);
 
     // Show visual feedback
     showFrameStepIndicator();
@@ -1982,6 +2096,10 @@ function drawPose(landmarks, landmarks3D) {
         const midHip = extendedLandmarks2D[34];
         drawCoordinateSystem(ctx, canvas.width, canvas.height, analysisModeVideo, calibrationPoint1Video, calibrationPoint2Video, midHip);
     }
+
+    // Render completed drawings
+    const currentFrame = Math.floor(video.currentTime * fps);
+    renderCompletedDrawings(canvas, false, currentFrame);
 }
 
 // Draw calibration points for 2D analysis
@@ -2736,6 +2854,124 @@ function downloadFile(content, filename, contentType) {
     URL.revokeObjectURL(url);
 }
 
+// ===== DRAWING TOOL FUNCTIONS =====
+
+function renderCompletedDrawings(canvas, isImageMode, currentFrame) {
+    const ctx = canvas.getContext('2d');
+    const calibrationScale = isImageMode ? parseFloat(calibrationScaleImage.value) || 1.0 : parseFloat(calibrationScaleVideo.value) || 1.0;
+    const fontSize = isImageMode ? parseInt(fontSizeSlider.value) || 28 : parseInt(fontSizeSliderVideo.value) || 28;
+
+    completedDrawings.forEach(drawing => {
+        // Skip if drawing is for different mode or frame
+        if (drawing.isImageMode !== isImageMode) return;
+        if (!isImageMode && drawing.frame !== currentFrame) return;
+
+        if (drawing.type === 'line' && drawing.points.length === 2) {
+            // Calculate calibration
+            const point1 = isImageMode ? calibrationPoint1Image : calibrationPoint1Video;
+            const point2 = isImageMode ? calibrationPoint2Image : calibrationPoint2Video;
+            const p1x = point1.x * canvas.width;
+            const p1y = point1.y * canvas.height;
+            const p2x = point2.x * canvas.width;
+            const p2y = point2.y * canvas.height;
+            const calibrationPixelDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
+            const pixelsPerMeter = calibrationPixelDistance / calibrationScale;
+
+            // Calculate distance
+            const dx = drawing.points[1].x - drawing.points[0].x;
+            const dy = drawing.points[1].y - drawing.points[0].y;
+            const distancePixels = Math.sqrt(dx * dx + dy * dy);
+            const distanceMeters = distancePixels / pixelsPerMeter;
+
+            // Draw line
+            ctx.save();
+            ctx.strokeStyle = '#00FF00';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(drawing.points[0].x, drawing.points[0].y);
+            ctx.lineTo(drawing.points[1].x, drawing.points[1].y);
+            ctx.stroke();
+
+            // Draw endpoints
+            ctx.fillStyle = '#00FF00';
+            drawing.points.forEach(pt => {
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 5, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+
+            // Draw label
+            const midX = (drawing.points[0].x + drawing.points[1].x) / 2;
+            const midY = (drawing.points[0].y + drawing.points[1].y) / 2;
+            const text = `${distanceMeters.toFixed(3)} m`;
+            ctx.font = `bold ${fontSize}px Arial`;
+            const textWidth = ctx.measureText(text).width;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(midX - textWidth / 2 - 5, midY - fontSize / 2 - 5, textWidth + 10, fontSize + 10);
+            ctx.fillStyle = '#00FF00';
+            ctx.fillText(text, midX - textWidth / 2, midY + fontSize / 3);
+            ctx.restore();
+        } else if (drawing.type === 'angle' && drawing.points.length === 3) {
+            const vertex = drawing.points[1];
+            const pt1 = drawing.points[0];
+            const pt2 = drawing.points[2];
+
+            // Calculate angle
+            const v1x = pt1.x - vertex.x;
+            const v1y = pt1.y - vertex.y;
+            const v2x = pt2.x - vertex.x;
+            const v2y = pt2.y - vertex.y;
+            const angle1 = Math.atan2(v1y, v1x);
+            const angle2 = Math.atan2(v2y, v2x);
+            let angleDiff = angle2 - angle1;
+            if (angleDiff < 0) angleDiff += 2 * Math.PI;
+            const angleDegrees = angleDiff * (180 / Math.PI);
+
+            // Draw lines
+            ctx.save();
+            ctx.strokeStyle = '#FF00FF';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(vertex.x, vertex.y);
+            ctx.lineTo(pt1.x, pt1.y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(vertex.x, vertex.y);
+            ctx.lineTo(pt2.x, pt2.y);
+            ctx.stroke();
+
+            // Draw points
+            ctx.fillStyle = '#FF00FF';
+            drawing.points.forEach(pt => {
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 5, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+
+            // Draw arc
+            const arcRadius = 50;
+            ctx.strokeStyle = '#FF00FF';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(vertex.x, vertex.y, arcRadius, angle1, angle2);
+            ctx.stroke();
+
+            // Draw label
+            const labelAngle = (angle1 + angle2) / 2;
+            const labelX = vertex.x + Math.cos(labelAngle) * (arcRadius + 20);
+            const labelY = vertex.y + Math.sin(labelAngle) * (arcRadius + 20);
+            const text = `${angleDegrees.toFixed(1)}°`;
+            ctx.font = `bold ${fontSize}px Arial`;
+            const textWidth = ctx.measureText(text).width;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(labelX - textWidth / 2 - 5, labelY - fontSize / 2 - 5, textWidth + 10, fontSize + 10);
+            ctx.fillStyle = '#FF00FF';
+            ctx.fillText(text, labelX - textWidth / 2, labelY + fontSize / 3);
+            ctx.restore();
+        }
+    });
+}
+
 // ===== JOINT EDITING FUNCTIONS =====
 
 function handleMouseDown(e) {
@@ -2750,7 +2986,80 @@ function handleMouseDown(e) {
     const isImageMode = targetCanvas === imageCanvas;
     const analysisMode = isImageMode ? analysisModeImage : analysisModeVideo;
 
-    console.log('handleMouseDown called - isEditMode:', isEditMode, 'isEditModeCalibration:', isEditModeCalibration);
+    console.log('handleMouseDown called - isEditMode:', isEditMode, 'isEditModeCalibration:', isEditModeCalibration, 'isDrawLineMode:', isDrawLineMode, 'isDrawAngleMode:', isDrawAngleMode);
+
+    // Handle drawing tools
+    if (isDrawLineMode || isDrawAngleMode) {
+        const currentFrame = isImageMode ? -1 : Math.floor(video.currentTime * fps);
+        drawingPoints.push({ x: mouseX, y: mouseY });
+
+        if (isDrawLineMode && drawingPoints.length === 2) {
+            // Complete line drawing
+            completedDrawings.push({
+                type: 'line',
+                points: [...drawingPoints],
+                frame: currentFrame,
+                isImageMode: isImageMode
+            });
+            drawingPoints = [];
+
+            // Uncheck and disable the mode
+            if (isImageMode) {
+                const checkbox = document.getElementById('drawLineModeImage');
+                if (checkbox) checkbox.checked = false;
+            } else {
+                const checkbox = document.getElementById('drawLineModeVideo');
+                if (checkbox) checkbox.checked = false;
+            }
+            isDrawLineMode = false;
+            targetCanvas.style.cursor = 'default';
+
+            // Trigger redraw
+            if (isImageMode) {
+                redrawImagePose();
+            } else {
+                redrawCurrentFrame();
+            }
+            console.log('Line drawing completed');
+        } else if (isDrawAngleMode && drawingPoints.length === 3) {
+            // Complete angle drawing
+            completedDrawings.push({
+                type: 'angle',
+                points: [...drawingPoints],
+                frame: currentFrame,
+                isImageMode: isImageMode
+            });
+            drawingPoints = [];
+
+            // Uncheck and disable the mode
+            if (isImageMode) {
+                const checkbox = document.getElementById('drawAngleModeImage');
+                if (checkbox) checkbox.checked = false;
+            } else {
+                const checkbox = document.getElementById('drawAngleModeVideo');
+                if (checkbox) checkbox.checked = false;
+            }
+            isDrawAngleMode = false;
+            targetCanvas.style.cursor = 'default';
+
+            // Trigger redraw
+            if (isImageMode) {
+                redrawImagePose();
+            } else {
+                redrawCurrentFrame();
+            }
+            console.log('Angle drawing completed');
+        } else {
+            // Draw temporary marker
+            const ctx = targetCanvas.getContext('2d');
+            ctx.fillStyle = isDrawLineMode ? '#00FF00' : '#FF00FF';
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            console.log(`Point ${drawingPoints.length} recorded for ${isDrawLineMode ? 'line' : 'angle'}`);
+        }
+        return; // Don't process other mouse events when in drawing mode
+    }
 
     // In 2D mode, check for calibration points if calibration edit mode is enabled
     if (analysisMode === '2D' && isEditModeCalibration) {
@@ -3323,6 +3632,9 @@ function drawImagePose(landmarks, landmarks3D) {
         const midHip = extendedLandmarks2D[34];
         drawCoordinateSystem(imageCtx, imageCanvas.width, imageCanvas.height, analysisModeImage, calibrationPoint1Image, calibrationPoint2Image, midHip);
     }
+
+    // Render completed drawings
+    renderCompletedDrawings(imageCanvas, true, -1);
 }
 
 // Export image pose data as JSON
