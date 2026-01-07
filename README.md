@@ -156,17 +156,61 @@ For accurate real-world measurements in 2D mode:
 
 All 2D coordinates will now be scaled to meters based on your calibration.
 
-### 6. Edit Joint Positions
+### 6. Edit Mode Features
 
+The application provides four mutually exclusive edit/drawing modes (only one can be active at a time):
+
+#### Edit Calibration
+For accurate real-world measurements in 2D mode:
+
+1. Check **"Edit Calibration"**
+2. Two cyan points labeled "Calibration 1" and "Calibration 2" will appear
+3. Drag these points to match a known distance in the image (e.g., a meter stick, door height)
+4. Enter the real-world distance in the **"Calibration Scale (m)"** field
+5. Uncheck "Edit Calibration" when done
+
+All 2D coordinates will now be scaled to meters based on your calibration.
+
+#### Edit Joints
 If pose estimation is inaccurate, you can manually adjust landmarks:
 
-1. Check **"Edit Joint Positions"**
+1. Check **"Edit Joints"**
 2. Green dots will become draggable
 3. Click and drag any green dot (joint) to reposition it
 4. COM calculations will update automatically based on new positions
-5. Uncheck "Edit Joint Positions" when done
+5. Uncheck "Edit Joints" when done
 
 **Note**: Only joints with visibility > 0.3 can be edited. Edited positions persist until you reload the media.
+
+#### Draw Line (Clicking Two Points)
+Measure distances between any two points with calibrated measurements:
+
+1. Check **"Draw Line (Clicking Two Points)"**
+2. The cursor becomes a crosshair
+3. Click two points on the image/video to draw a line
+4. The line appears in **green** with the calibrated distance (in meters) displayed at the midpoint
+5. You can draw multiple lines while the mode is active
+6. Click **"Clear Drawings"** to remove all drawings from the current frame
+
+**Note**: For videos, drawings are frame-specific. Navigate to different frames to draw on multiple frames.
+
+#### Draw Angle (Clicking Three Points)
+Measure angles between any three points:
+
+1. Check **"Draw Angle (Clicking Three Points)"**
+2. The cursor becomes a crosshair
+3. Click three points: first point → vertex (center) → third point
+4. The angle appears in **magenta** with the angle measurement (in degrees) displayed
+5. An arc shows the angle between the two lines
+6. You can draw multiple angles while the mode is active
+7. Click **"Clear Drawings"** to remove all drawings from the current frame
+
+**Note**: The second click defines the vertex (center point) of the angle.
+
+#### Clear Drawings
+- Removes all line and angle drawings from the current frame (video) or image
+- Does not affect pose landmarks or COM markers
+- Useful for starting fresh measurements on a frame
 
 ### 7. Video Playback Controls
 
