@@ -1035,6 +1035,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Clear Drawings buttons
+    const clearDrawingsVideoBtn = document.getElementById('clearDrawingsVideo');
+    const clearDrawingsImageBtn = document.getElementById('clearDrawingsImage');
+
+    if (clearDrawingsVideoBtn) {
+        clearDrawingsVideoBtn.addEventListener('click', () => {
+            const currentFrame = Math.floor(video.currentTime * fps);
+            // Remove all drawings for the current frame in video mode
+            completedDrawings = completedDrawings.filter(d => d.isImageMode || d.frame !== currentFrame);
+            drawingPoints = []; // Clear any in-progress drawing
+            redrawCurrentFrame();
+            console.log(`Cleared all drawings for video frame ${currentFrame}`);
+        });
+    }
+
+    if (clearDrawingsImageBtn) {
+        clearDrawingsImageBtn.addEventListener('click', () => {
+            // Remove all drawings for image mode
+            completedDrawings = completedDrawings.filter(d => !d.isImageMode);
+            drawingPoints = []; // Clear any in-progress drawing
+            redrawImagePose();
+            console.log('Cleared all drawings for image');
+        });
+    }
+
     // Mouse events for image canvas
     imageCanvas.addEventListener('mousedown', handleMouseDown);
     imageCanvas.addEventListener('mousemove', handleMouseMove);
@@ -3003,24 +3028,13 @@ function handleMouseDown(e) {
             });
             drawingPoints = [];
 
-            // Uncheck and disable the mode
-            if (isImageMode) {
-                const checkbox = document.getElementById('drawLineModeImage');
-                if (checkbox) checkbox.checked = false;
-            } else {
-                const checkbox = document.getElementById('drawLineModeVideo');
-                if (checkbox) checkbox.checked = false;
-            }
-            isDrawLineMode = false;
-            targetCanvas.style.cursor = 'default';
-
-            // Trigger redraw
+            // Trigger redraw (keep mode active for more drawings)
             if (isImageMode) {
                 redrawImagePose();
             } else {
                 redrawCurrentFrame();
             }
-            console.log('Line drawing completed');
+            console.log('Line drawing completed - ready for next line');
         } else {
             // Draw temporary marker
             const ctx = targetCanvas.getContext('2d');
@@ -3048,24 +3062,13 @@ function handleMouseDown(e) {
             });
             drawingPoints = [];
 
-            // Uncheck and disable the mode
-            if (isImageMode) {
-                const checkbox = document.getElementById('drawAngleModeImage');
-                if (checkbox) checkbox.checked = false;
-            } else {
-                const checkbox = document.getElementById('drawAngleModeVideo');
-                if (checkbox) checkbox.checked = false;
-            }
-            isDrawAngleMode = false;
-            targetCanvas.style.cursor = 'default';
-
-            // Trigger redraw
+            // Trigger redraw (keep mode active for more drawings)
             if (isImageMode) {
                 redrawImagePose();
             } else {
                 redrawCurrentFrame();
             }
-            console.log('Angle drawing completed');
+            console.log('Angle drawing completed - ready for next angle');
         } else {
             // Draw temporary marker
             const ctx = targetCanvas.getContext('2d');
