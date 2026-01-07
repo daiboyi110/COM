@@ -2988,12 +2988,12 @@ function handleMouseDown(e) {
 
     console.log('handleMouseDown called - isEditMode:', isEditMode, 'isEditModeCalibration:', isEditModeCalibration, 'isDrawLineMode:', isDrawLineMode, 'isDrawAngleMode:', isDrawAngleMode);
 
-    // Handle drawing tools
-    if (isDrawLineMode || isDrawAngleMode) {
+    // MODE 1: Draw Line Mode
+    if (isDrawLineMode) {
         const currentFrame = isImageMode ? -1 : Math.floor(video.currentTime * fps);
         drawingPoints.push({ x: mouseX, y: mouseY });
 
-        if (isDrawLineMode && drawingPoints.length === 2) {
+        if (drawingPoints.length === 2) {
             // Complete line drawing
             completedDrawings.push({
                 type: 'line',
@@ -3021,7 +3021,24 @@ function handleMouseDown(e) {
                 redrawCurrentFrame();
             }
             console.log('Line drawing completed');
-        } else if (isDrawAngleMode && drawingPoints.length === 3) {
+        } else {
+            // Draw temporary marker
+            const ctx = targetCanvas.getContext('2d');
+            ctx.fillStyle = '#00FF00';
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            console.log(`Point ${drawingPoints.length} recorded for line`);
+        }
+        return; // Exit - only handle drawing mode
+    }
+
+    // MODE 2: Draw Angle Mode
+    else if (isDrawAngleMode) {
+        const currentFrame = isImageMode ? -1 : Math.floor(video.currentTime * fps);
+        drawingPoints.push({ x: mouseX, y: mouseY });
+
+        if (drawingPoints.length === 3) {
             // Complete angle drawing
             completedDrawings.push({
                 type: 'angle',
@@ -3052,17 +3069,17 @@ function handleMouseDown(e) {
         } else {
             // Draw temporary marker
             const ctx = targetCanvas.getContext('2d');
-            ctx.fillStyle = isDrawLineMode ? '#00FF00' : '#FF00FF';
+            ctx.fillStyle = '#FF00FF';
             ctx.beginPath();
             ctx.arc(mouseX, mouseY, 5, 0, 2 * Math.PI);
             ctx.fill();
-            console.log(`Point ${drawingPoints.length} recorded for ${isDrawLineMode ? 'line' : 'angle'}`);
+            console.log(`Point ${drawingPoints.length} recorded for angle`);
         }
-        return; // Don't process other mouse events when in drawing mode
+        return; // Exit - only handle drawing mode
     }
 
-    // In 2D mode, check for calibration points if calibration edit mode is enabled
-    if (analysisMode === '2D' && isEditModeCalibration) {
+    // MODE 3: Edit Calibration Points Mode
+    else if (analysisMode === '2D' && isEditModeCalibration) {
         const CLICK_THRESHOLD = 20;
         const point1 = isImageMode ? calibrationPoint1Image : calibrationPoint1Video;
         const point2 = isImageMode ? calibrationPoint2Image : calibrationPoint2Video;
@@ -3080,69 +3097,73 @@ function handleMouseDown(e) {
             draggedCalibrationPoint = 'point1';
             targetCanvas.style.cursor = 'move';
             console.log('Started dragging calibration point 1');
-            return;
         } else if (dist2 < CLICK_THRESHOLD) {
             isDragging = true;
             draggedCalibrationPoint = 'point2';
             targetCanvas.style.cursor = 'move';
             console.log('Started dragging calibration point 2');
+        }
+        return; // Exit - only handle calibration mode
+    }
+
+    // MODE 4: Edit Joint Positions Mode
+    else if (isEditMode) {
+        console.log('Checking for joints to drag...');
+
+        // Use filled landmarks (with mirroring) for click detection
+        const filledLandmarks = isImageMode ? lastFilledLandmarks2DImage : lastFilledLandmarks2DVideo;
+
+        if (!filledLandmarks) {
+            console.log('No filled landmarks available for editing');
             return;
         }
-    }
+        console.log('Filled landmarks found:', filledLandmarks.length);
 
-    // Only check pose landmarks if in edit mode
-    if (!isEditMode) {
-        console.log('Skipping joint check - isEditMode is false');
-        return;
-    }
-    console.log('Checking for joints to drag...');
+        // Find the closest joint within 20 pixels
+        const CLICK_THRESHOLD = 20;
+        let closestJoint = null;
+        let closestDistance = CLICK_THRESHOLD;
 
-    // Use filled landmarks (with mirroring) for click detection
-    const filledLandmarks = isImageMode ? lastFilledLandmarks2DImage : lastFilledLandmarks2DVideo;
-
-    if (!filledLandmarks) {
-        console.log('No filled landmarks available for editing');
-        return;
-    }
-    console.log('Filled landmarks found:', filledLandmarks.length);
-
-    // Find the closest joint within 20 pixels
-    const CLICK_THRESHOLD = 20;
-    let closestJoint = null;
-    let closestDistance = CLICK_THRESHOLD;
-
-    filledLandmarks.forEach((landmark, index) => {
-        // Skip excluded landmarks (nose and eyes)
-        if (EXCLUDED_LANDMARKS.includes(index)) {
-            return;
-        }
-
-        // Check all landmarks including mirrored ones (visibility > 0 instead of > 0.3)
-        if (landmark && landmark.visibility > 0) {
-            const jointX = landmark.x * targetCanvas.width;
-            const jointY = landmark.y * targetCanvas.height;
-            const distance = Math.sqrt(
-                Math.pow(mouseX - jointX, 2) +
-                Math.pow(mouseY - jointY, 2)
-            );
-
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                closestJoint = index;
+        filledLandmarks.forEach((landmark, index) => {
+            // Skip excluded landmarks (nose and eyes)
+            if (EXCLUDED_LANDMARKS.includes(index)) {
+                return;
             }
-        }
-    });
 
-    if (closestJoint !== null) {
-        isDragging = true;
-        draggedJointIndex = closestJoint;
-        if (!isImageMode) {
-            draggedJointFrame = Math.floor(video.currentTime * fps);
+            // Check all landmarks including mirrored ones (visibility > 0 instead of > 0.3)
+            if (landmark && landmark.visibility > 0) {
+                const jointX = landmark.x * targetCanvas.width;
+                const jointY = landmark.y * targetCanvas.height;
+                const distance = Math.sqrt(
+                    Math.pow(mouseX - jointX, 2) +
+                    Math.pow(mouseY - jointY, 2)
+                );
+
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestJoint = index;
+                }
+            }
+        });
+
+        if (closestJoint !== null) {
+            isDragging = true;
+            draggedJointIndex = closestJoint;
+            if (!isImageMode) {
+                draggedJointFrame = Math.floor(video.currentTime * fps);
+            }
+            targetCanvas.style.cursor = 'move';
+            console.log(`Started dragging joint ${draggedJointIndex} (${LANDMARK_NAMES[draggedJointIndex]})`);
+        } else {
+            console.log('No joint found within click threshold');
         }
-        targetCanvas.style.cursor = 'move';
-        console.log(`Started dragging joint ${draggedJointIndex} (${LANDMARK_NAMES[draggedJointIndex]})`);
-    } else {
-        console.log('No joint found within click threshold');
+        return; // Exit - only handle edit mode
+    }
+
+    // MODE 5: No mode active - do nothing
+    else {
+        console.log('No edit/draw mode active - click ignored');
+        return;
     }
 }
 
