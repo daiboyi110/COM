@@ -851,13 +851,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (editModeImageCheckbox) {
         editModeImageCheckbox.addEventListener('change', (e) => {
             if (e.target.checked) {
-                // Uncheck calibration edit mode
-                if (editModeCalibrationImageCheckbox) {
-                    editModeCalibrationImageCheckbox.checked = false;
-                }
+                // Uncheck all other modes
+                if (editModeCalibrationImageCheckbox) editModeCalibrationImageCheckbox.checked = false;
+                if (drawLineModeImageCheckbox) drawLineModeImageCheckbox.checked = false;
+                if (drawAngleModeImageCheckbox) drawAngleModeImageCheckbox.checked = false;
+
                 isEditMode = true;
                 isEditModeCalibration = false;
+                isDrawLineMode = false;
+                isDrawAngleMode = false;
+                drawingPoints = [];
                 imageCanvas.classList.add('editable');
+                imageCanvas.style.cursor = 'default';
                 console.log('Edit mode enabled for image');
             } else {
                 isEditMode = false;
@@ -924,12 +929,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (editModeCalibrationImageCheckbox) {
         editModeCalibrationImageCheckbox.addEventListener('change', (e) => {
             if (e.target.checked) {
-                // Uncheck other modes
+                // Uncheck all other modes
                 if (editModeImageCheckbox) editModeImageCheckbox.checked = false;
+                if (drawLineModeImageCheckbox) drawLineModeImageCheckbox.checked = false;
+                if (drawAngleModeImageCheckbox) drawAngleModeImageCheckbox.checked = false;
 
                 isEditMode = false;
                 isEditModeCalibration = true;
+                isDrawLineMode = false;
+                isDrawAngleMode = false;
+                drawingPoints = [];
                 imageCanvas.classList.add('editable');
+                imageCanvas.style.cursor = 'default';
                 console.log('Calibration edit mode enabled for image');
             } else {
                 isEditModeCalibration = false;
