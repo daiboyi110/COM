@@ -1066,6 +1066,15 @@ document.addEventListener('DOMContentLoaded', () => {
     imageCanvas.addEventListener('mouseup', handleMouseUp);
     imageCanvas.addEventListener('mouseleave', handleMouseUp);
 
+    // Prevent video from playing when clicking in drawing/edit modes
+    video.addEventListener('click', (e) => {
+        if (isDrawLineMode || isDrawAngleMode || isEditMode || isEditModeCalibration) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Video click prevented - in edit/draw mode');
+        }
+    });
+
     // Mouse events for video canvas
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
