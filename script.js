@@ -467,6 +467,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clear previous pose data
             poseDataArray = [];
             document.getElementById('capturedFrames').textContent = '0';
+
+            // Auto-enable Edit Joints mode
+            if (editModeVideoCheckbox) {
+                editModeVideoCheckbox.checked = true;
+                isEditMode = true;
+                canvas.classList.add('editable');
+                canvas.style.cursor = 'default';
+                console.log('Edit Joints mode auto-enabled for video');
+            }
         }
     });
 
@@ -550,6 +559,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Process pose estimation on the image
                 console.log('Processing pose estimation...');
                 processImagePose();
+
+                // Auto-enable Edit Joints mode
+                if (editModeImageCheckbox) {
+                    editModeImageCheckbox.checked = true;
+                    isEditMode = true;
+                    imageCanvas.classList.add('editable');
+                    imageCanvas.style.cursor = 'default';
+                    console.log('Edit Joints mode auto-enabled for image');
+                }
             };
 
             imageDisplay.onerror = (error) => {
@@ -1146,6 +1164,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Analysis mode radio buttons - Video
     const calibrationScaleLabelVideo = document.getElementById('calibrationScaleLabelVideo');
+    const drawLineModeVideoLabel = document.getElementById('drawLineModeVideoLabel');
     document.querySelectorAll('input[name="analysisModeVideo"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             analysisModeVideo = e.target.value;
@@ -1157,16 +1176,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (editCalibrationVideoLabel) {
                     editCalibrationVideoLabel.style.display = 'inline-block';
                 }
+                if (drawLineModeVideoLabel) {
+                    drawLineModeVideoLabel.style.display = 'inline-block';
+                }
             } else {
                 calibrationScaleLabelVideo.style.display = 'none';
                 if (editCalibrationVideoLabel) {
                     editCalibrationVideoLabel.style.display = 'none';
+                }
+                if (drawLineModeVideoLabel) {
+                    drawLineModeVideoLabel.style.display = 'none';
                 }
                 // Disable calibration edit mode when switching to 3D
                 if (isEditModeCalibration && editModeCalibrationVideoCheckbox) {
                     editModeCalibrationVideoCheckbox.checked = false;
                     isEditModeCalibration = false;
                     canvas.classList.remove('editable');
+                }
+                // Disable draw line mode when switching to 3D
+                if (isDrawLineMode && drawLineModeVideoCheckbox) {
+                    drawLineModeVideoCheckbox.checked = false;
+                    isDrawLineMode = false;
+                    canvas.classList.remove('editable');
+                    drawingPoints = [];
                 }
             }
 
@@ -1181,6 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Analysis mode radio buttons - Image
     const calibrationScaleLabelImage = document.getElementById('calibrationScaleLabelImage');
+    const drawLineModeImageLabel = document.getElementById('drawLineModeImageLabel');
     document.querySelectorAll('input[name="analysisModeImage"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             analysisModeImage = e.target.value;
@@ -1192,16 +1225,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (editCalibrationImageLabel) {
                     editCalibrationImageLabel.style.display = 'inline-block';
                 }
+                if (drawLineModeImageLabel) {
+                    drawLineModeImageLabel.style.display = 'inline-block';
+                }
             } else {
                 calibrationScaleLabelImage.style.display = 'none';
                 if (editCalibrationImageLabel) {
                     editCalibrationImageLabel.style.display = 'none';
+                }
+                if (drawLineModeImageLabel) {
+                    drawLineModeImageLabel.style.display = 'none';
                 }
                 // Disable calibration edit mode when switching to 3D
                 if (isEditModeCalibration && editModeCalibrationImageCheckbox) {
                     editModeCalibrationImageCheckbox.checked = false;
                     isEditModeCalibration = false;
                     imageCanvas.classList.remove('editable');
+                }
+                // Disable draw line mode when switching to 3D
+                if (isDrawLineMode && drawLineModeImageCheckbox) {
+                    drawLineModeImageCheckbox.checked = false;
+                    isDrawLineMode = false;
+                    imageCanvas.classList.remove('editable');
+                    drawingPoints = [];
                 }
             }
 
@@ -2108,7 +2154,7 @@ function drawPose(landmarks, landmarks3D) {
                     // Negate Y to make positive direction upward (conventional)
                     coordText = `(${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
                 } else if (analysisModeVideo === '2D') {
-                    // 2D coordinates in pixels, divided by calibration distance
+                    // 2D coordinates in meters, using calibration
                     const pixelX = landmark.x * width;
                     const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
 
@@ -2119,11 +2165,11 @@ function drawPose(landmarks, landmarks3D) {
                     const p2y = calibrationPoint2Video.y * height;
                     const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
 
-                    // Normalize by calibration distance
-                    const normalizedX = pixelX / calibDistance;
-                    const normalizedY = pixelY / calibDistance;
+                    // Convert to meters: (pixels / calibration pixels) * calibration scale
+                    const metersX = (pixelX / calibDistance) * calibrationScaleVideo;
+                    const metersY = (pixelY / calibDistance) * calibrationScaleVideo;
 
-                    coordText = `(${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
+                    coordText = `(${metersX.toFixed(3)}, ${metersY.toFixed(3)})`;
                 }
 
                 if (coordText) {
@@ -2917,7 +2963,7 @@ function downloadFile(content, filename, contentType) {
 
 function renderCompletedDrawings(canvas, isImageMode, currentFrame) {
     const ctx = canvas.getContext('2d');
-    const calibrationScale = isImageMode ? parseFloat(calibrationScaleImage.value) || 1.0 : parseFloat(calibrationScaleVideo.value) || 1.0;
+    const calibrationScale = isImageMode ? calibrationScaleImage : calibrationScaleVideo;
     const fontSize = isImageMode ? parseInt(fontSizeSlider.value) || 28 : parseInt(fontSizeSliderVideo.value) || 28;
 
     completedDrawings.forEach(drawing => {
@@ -2944,7 +2990,7 @@ function renderCompletedDrawings(canvas, isImageMode, currentFrame) {
 
             // Draw line
             ctx.save();
-            ctx.strokeStyle = '#00FF00';
+            ctx.strokeStyle = '#89CFF0'; // Baby blue
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(drawing.points[0].x, drawing.points[0].y);
@@ -2952,7 +2998,7 @@ function renderCompletedDrawings(canvas, isImageMode, currentFrame) {
             ctx.stroke();
 
             // Draw endpoints
-            ctx.fillStyle = '#00FF00';
+            ctx.fillStyle = '#89CFF0'; // Baby blue
             drawing.points.forEach(pt => {
                 ctx.beginPath();
                 ctx.arc(pt.x, pt.y, 5, 0, 2 * Math.PI);
@@ -2967,7 +3013,7 @@ function renderCompletedDrawings(canvas, isImageMode, currentFrame) {
             const textWidth = ctx.measureText(text).width;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             ctx.fillRect(midX - textWidth / 2 - 5, midY - fontSize / 2 - 5, textWidth + 10, fontSize + 10);
-            ctx.fillStyle = '#00FF00';
+            ctx.fillStyle = '#89CFF0'; // Baby blue
             ctx.fillText(text, midX - textWidth / 2, midY + fontSize / 3);
             ctx.restore();
         } else if (drawing.type === 'angle' && drawing.points.length === 3) {
@@ -3049,6 +3095,12 @@ function handleMouseDown(e) {
 
     // MODE 1: Draw Line Mode
     if (isDrawLineMode) {
+        // Only allow drawing lines in 2D mode
+        if (analysisMode !== '2D') {
+            console.log('Line drawing is only available in 2D mode');
+            return;
+        }
+
         const currentFrame = isImageMode ? -1 : Math.floor(video.currentTime * fps);
         drawingPoints.push({ x: mouseX, y: mouseY });
 
@@ -3072,7 +3124,7 @@ function handleMouseDown(e) {
         } else {
             // Draw temporary marker
             const ctx = targetCanvas.getContext('2d');
-            ctx.fillStyle = '#00FF00';
+            ctx.fillStyle = '#89CFF0'; // Baby blue
             ctx.beginPath();
             ctx.arc(mouseX, mouseY, 5, 0, 2 * Math.PI);
             ctx.fill();
@@ -3655,7 +3707,7 @@ function drawImagePose(landmarks, landmarks3D) {
                     // Negate Y to make positive direction upward (conventional)
                     coordText = `(${lm3d.x.toFixed(3)}, ${(-lm3d.y).toFixed(3)}, ${lm3d.z.toFixed(3)})`;
                 } else if (analysisModeImage === '2D') {
-                    // 2D coordinates in pixels, divided by calibration distance
+                    // 2D coordinates in meters, using calibration
                     const pixelX = landmark.x * width;
                     const pixelY = (1 - landmark.y) * height; // Transform Y to make positive direction upward
 
@@ -3666,11 +3718,11 @@ function drawImagePose(landmarks, landmarks3D) {
                     const p2y = calibrationPoint2Image.y * height;
                     const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
 
-                    // Normalize by calibration distance
-                    const normalizedX = pixelX / calibDistance;
-                    const normalizedY = pixelY / calibDistance;
+                    // Convert to meters: (pixels / calibration pixels) * calibration scale
+                    const metersX = (pixelX / calibDistance) * calibrationScaleImage;
+                    const metersY = (pixelY / calibDistance) * calibrationScaleImage;
 
-                    coordText = `(${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)})`;
+                    coordText = `(${metersX.toFixed(3)}, ${metersY.toFixed(3)})`;
                 }
 
                 if (coordText) {

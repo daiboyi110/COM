@@ -174,7 +174,7 @@ All 2D coordinates will now be scaled to meters based on your calibration.
 #### Edit Joints
 If pose estimation is inaccurate, you can manually adjust landmarks:
 
-1. Check **"Edit Joints"**
+1. **"Edit Joints"** is automatically enabled when you load a video or image
 2. Green dots will become draggable
 3. Click and drag any green dot (joint) to reposition it
 4. COM calculations will update automatically based on new positions
@@ -182,24 +182,25 @@ If pose estimation is inaccurate, you can manually adjust landmarks:
 
 **Note**: Only joints with visibility > 0.3 can be edited. Edited positions persist until you reload the media.
 
-#### Draw Line (Clicking Two Points)
-Measure distances between any two points with calibrated measurements:
+#### Draw Line
+Measure distances between any two points with calibrated measurements (2D mode only):
 
-1. Check **"Draw Line (Clicking Two Points)"**
+1. Check **"Draw Line"**
 2. The cursor becomes a crosshair
 3. Click two points on the image/video to draw a line
-4. The line appears in **green** with the calibrated distance (in meters) displayed at the midpoint
+4. The line appears in **baby blue** with the calibrated distance (in meters) displayed at the midpoint
 5. You can draw multiple lines while the mode is active
 6. Click **"Clear Drawings"** to remove all drawings from the current frame
 
 **Notes**:
+- Only available in 2D analysis mode (checkbox hidden in 3D mode)
 - For videos, drawings are frame-specific. Navigate to different frames to draw on multiple frames.
 - Drawing tools work immediately after loading media, even before pose detection completes.
 
-#### Draw Angle (Clicking Three Points)
+#### Draw Angle
 Measure angles between any three points:
 
-1. Check **"Draw Angle (Clicking Three Points)"**
+1. Check **"Draw Angle"**
 2. The cursor becomes a crosshair
 3. Click three points: first point → vertex (center) → third point
 4. The angle appears in **magenta** with the angle measurement (in degrees) displayed
