@@ -192,7 +192,9 @@ Measure distances between any two points with calibrated measurements:
 5. You can draw multiple lines while the mode is active
 6. Click **"Clear Drawings"** to remove all drawings from the current frame
 
-**Note**: For videos, drawings are frame-specific. Navigate to different frames to draw on multiple frames.
+**Notes**:
+- For videos, drawings are frame-specific. Navigate to different frames to draw on multiple frames.
+- Drawing tools work immediately after loading media, even before pose detection completes.
 
 #### Draw Angle (Clicking Three Points)
 Measure angles between any three points:
@@ -205,7 +207,9 @@ Measure angles between any three points:
 6. You can draw multiple angles while the mode is active
 7. Click **"Clear Drawings"** to remove all drawings from the current frame
 
-**Note**: The second click defines the vertex (center point) of the angle.
+**Notes**:
+- The second click defines the vertex (center point) of the angle.
+- Drawing tools work immediately after loading media, even before pose detection completes.
 
 #### Clear Drawings
 - Removes all line and angle drawings from the current frame (video) or image

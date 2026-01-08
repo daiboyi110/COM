@@ -2398,6 +2398,10 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
 // Clear the canvas
 function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Render completed drawings even when canvas is cleared
+    const currentFrame = Math.floor(video.currentTime * fps);
+    renderCompletedDrawings(canvas, false, currentFrame);
 }
 
 // Save pose data for export
@@ -3433,8 +3437,16 @@ function redrawImagePose() {
     }
 
     // Draw pose if available and enabled
-    if (!imagePoseData) return;
-    if (!showPoseImage) return;
+    if (!imagePoseData) {
+        // Still render completed drawings even without pose data
+        renderCompletedDrawings(imageCanvas, true, -1);
+        return;
+    }
+    if (!showPoseImage) {
+        // Still render completed drawings even when pose is hidden
+        renderCompletedDrawings(imageCanvas, true, -1);
+        return;
+    }
 
     // Draw pose
     drawImagePose(imagePoseData.landmarks2D, imagePoseData.landmarks3D);
