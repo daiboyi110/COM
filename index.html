@@ -10,6 +10,32 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <!-- Suppress MediaPipe verbose logging -->
+    <script>
+        // Override console methods to filter out MediaPipe internal logs
+        (function() {
+            const originalWarn = console.warn;
+            const originalLog = console.log;
+
+            console.warn = function(...args) {
+                const msg = args.join(' ');
+                // Filter out MediaPipe WebGL and OpenGL messages
+                if (msg.includes('gl_context') || msg.includes('OpenGL')) {
+                    return;
+                }
+                originalWarn.apply(console, args);
+            };
+
+            console.log = function(...args) {
+                const msg = args.join(' ');
+                // Filter out MediaPipe WebGL initialization messages
+                if (msg.includes('gl_context') || msg.includes('GL version') || msg.includes('OpenGL')) {
+                    return;
+                }
+                originalLog.apply(console, args);
+            };
+        })();
+    </script>
     <!-- SheetJS for Excel export -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
