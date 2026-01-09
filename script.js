@@ -413,9 +413,20 @@ document.addEventListener('DOMContentLoaded', () => {
             // Reinitialize MediaPipe Pose for optimal sampling rate
             console.log('Reinitializing MediaPipe Pose before loading new video...');
             if (pose) {
-                pose.close();
+                try {
+                    pose.close();
+                    pose = null; // Clear the reference
+                    console.log('MediaPipe Pose closed successfully');
+                } catch (error) {
+                    console.error('Error closing MediaPipe Pose:', error);
+                    pose = null; // Still clear the reference
+                }
             }
-            initializePose();
+
+            // Wait a moment before reinitializing to allow cleanup
+            setTimeout(() => {
+                initializePose();
+            }, 100);
 
             // Store original filename (without extension)
             originalVideoFileName = file.name.replace(/\.[^/.]+$/, '');
@@ -491,9 +502,20 @@ document.addEventListener('DOMContentLoaded', () => {
             // Reinitialize MediaPipe Pose for image processing
             console.log('Reinitializing MediaPipe Pose before loading new image...');
             if (pose) {
-                pose.close();
+                try {
+                    pose.close();
+                    pose = null; // Clear the reference
+                    console.log('MediaPipe Pose closed successfully');
+                } catch (error) {
+                    console.error('Error closing MediaPipe Pose:', error);
+                    pose = null; // Still clear the reference
+                }
             }
-            initializePose();
+
+            // Wait a moment before reinitializing to allow cleanup
+            setTimeout(() => {
+                initializePose();
+            }, 100);
 
             // Store original filename (without extension)
             originalImageFileName = file.name.replace(/\.[^/.]+$/, '');
@@ -1664,8 +1686,17 @@ function initializePose() {
 // Process a single frame for pose detection
 async function processPoseFrame() {
     if (!pose) {
-        console.error('processPoseFrame: pose object is null/undefined');
-        return;
+        console.warn('processPoseFrame: pose object is null/undefined, waiting for initialization...');
+        // Try to reinitialize if needed
+        if (typeof window.Pose !== 'undefined') {
+            console.log('Attempting to reinitialize MediaPipe Pose...');
+            initializePose();
+            // Wait briefly for initialization
+            await new Promise(resolve => setTimeout(resolve, 200));
+            if (!pose) return; // Still not ready
+        } else {
+            return;
+        }
     }
     if (!video.videoWidth) {
         console.error('processPoseFrame: video.videoWidth is 0 or undefined');
