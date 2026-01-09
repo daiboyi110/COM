@@ -264,17 +264,14 @@ function getMirrorLandmarkIndex(index) {
 }
 
 // Function to copy landmark from opposite side (bilateral symmetry estimation)
-// Uses the same coordinates with small random noise to avoid complete overlap
+// Mirrors landmark from opposite side using exact coordinates
 function mirrorLandmark(landmark) {
     if (!landmark) return null;
 
-    // Add small random noise (±0.5% of coordinate value) to avoid complete overlap
-    const noise = () => (Math.random() - 0.5) * 0.1;
-
     return {
-        x: landmark.x + noise(),     // Add small noise to X
-        y: landmark.y + noise(),     // Add small noise to Y
-        z: landmark.z + noise(),     // Add small noise to Z (depth)
+        x: landmark.x,
+        y: landmark.y,
+        z: landmark.z,
         visibility: landmark.visibility
     };
 }
@@ -379,6 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close buttons
     const closeImageBtn = document.getElementById('closeImageBtn');
     const closeVideoBtn = document.getElementById('closeVideoBtn');
+    const closeMediaBtn = document.getElementById('closeMediaBtn');
 
     // Check if XLSX library is loaded
     if (typeof XLSX !== 'undefined') {
@@ -476,6 +474,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvas.style.cursor = 'default';
                 console.log('Edit Joints mode auto-enabled for video');
             }
+
+            // Show close media button
+            if (closeMediaBtn) {
+                closeMediaBtn.style.display = 'block';
+            }
         }
     });
 
@@ -567,6 +570,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     imageCanvas.classList.add('editable');
                     imageCanvas.style.cursor = 'default';
                     console.log('Edit Joints mode auto-enabled for image');
+                }
+
+                // Show close media button
+                if (closeMediaBtn) {
+                    closeMediaBtn.style.display = 'block';
                 }
             };
 
@@ -1302,6 +1310,15 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Image calibration scale set to: ${calibrationScaleImage}m`);
         redrawImagePose();
     });
+
+    // Close media button handler
+    if (closeMediaBtn) {
+        closeMediaBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to close the current media? This will reload the page.')) {
+                location.reload();
+            }
+        });
+    }
 
     // Summary log
     console.log('=== Initialization Complete ===');
