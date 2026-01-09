@@ -16,6 +16,7 @@ let showCoordinates = false;
 let showCoordinateSystem = false;
 let processingTimer = null;
 let poseDataArray = []; // Store all captured pose data
+let isLoadingNewMedia = false; // Flag to prevent processing during media switching
 
 // Image mode variables
 let showPoseImage = true;
@@ -410,23 +411,24 @@ document.addEventListener('DOMContentLoaded', () => {
     videoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Reinitialize MediaPipe Pose for optimal sampling rate
-            console.log('Reinitializing MediaPipe Pose before loading new video...');
-            if (pose) {
-                try {
-                    pose.close();
-                    pose = null; // Clear the reference
-                    console.log('MediaPipe Pose closed successfully');
-                } catch (error) {
-                    console.error('Error closing MediaPipe Pose:', error);
-                    pose = null; // Still clear the reference
-                }
+            // Set flag to stop processing current video
+            isLoadingNewMedia = true;
+
+            // Stop any ongoing processing
+            if (processingTimer) {
+                clearInterval(processingTimer);
+                processingTimer = null;
             }
 
-            // Wait longer for complete cleanup before reinitializing
-            setTimeout(() => {
+            // Reset pose data array for new video
+            poseDataArray = [];
+
+            // Reuse existing MediaPipe Pose instance to avoid WebAssembly conflicts
+            console.log('Loading new video with existing MediaPipe Pose instance...');
+            if (!pose) {
+                console.log('Initializing MediaPipe Pose for first time...');
                 initializePose();
-            }, 500);
+            }
 
             // Store original filename (without extension)
             originalVideoFileName = file.name.replace(/\.[^/.]+$/, '');
@@ -499,23 +501,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (file) {
             console.log('Image file selected:', file.name);
 
-            // Reinitialize MediaPipe Pose for image processing
-            console.log('Reinitializing MediaPipe Pose before loading new image...');
-            if (pose) {
-                try {
-                    pose.close();
-                    pose = null; // Clear the reference
-                    console.log('MediaPipe Pose closed successfully');
-                } catch (error) {
-                    console.error('Error closing MediaPipe Pose:', error);
-                    pose = null; // Still clear the reference
-                }
-            }
+            // Set flag to stop processing current media
+            isLoadingNewMedia = true;
 
-            // Wait longer for complete cleanup before reinitializing
-            setTimeout(() => {
+            // Reset pose data for new image
+            imagePoseData = null;
+
+            // Reuse existing MediaPipe Pose instance to avoid WebAssembly conflicts
+            console.log('Loading new image with existing MediaPipe Pose instance...');
+            if (!pose) {
+                console.log('Initializing MediaPipe Pose for first time...');
                 initializePose();
-            }, 500);
+            }
 
             // Store original filename (without extension)
             originalImageFileName = file.name.replace(/\.[^/.]+$/, '');
@@ -567,6 +564,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             imageDisplay.onload = () => {
                 console.log('Image loaded:', imageDisplay.naturalWidth, 'x', imageDisplay.naturalHeight);
+
+                // Clear the loading flag - ready to process new image
+                isLoadingNewMedia = false;
 
                 // Set canvas size to match image
                 imageCanvas.width = imageDisplay.naturalWidth;
@@ -694,6 +694,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (analysisModeVideo === '2D') {
             drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo);
         }
+
+        // Clear the loading flag - ready to process new video
+        isLoadingNewMedia = false;
 
         // Process first frame after a short delay to ensure pose is initialized
         console.log('Video metadata loaded, processing first frame...');
@@ -1685,6 +1688,12 @@ function initializePose() {
 
 // Process a single frame for pose detection
 async function processPoseFrame() {
+    // Don't process if we're loading new media
+    if (isLoadingNewMedia) {
+        console.log('Skipping frame processing - loading new media');
+        return;
+    }
+
     if (!pose) {
         console.warn('processPoseFrame: pose object is null/undefined, waiting for initialization...');
         // Try to reinitialize if needed
@@ -3486,6 +3495,12 @@ function getCurrentFramePoseData() {
 
 // Process pose estimation on uploaded image
 async function processImagePose() {
+    // Don't process if we're loading new media
+    if (isLoadingNewMedia) {
+        console.log('Skipping image processing - loading new media');
+        return;
+    }
+
     if (!imageDisplay || !pose) return;
 
     try {
