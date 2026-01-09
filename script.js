@@ -423,10 +423,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Wait a moment before reinitializing to allow cleanup
+            // Wait longer for complete cleanup before reinitializing
             setTimeout(() => {
                 initializePose();
-            }, 100);
+            }, 500);
 
             // Store original filename (without extension)
             originalVideoFileName = file.name.replace(/\.[^/.]+$/, '');
@@ -512,10 +512,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Wait a moment before reinitializing to allow cleanup
+            // Wait longer for complete cleanup before reinitializing
             setTimeout(() => {
                 initializePose();
-            }, 100);
+            }, 500);
 
             // Store original filename (without extension)
             originalImageFileName = file.name.replace(/\.[^/.]+$/, '');
