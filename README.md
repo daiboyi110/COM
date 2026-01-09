@@ -12,7 +12,7 @@ A web-based application for analyzing human pose and calculating center of mass 
 - **MediaPipe Pose Estimation**: Automatic detection of 33 body landmarks using Google's MediaPipe Pose
 - **2D & 3D Analysis Modes**: Choose between 2D pixel-based or 3D world coordinate analysis
 - **Center of Mass Calculation**: Calculate segment COM and total-body COM with sex-specific models
-- **Bilateral Symmetry Mirroring**: Automatically estimate missing landmarks using opposite side data
+- **Bilateral Symmetry Mirroring**: Automatically estimate missing landmarks using exact coordinates from opposite side (no noise added for accurate estimation)
 - **Interactive Editing**: Manually adjust joint positions and calibration points
 - **Coordinate System Visualization**: Display 2D or 3D coordinate axes with origin markers
 - **Real-time Visual Overlay**: See detected skeleton, joints, and COM overlaid on video/image
@@ -116,8 +116,14 @@ Open `index.html` in a modern web browser (Chrome, Firefox, Edge, or Safari reco
 ### 2. Upload Media
 - Click **"📹 Upload Video"** to select a video file (MP4, WebM, etc.)
 - Click **"🖼️ Upload Image"** to select an image file (JPG, PNG, etc.)
+- After loading, a red **"✕ Close Media"** button appears below the upload buttons
+- Click this button to reload the page and start fresh with new media
 
-**Tip**: For optimal performance when loading multiple videos or images sequentially, press **Ctrl+F5** (Windows/Linux) or **Cmd+Shift+R** (Mac) to hard refresh the page before uploading a new file. This clears the MediaPipe cache and ensures better pose detection accuracy.
+**Tip**: For optimal performance when loading multiple videos or images sequentially, you can either:
+- Click the **"✕ Close Media"** button to reload the page, or
+- Press **Ctrl+F5** (Windows/Linux) or **Cmd+Shift+R** (Mac) to hard refresh the page
+
+This clears the MediaPipe cache and ensures better pose detection accuracy.
 
 ### 3. Configure Analysis Settings
 
