@@ -2438,7 +2438,7 @@ function calculateExtendedLandmarksForExport(landmarks2D, landmarks3D, sex, anal
     }
 
     // Step 5: Calculate total body COM
-    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex, bodySide);
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex);
 
     // Add total body COM to extended landmarks (index 49)
     if (totalBodyCOM2D) extendedLandmarks2D[49] = totalBodyCOM2D;
