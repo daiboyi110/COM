@@ -1032,12 +1032,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 isDrawLineMode = true;
                 isDrawAngleMode = false;
                 drawingPoints = [];
+                canvas.classList.add('editable'); // Enable pointer events
                 canvas.style.cursor = 'crosshair';
                 if (video && video.src) video.pause();
                 console.log('Line drawing mode enabled for video');
             } else {
                 isDrawLineMode = false;
                 drawingPoints = [];
+                canvas.classList.remove('editable'); // Disable pointer events
                 canvas.style.cursor = 'default';
                 console.log('Line drawing mode disabled for video');
             }
@@ -1057,12 +1059,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 isDrawLineMode = false;
                 isDrawAngleMode = true;
                 drawingPoints = [];
+                canvas.classList.add('editable'); // Enable pointer events
                 canvas.style.cursor = 'crosshair';
                 if (video && video.src) video.pause();
                 console.log('Angle drawing mode enabled for video');
             } else {
                 isDrawAngleMode = false;
                 drawingPoints = [];
+                canvas.classList.remove('editable'); // Disable pointer events
                 canvas.style.cursor = 'default';
                 console.log('Angle drawing mode disabled for video');
             }
@@ -1082,11 +1086,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 isDrawLineMode = true;
                 isDrawAngleMode = false;
                 drawingPoints = [];
+                imageCanvas.classList.add('editable'); // Enable pointer events
                 imageCanvas.style.cursor = 'crosshair';
                 console.log('Line drawing mode enabled for image');
             } else {
                 isDrawLineMode = false;
                 drawingPoints = [];
+                imageCanvas.classList.remove('editable'); // Disable pointer events
                 imageCanvas.style.cursor = 'default';
                 console.log('Line drawing mode disabled for image');
             }
@@ -1106,11 +1112,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 isDrawLineMode = false;
                 isDrawAngleMode = true;
                 drawingPoints = [];
+                imageCanvas.classList.add('editable'); // Enable pointer events
                 imageCanvas.style.cursor = 'crosshair';
                 console.log('Angle drawing mode enabled for image');
             } else {
                 isDrawAngleMode = false;
                 drawingPoints = [];
+                imageCanvas.classList.remove('editable'); // Disable pointer events
                 imageCanvas.style.cursor = 'default';
                 console.log('Angle drawing mode disabled for image');
             }
