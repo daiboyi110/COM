@@ -389,6 +389,27 @@ The application uses abbreviated names for compact display:
 - **Video Processing**: Maximum framerate (no throttling)
 - **Visibility Threshold**: 0.3 (landmarks with visibility < 0.3 are hidden)
 
+### MediaPipe Pose Configuration Parameters
+
+The following MediaPipe Pose parameters are used in this application for optimal accuracy and performance:
+
+```javascript
+{
+  modelComplexity: 1,              // Model: 0=lite, 1=full, 2=heavy (full model for balanced accuracy/performance)
+  smoothLandmarks: true,            // Enable landmark smoothing to reduce jitter
+  enableSegmentation: false,        // Disable segmentation mask (not needed for this application)
+  minDetectionConfidence: 0.5,     // Minimum confidence (0.0-1.0) for person detection
+  minTrackingConfidence: 0.5       // Minimum confidence (0.0-1.0) for landmark tracking
+}
+```
+
+**Parameter Explanations:**
+- **modelComplexity**: Set to `1` (full model) for better accuracy without excessive computational cost. Use `0` for faster performance on slower devices, or `2` for maximum accuracy on powerful hardware.
+- **smoothLandmarks**: Enabled to reduce jitter and provide smoother landmark tracking across frames.
+- **enableSegmentation**: Disabled as person segmentation masks are not required for pose analysis.
+- **minDetectionConfidence**: Set to `0.5` to ensure reasonable detection quality while maintaining good performance.
+- **minTrackingConfidence**: Set to `0.5` to balance tracking stability with responsiveness to movement.
+
 ## Files
 
 - `index.html` - Main application interface
