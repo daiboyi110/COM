@@ -49,6 +49,7 @@ The application displays **37 total markers**:
   - Coordinates are calculated as: `(pixel distance) / (calibration distance in pixels) × (calibration scale in meters)`
   - Default calibration scale: 1.0 meter
 - **Use Case**: Analyzing movement in a single plane (e.g., sagittal or frontal plane analysis)
+- **Accuracy**: ✅ **Highly accurate** for X and Y coordinates when properly calibrated. 2D measurements are reliable for planar motion analysis as they are based on direct pixel-to-metric conversion using the calibration reference.
 
 ### 3D Analysis
 - **Coordinate System**: Origin at **mid-hip** landmark
@@ -57,6 +58,7 @@ The application displays **37 total markers**:
   - **Z-axis**: Points forward toward camera (positive direction)
 - **Units**: Meters (real-world coordinates provided by MediaPipe)
 - **Use Case**: Full 3D spatial analysis with depth information
+- **Accuracy**: ⚠️ **Limited accuracy** for X, Y, and Z coordinates. 3D depth estimation from a single camera (monocular vision) has inherent limitations and may not be suitable for precise quantitative analysis. For accurate measurements, use 2D analysis with proper calibration instead.
 
 ## Sex-Specific Center of Mass Models
 
@@ -431,8 +433,8 @@ All processing happens **locally in your browser**. No video, image, or pose dat
 
 - **Single Person Detection**: MediaPipe Pose detects only one person per frame (the most prominent person)
 - **Visibility Requirements**: Landmarks must have visibility ≥ 0.3 to be displayed
-- **2D Calibration**: Requires manual calibration point placement for accurate measurements
-- **3D Accuracy**: 3D depth estimation is monocular (single camera) and may have accuracy limitations
+- **2D Calibration**: Requires manual calibration point placement for accurate measurements in 2D mode
+- **3D Accuracy Limitation**: ⚠️ 3D depth estimation (X, Y, Z coordinates) from monocular video is **not accurate** for precise quantitative analysis. MediaPipe's 3D pose estimation uses a single camera and has inherent depth perception limitations. **For accurate measurements, use 2D analysis with proper calibration.**
 - **Browser Memory**: Very long videos may consume significant memory
 
 ## Use Cases
