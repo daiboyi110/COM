@@ -152,19 +152,7 @@ This clears the MediaPipe cache and ensures better pose detection accuracy.
 
 **Font Size Slider**: Adjust base font size (12-60px) for all text labels
 
-### 5. Calibration (2D Mode Only)
-
-For accurate real-world measurements in 2D mode:
-
-1. Check **"Edit Calibration Points"**
-2. Two cyan points labeled "Calibration 1" and "Calibration 2" will appear
-3. Drag these points to match a known distance in the image (e.g., a meter stick, door height)
-4. Enter the real-world distance in the **"Calibration Scale (m)"** field
-5. Uncheck "Edit Calibration Points" when done
-
-All 2D coordinates will now be scaled to meters based on your calibration.
-
-### 6. Edit Mode Features
+### 5. Edit Mode Features
 
 The application provides four mutually exclusive edit/drawing modes (only one can be active at a time):
 
@@ -225,7 +213,7 @@ Measure angles between any three points:
 - Does not affect pose landmarks or COM markers
 - Useful for starting fresh measurements on a frame
 
-### 7. Video Playback Controls
+### 6. Video Playback Controls
 
 - **▶ Play / ⏸ Pause**: Start/stop video playback
 - **⏮ Previous Frame / ⏭ Next Frame**: Step through video frame-by-frame
@@ -233,7 +221,7 @@ Measure angles between any three points:
 
 **Tip for Better Accuracy**: For optimal pose estimation accuracy, use the frame-by-frame navigation (⏮ Previous Frame / ⏭ Next Frame buttons) instead of playing the video continuously. This gives MediaPipe more processing time per frame and can result in more accurate landmark detection, especially for complex poses or fast movements.
 
-### 8. Export Data
+### 7. Export Data
 
 **Export Excel** (📗):
 - Creates an XLSX file based on your selected analysis mode (2D or 3D)
@@ -264,7 +252,7 @@ Measure angles between any three points:
 - Processing time depends on video length and framerate
 - Overlays include skeleton, landmarks, coordinates, COM markers as displayed
 
-### 9. Video-Specific Features
+### 8. Video-Specific Features
 
 **Clear Data** (🗑️): Removes all collected frame data and resets analysis
 
