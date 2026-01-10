@@ -229,6 +229,8 @@ Measure angles between any three points:
 - **⏮ Previous Frame / ⏭ Next Frame**: Step through video frame-by-frame
 - **Video Progress Bar**: Click or drag to jump to specific time
 
+**Tip for Better Accuracy**: For optimal pose estimation accuracy, use the frame-by-frame navigation (⏮ Previous Frame / ⏭ Next Frame buttons) instead of playing the video continuously. This gives MediaPipe more processing time per frame and can result in more accurate landmark detection, especially for complex poses or fast movements.
+
 ### 8. Export Data
 
 **Export Excel** (📗):
