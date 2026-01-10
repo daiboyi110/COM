@@ -176,7 +176,7 @@ If pose estimation is inaccurate, you can manually adjust landmarks:
 4. COM calculations will update automatically based on new positions
 5. Uncheck "Edit Joints" when done
 
-**Note**: Only joints with visibility > 0.3 can be edited. Edited positions persist until you reload the media.
+**Note**: Only joints with visibility > 0.5 can be edited. Edited positions persist until you reload the media.
 
 #### Draw Line
 Measure distances between any two points with calibrated measurements (2D mode only):
@@ -377,7 +377,7 @@ The application uses abbreviated names for compact display:
 - **Browser Compatibility**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
 - **Processing**: Client-side only (no data uploaded to servers)
 - **Video Processing**: Maximum framerate (no throttling)
-- **Visibility Threshold**: 0.3 (landmarks with visibility < 0.3 are hidden)
+- **Visibility Threshold**: 0.5 (landmarks with visibility < 0.5 are hidden)
 
 ### MediaPipe Pose Configuration Parameters
 
@@ -420,7 +420,7 @@ All processing happens **locally in your browser**. No video, image, or pose dat
 ## Limitations
 
 - **Single Person Detection**: MediaPipe Pose detects only one person per frame (the most prominent person)
-- **Visibility Requirements**: Landmarks must have visibility ≥ 0.3 to be displayed
+- **Visibility Requirements**: Landmarks must have visibility ≥ 0.5 to be displayed
 - **2D Calibration**: Requires manual calibration point placement for accurate measurements in 2D mode
 - **3D Accuracy Limitation**: ⚠️ 3D depth estimation (X, Y, Z coordinates) from monocular video is **not accurate** for precise quantitative analysis. MediaPipe's 3D pose estimation uses a single camera and has inherent depth perception limitations. **For accurate measurements, use 2D analysis with proper calibration.**
 - **Browser Memory**: Very long videos may consume significant memory

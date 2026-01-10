@@ -281,14 +281,14 @@ function fillMissingLandmarksWithMirrors(landmarks2D, landmarks3D) {
         const left2D = filled2D[leftIdx];
         const right2D = filled2D[rightIdx];
 
-        if (!left2D || left2D.visibility < 0.3) {
-            if (right2D && right2D.visibility >= 0.3) {
+        if (!left2D || left2D.visibility < 0.5) {
+            if (right2D && right2D.visibility >= 0.5) {
                 filled2D[leftIdx] = mirrorLandmark(right2D);
             }
         }
 
-        if (!right2D || right2D.visibility < 0.3) {
-            if (left2D && left2D.visibility >= 0.3) {
+        if (!right2D || right2D.visibility < 0.5) {
+            if (left2D && left2D.visibility >= 0.5) {
                 filled2D[rightIdx] = mirrorLandmark(left2D);
             }
         }
@@ -298,14 +298,14 @@ function fillMissingLandmarksWithMirrors(landmarks2D, landmarks3D) {
             const left3D = filled3D[leftIdx];
             const right3D = filled3D[rightIdx];
 
-            if (!left3D || left3D.visibility < 0.3) {
-                if (right3D && right3D.visibility >= 0.3) {
+            if (!left3D || left3D.visibility < 0.5) {
+                if (right3D && right3D.visibility >= 0.5) {
                     filled3D[leftIdx] = mirrorLandmark(right3D);
                 }
             }
 
-            if (!right3D || right3D.visibility < 0.3) {
-                if (left3D && left3D.visibility >= 0.3) {
+            if (!right3D || right3D.visibility < 0.5) {
+                if (left3D && left3D.visibility >= 0.5) {
                     filled3D[rightIdx] = mirrorLandmark(left3D);
                 }
             }
@@ -1938,7 +1938,7 @@ function drawPose(landmarks, landmarks3D) {
             return;
         }
 
-        if (start && end && start.visibility > 0.3 && end.visibility > 0.3) {
+        if (start && end && start.visibility > 0.5 && end.visibility > 0.5) {
             ctx.beginPath();
             ctx.moveTo(start.x * width, start.y * height);
             ctx.lineTo(end.x * width, end.y * height);
@@ -1951,7 +1951,7 @@ function drawPose(landmarks, landmarks3D) {
         const midShoulder = extendedLandmarks2D[33];
         const midHip = extendedLandmarks2D[34];
 
-        if (midShoulder.visibility > 0.3 && midHip.visibility > 0.3) {
+        if (midShoulder.visibility > 0.5 && midHip.visibility > 0.5) {
             ctx.strokeStyle = '#00FF00';
             ctx.lineWidth = 4;
             ctx.beginPath();
@@ -2005,7 +2005,7 @@ function drawPose(landmarks, landmarks3D) {
         }
 
         // Skip if landmark doesn't exist or has low visibility
-        if (!landmark || landmark.visibility < 0.3) {
+        if (!landmark || landmark.visibility < 0.5) {
             return;
         }
 
@@ -2261,7 +2261,7 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
         let originX = 100; // Default position
         let originY = 100;
 
-        if (midHipLandmark && midHipLandmark.visibility > 0.3) {
+        if (midHipLandmark && midHipLandmark.visibility > 0.5) {
             originX = midHipLandmark.x * width;
             originY = midHipLandmark.y * height;
         }
@@ -2619,7 +2619,7 @@ function exportAsExcel() {
 
                     const displayCoord = displayCoords[index];
 
-                    if (landmark && landmark.visibility >= 0.3 && displayCoord) {
+                    if (landmark && landmark.visibility >= 0.5 && displayCoord) {
                         row.push(
                             parseFloat(displayCoord.x.toFixed(6)),
                             parseFloat(displayCoord.y.toFixed(6))
@@ -3053,7 +3053,7 @@ function handleMouseMove(e) {
         let landmark3D = imagePoseData.landmarks3D[draggedJointIndex];
 
         // If landmark doesn't exist or has low visibility (was mirrored), create a new one
-        if (!landmark2D || landmark2D.visibility < 0.3) {
+        if (!landmark2D || landmark2D.visibility < 0.5) {
             landmark2D = {
                 x: clampedX,
                 y: clampedY,
@@ -3103,7 +3103,7 @@ function handleMouseMove(e) {
             let landmark3D = frameData.landmarks3D[draggedJointIndex];
 
             // If landmark doesn't exist or has low visibility (was mirrored), create a new one
-            if (!landmark2D || landmark2D.visibility < 0.3) {
+            if (!landmark2D || landmark2D.visibility < 0.5) {
                 landmark2D = {
                     x: clampedX,
                     y: clampedY,
@@ -3318,7 +3318,7 @@ function drawImagePose(landmarks, landmarks3D) {
             return;
         }
 
-        if (start && end && start.visibility > 0.3 && end.visibility > 0.3) {
+        if (start && end && start.visibility > 0.5 && end.visibility > 0.5) {
             imageCtx.beginPath();
             imageCtx.moveTo(start.x * width, start.y * height);
             imageCtx.lineTo(end.x * width, end.y * height);
@@ -3331,7 +3331,7 @@ function drawImagePose(landmarks, landmarks3D) {
         const midShoulder = extendedLandmarks2D[33];
         const midHip = extendedLandmarks2D[34];
 
-        if (midShoulder.visibility > 0.3 && midHip.visibility > 0.3) {
+        if (midShoulder.visibility > 0.5 && midHip.visibility > 0.5) {
             imageCtx.strokeStyle = '#00FF00';
             imageCtx.lineWidth = 4;
             imageCtx.beginPath();
@@ -3385,7 +3385,7 @@ function drawImagePose(landmarks, landmarks3D) {
         }
 
         // Skip if landmark doesn't exist or has low visibility
-        if (!landmark || landmark.visibility < 0.3) {
+        if (!landmark || landmark.visibility < 0.5) {
             return;
         }
 
@@ -3570,7 +3570,7 @@ function exportImageAsExcel() {
 
                 const displayCoord = displayCoords[index];
 
-                if (landmark && landmark.visibility >= 0.3 && displayCoord) {
+                if (landmark && landmark.visibility >= 0.5 && displayCoord) {
                     data.push([
                         index,
                         LANDMARK_NAMES[index],
