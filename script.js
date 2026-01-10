@@ -318,6 +318,13 @@ function fillMissingLandmarksWithMirrors(landmarks2D, landmarks3D) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOMContentLoaded event fired - initializing application');
 
+    // Initialize visit counter
+    const visitCounterElement = document.getElementById('visitCounter');
+    let visitCount = parseInt(localStorage.getItem('visitCount') || '0', 10);
+    visitCount++;
+    localStorage.setItem('visitCount', visitCount.toString());
+    visitCounterElement.textContent = visitCount.toLocaleString();
+
     video = document.getElementById('video');
     canvas = document.getElementById('poseCanvas');
     ctx = canvas.getContext('2d');

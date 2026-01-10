@@ -6,6 +6,8 @@
 
 A web-based application for analyzing human pose and calculating center of mass in videos and images using MediaPipe Pose estimation. Upload videos or images, visualize body landmarks, calculate segment and total-body center of mass, and export detailed biomechanical data.
 
+**Recommended Platform**: This web application works best on a computer with a mouse. While it can function on phones and tablets, the interactive features (joint editing, calibration, drawing tools, and precise frame navigation) are optimized for mouse-based interaction and larger screen displays.
+
 ## Features
 
 - **Video & Image Analysis**: Process both video files and static images
