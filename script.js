@@ -1459,20 +1459,17 @@ async function detectFPS() {
         console.log('Starting comprehensive FPS detection...');
 
         // Method 1: Try to get FPS from video metadata (most reliable if available)
-        const videoElement = video;
-        let detectedFPS = null;
-
         // Check for metadata hints
-        if (videoElement.mozDecodedFrames !== undefined && videoElement.mozPresentedFrames !== undefined) {
+        if (video.mozDecodedFrames !== undefined && video.mozPresentedFrames !== undefined) {
             // Firefox-specific metadata
             const startTime = performance.now();
-            const startFrames = videoElement.mozPresentedFrames;
+            const startFrames = video.mozPresentedFrames;
 
             setTimeout(() => {
                 const elapsed = (performance.now() - startTime) / 1000;
-                const framesPassed = videoElement.mozPresentedFrames - startFrames;
+                const framesPassed = video.mozPresentedFrames - startFrames;
                 if (framesPassed > 0 && elapsed > 0) {
-                    detectedFPS = Math.round(framesPassed / elapsed);
+                    const detectedFPS = Math.round(framesPassed / elapsed);
                     console.log(`Firefox metadata FPS: ${detectedFPS}`);
                 }
             }, 1000);

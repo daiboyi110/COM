@@ -180,7 +180,7 @@ All 2D coordinates will now be scaled to meters based on your calibration.
 #### Edit Joints
 If pose estimation is inaccurate, you can manually adjust landmarks:
 
-1. **"Edit Joints"** is automatically enabled when you load a video or image
+1. Check **"Edit Joints"** to enable editing mode
 2. Green dots will become draggable
 3. Click and drag any green dot (joint) to reposition it
 4. COM calculations will update automatically based on new positions
