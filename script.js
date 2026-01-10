@@ -479,14 +479,19 @@ document.addEventListener('DOMContentLoaded', () => {
             poseDataArray = [];
             document.getElementById('capturedFrames').textContent = '0';
 
-            // Auto-enable Edit Joints mode
-            if (editModeVideoCheckbox) {
-                editModeVideoCheckbox.checked = true;
-                isEditMode = true;
-                canvas.classList.add('editable');
-                canvas.style.cursor = 'default';
-                console.log('Edit Joints mode auto-enabled for video');
-            }
+            // Uncheck all edit mode checkboxes
+            if (editModeVideoCheckbox) editModeVideoCheckbox.checked = false;
+            if (editModeCalibrationVideoCheckbox) editModeCalibrationVideoCheckbox.checked = false;
+            if (drawLineModeVideoCheckbox) drawLineModeVideoCheckbox.checked = false;
+            if (drawAngleModeVideoCheckbox) drawAngleModeVideoCheckbox.checked = false;
+
+            // Disable all edit modes
+            isEditMode = false;
+            isEditModeCalibration = false;
+            isDrawLineMode = false;
+            isDrawAngleMode = false;
+            canvas.classList.remove('editable');
+            console.log('All edit modes disabled for new video');
 
             // Show close media button
             if (closeMediaBtn) {
@@ -585,14 +590,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Processing pose estimation...');
                 processImagePose();
 
-                // Auto-enable Edit Joints mode
-                if (editModeImageCheckbox) {
-                    editModeImageCheckbox.checked = true;
-                    isEditMode = true;
-                    imageCanvas.classList.add('editable');
-                    imageCanvas.style.cursor = 'default';
-                    console.log('Edit Joints mode auto-enabled for image');
-                }
+                // Uncheck all edit mode checkboxes
+                if (editModeImageCheckbox) editModeImageCheckbox.checked = false;
+                if (editModeCalibrationImageCheckbox) editModeCalibrationImageCheckbox.checked = false;
+                if (drawLineModeImageCheckbox) drawLineModeImageCheckbox.checked = false;
+                if (drawAngleModeImageCheckbox) drawAngleModeImageCheckbox.checked = false;
+
+                // Disable all edit modes
+                isEditMode = false;
+                isEditModeCalibration = false;
+                isDrawLineMode = false;
+                isDrawAngleMode = false;
+                imageCanvas.classList.remove('editable');
+                console.log('All edit modes disabled for new image');
 
                 // Show close media button
                 if (closeMediaBtn) {
