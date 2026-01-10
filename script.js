@@ -36,9 +36,7 @@ let analysisModeImage = '2D'; // '2D' or '3D'
 let sexSelectionVideo = 'male'; // 'male' or 'female'
 let sexSelectionImage = 'male'; // 'male' or 'female'
 
-// Body side selection for display
-let bodySideVideo = 'full'; // 'full', 'right', or 'left'
-let bodySideImage = 'full'; // 'full', 'right', or 'left'
+// Body side is always 'full' - bilateral mirroring enabled for all landmarks
 
 // Joint dragging variables
 let isDragging = false;
@@ -214,19 +212,13 @@ function isCentralLandmark(index) {
 }
 
 // Helper function to filter landmarks based on body side selection
-function shouldDisplayLandmark(index, bodySide) {
-    if (bodySide === 'full') return true;
-    if (bodySide === 'left') return isLeftSideLandmark(index) || isCentralLandmark(index);
-    if (bodySide === 'right') return isRightSideLandmark(index) || isCentralLandmark(index);
+// Body side is always 'full', so these functions always return true
+function shouldDisplayLandmark(index) {
     return true;
 }
 
-// Helper function to filter connections based on body side selection
-function shouldDisplayConnection(startIdx, endIdx, bodySide) {
-    if (bodySide === 'full') return true;
-
-    // Only show connection if both endpoints should be displayed
-    return shouldDisplayLandmark(startIdx, bodySide) && shouldDisplayLandmark(endIdx, bodySide);
+function shouldDisplayConnection(startIdx, endIdx) {
+    return true;
 }
 
 // Mapping of left-right landmark pairs for mirroring
@@ -1271,8 +1263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Body side is now always 'full' - bilateral mirroring is always enabled
-    // bodySideVideo and bodySideImage remain set to 'full'
+    // Body side is always 'full' - bilateral mirroring is always enabled
 
     // Calibration scale input handlers
     const calibrationScaleVideoInput = document.getElementById('calibrationScaleVideo');
@@ -1708,7 +1699,7 @@ function onPoseResults(results) {
     }
 
     // Calculate total body center of mass
-    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionVideo, bodySideVideo);
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionVideo);
 
     // Add total body COM to extended landmarks (index 49)
     if (totalBodyCOM2D) extendedLandmarks2D[49] = totalBodyCOM2D;
@@ -1811,8 +1802,8 @@ function calculateSegmentCOMs(extendedLandmarks2D, extendedLandmarks3D, sex) {
 }
 
 // Calculate total body center of mass using weighted average of segment COMs
-// If bodySide is 'left' or 'right', assumes symmetric body and doubles the mass of visible segments
-function calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex, bodySide = 'full') {
+// Calculate total body COM (body side is always 'full')
+function calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex) {
     let totalBodyCOM2D = null;
     let totalBodyCOM3D = null;
 
@@ -1823,18 +1814,10 @@ function calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex, bodySide = 'fu
 
     for (const segmentMass of SEGMENT_MASS_PERCENTAGES) {
         const { index, male, female } = segmentMass;
-        let massPercent = sex === 'male' ? male : female;
+        const massPercent = sex === 'male' ? male : female;
         const segmentCOM = segmentCOMs2D[index];
 
         if (segmentCOM) {
-            // For left/right side display, double the mass of side-specific segments
-            // to account for the symmetric missing side
-            if (bodySide === 'left' || bodySide === 'right') {
-                if (isLeftSideLandmark(index) || isRightSideLandmark(index)) {
-                    massPercent *= 2;
-                }
-            }
-
             sum2D.x += segmentCOM.x * massPercent;
             sum2D.y += segmentCOM.y * massPercent;
             sum2D.z += segmentCOM.z * massPercent;
@@ -1860,18 +1843,10 @@ function calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex, bodySide = 'fu
 
         for (const segmentMass of SEGMENT_MASS_PERCENTAGES) {
             const { index, male, female } = segmentMass;
-            let massPercent = sex === 'male' ? male : female;
+            const massPercent = sex === 'male' ? male : female;
             const segmentCOM = segmentCOMs3D[index];
 
             if (segmentCOM) {
-                // For left/right side display, double the mass of side-specific segments
-                // to account for the symmetric missing side
-                if (bodySide === 'left' || bodySide === 'right') {
-                    if (isLeftSideLandmark(index) || isRightSideLandmark(index)) {
-                        massPercent *= 2;
-                    }
-                }
-
                 sum3D.x += segmentCOM.x * massPercent;
                 sum3D.y += segmentCOM.y * massPercent;
                 sum3D.z += segmentCOM.z * massPercent;
@@ -1931,7 +1906,7 @@ function drawPose(landmarks, landmarks3D) {
     }
 
     // Calculate total body center of mass
-    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionVideo, bodySideVideo);
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionVideo);
 
     // Add total body COM to extended landmarks (index 49)
     if (totalBodyCOM2D) extendedLandmarks2D[49] = totalBodyCOM2D;
@@ -1945,8 +1920,8 @@ function drawPose(landmarks, landmarks3D) {
         const start = filled2D[startIdx];
         const end = filled2D[endIdx];
 
-        // Filter connections based on body side selection
-        if (!shouldDisplayConnection(startIdx, endIdx, bodySideVideo)) {
+        // Body side is always 'full' - show all connections
+        if (!shouldDisplayConnection(startIdx, endIdx)) {
             return;
         }
 
@@ -2024,8 +1999,8 @@ function drawPose(landmarks, landmarks3D) {
             return;
         }
 
-        // Skip landmarks based on body side selection
-        if (!shouldDisplayLandmark(index, bodySideVideo)) {
+        // Body side is always 'full' - show all landmarks
+        if (!shouldDisplayLandmark(index)) {
             return;
         }
 
@@ -2438,7 +2413,7 @@ function savePoseData(landmarks2D, landmarks3D, manuallyEdited = false) {
 }
 
 // Helper function to calculate all extended landmarks (including COM) with display coordinates
-function calculateExtendedLandmarksForExport(landmarks2D, landmarks3D, sex, bodySide, analysisMode, calibrationPoint1, calibrationPoint2, calibrationScale, canvasWidth, canvasHeight) {
+function calculateExtendedLandmarksForExport(landmarks2D, landmarks3D, sex, analysisMode, calibrationPoint1, calibrationPoint2, calibrationScale, canvasWidth, canvasHeight) {
     // Step 1: Fill missing landmarks with mirroring
     const { filled2D, filled3D } = fillMissingLandmarksWithMirrors(landmarks2D, landmarks3D);
 
@@ -2620,7 +2595,6 @@ function exportAsExcel() {
                 frameData.landmarks2D,
                 frameData.landmarks3D,
                 sexSelectionVideo,
-                bodySideVideo,
                 analysisModeVideo,
                 calibrationPoint1Video,
                 calibrationPoint2Video,
@@ -3312,7 +3286,7 @@ function drawImagePose(landmarks, landmarks3D) {
     }
 
     // Calculate total body center of mass
-    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionImage, bodySideImage);
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionImage);
 
     // Add total body COM to extended landmarks (index 49)
     if (totalBodyCOM2D) extendedLandmarks2D[49] = totalBodyCOM2D;
@@ -3326,8 +3300,8 @@ function drawImagePose(landmarks, landmarks3D) {
         const start = filled2D[startIdx];
         const end = filled2D[endIdx];
 
-        // Filter connections based on body side selection
-        if (!shouldDisplayConnection(startIdx, endIdx, bodySideImage)) {
+        // Body side is always 'full' - show all connections
+        if (!shouldDisplayConnection(startIdx, endIdx)) {
             return;
         }
 
@@ -3405,8 +3379,8 @@ function drawImagePose(landmarks, landmarks3D) {
             return;
         }
 
-        // Skip landmarks based on body side selection
-        if (!shouldDisplayLandmark(index, bodySideImage)) {
+        // Body side is always 'full' - show all landmarks
+        if (!shouldDisplayLandmark(index)) {
             return;
         }
 
@@ -3567,7 +3541,6 @@ function exportImageAsExcel() {
             imagePoseData.landmarks2D,
             imagePoseData.landmarks3D,
             sexSelectionImage,
-            bodySideImage,
             analysisModeImage,
             calibrationPoint1Image,
             calibrationPoint2Image,
