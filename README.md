@@ -3,6 +3,7 @@
 **Author:** Boyi Dai
 **Contact:** [daiboyi@gmail.com](mailto:daiboyi@gmail.com)
 **Last Updated:** January 2026
+**Development Tool:** Built with assistance from [Claude Code](https://claude.com/claude-code)
 
 A web-based application for analyzing human pose and calculating center of mass in videos and images using MediaPipe Pose estimation. Upload videos or images, visualize body landmarks, calculate segment and total-body center of mass, and export detailed biomechanical data.
 
