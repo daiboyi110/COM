@@ -2502,7 +2502,7 @@ function drawVelocityVectors(context, width, height, velocityX, velocityY, total
     }
 
     // Scale factor for vector visualization
-    const vectorScale = 37.5; // pixels per m/s
+    const vectorScale = 56.25; // pixels per m/s
 
     // Calculate resultant vector end point
     // velocityX is positive to the right, velocityY is positive upward (but canvas Y is inverted)
