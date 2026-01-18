@@ -456,24 +456,24 @@ h1 {
 
 .legend strong {
     color: #000;
-    font-size: 16px;
+    font-size: 8px;
 }
 
 .legend-item {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-size: 16px;
+    gap: 4px;
+    font-size: 8px;
     color: #333;
     font-weight: 600;
 }
 
 .legend-circle {
     display: inline-block;
-    width: 20px;
-    height: 20px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
-    border: 2px solid #000;
+    border: 1px solid #000;
 }
 
 .legend-circle.green {

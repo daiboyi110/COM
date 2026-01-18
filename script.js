@@ -11,9 +11,10 @@ let showPose = true;
 let showCOM = true;
 let showLeftSide = true;
 let showRightSide = true;
-let showJointNumbers = true;
+let showJointNumbers = false;
 let showCoordinates = false;
 let showCoordinateSystem = false;
+let showVelocityVectors = false;
 let processingTimer = null;
 let poseDataArray = []; // Store all captured pose data
 let isLoadingNewMedia = false; // Flag to prevent processing during media switching
@@ -23,7 +24,7 @@ let showPoseImage = true;
 let showCOMImage = true;
 let showLeftSideImage = true;
 let showRightSideImage = true;
-let showJointNumbersImage = true;
+let showJointNumbersImage = false;
 let showCoordinatesImage = false;
 let showCoordinateSystemImage = false;
 let imagePoseData = null; // Store pose data for the image
@@ -746,6 +747,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showCoordinateSystemCheckbox.addEventListener('change', (e) => {
         showCoordinateSystem = e.target.checked;
+        if (!video.paused) {
+            clearCanvas();
+        } else {
+            redrawCurrentFrame();
+        }
+    });
+
+    const showVelocityVectorsCheckbox = document.getElementById('showVelocityVectors');
+    showVelocityVectorsCheckbox.addEventListener('change', (e) => {
+        showVelocityVectors = e.target.checked;
         if (!video.paused) {
             clearCanvas();
         } else {
@@ -1685,18 +1696,22 @@ function onPoseResults(results) {
     const displayedJointCount = LANDMARK_NAMES.length - EXCLUDED_LANDMARKS.length;
     document.getElementById('jointCountVideo').textContent = displayedJointCount;
 
-    // Calculate extended landmarks including midpoints, segment COMs, and total body COM
-    const { midpoints2D, midpoints3D } = calculateMidpoints(results.poseLandmarks, results.poseWorldLandmarks);
+    // Fill missing landmarks with mirrored versions FIRST (same as drawPose does)
+    const { filled2D, filled3D } = fillMissingLandmarksWithMirrors(results.poseLandmarks, results.poseWorldLandmarks);
 
-    // Extend landmarks array with midpoints
-    const extendedLandmarks2D = [...results.poseLandmarks];
-    const extendedLandmarks3D = results.poseWorldLandmarks ? [...results.poseWorldLandmarks] : [];
+    // Calculate extended landmarks including midpoints, segment COMs, and total body COM
+    // Using mirrored data for consistency with displayed data
+    const { midpoints2D, midpoints3D } = calculateMidpoints(filled2D, filled3D);
+
+    // Extend landmarks array with midpoints (using mirrored data)
+    const extendedLandmarks2D = [...filled2D];
+    const extendedLandmarks3D = filled3D ? [...filled3D] : [];
     if (midpoints2D[33]) extendedLandmarks2D[33] = midpoints2D[33];
     if (midpoints2D[34]) extendedLandmarks2D[34] = midpoints2D[34];
     if (midpoints3D[33]) extendedLandmarks3D[33] = midpoints3D[33];
     if (midpoints3D[34]) extendedLandmarks3D[34] = midpoints3D[34];
 
-    // Calculate segment centers of mass
+    // Calculate segment centers of mass (using mirrored data)
     const { segmentCOMs2D, segmentCOMs3D } = calculateSegmentCOMs(extendedLandmarks2D, extendedLandmarks3D, sexSelectionVideo);
 
     // Extend landmarks array with COMs
@@ -1705,14 +1720,14 @@ function onPoseResults(results) {
         if (segmentCOMs3D[i]) extendedLandmarks3D[i] = segmentCOMs3D[i];
     }
 
-    // Calculate total body center of mass
+    // Calculate total body center of mass (using mirrored data)
     const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sexSelectionVideo);
 
     // Add total body COM to extended landmarks (index 49)
     if (totalBodyCOM2D) extendedLandmarks2D[49] = totalBodyCOM2D;
     if (totalBodyCOM3D) extendedLandmarks3D[49] = totalBodyCOM3D;
 
-    // Store extended pose data for export (includes all calculated landmarks)
+    // Store extended pose data for export (includes all calculated landmarks with mirrored data)
     savePoseData(extendedLandmarks2D, extendedLandmarks3D);
 }
 
@@ -2124,8 +2139,65 @@ function drawPose(landmarks, landmarks3D) {
         drawCoordinateSystem(ctx, canvas.width, canvas.height, analysisModeVideo, calibrationPoint1Video, calibrationPoint2Video, midHip);
     }
 
-    // Render completed drawings
+    // Draw velocity vectors if enabled
     const currentFrame = Math.floor(video.currentTime * fps);
+    const currentTime = video.currentTime;
+
+    if (showVelocityVectors) {
+        const totalBodyCOMCurrent = extendedLandmarks2D[49];
+
+        if (totalBodyCOMCurrent && totalBodyCOMCurrent.visibility >= 0.3) {
+            let velocityX = 0;
+            let velocityY = 0;
+
+            // Look for previous frame (frame N-1) by absolute frame number
+            const prevFrameData = poseDataArray.find(d => d.frame === currentFrame - 1);
+
+            if (prevFrameData) {
+                const totalBodyCOMPrev = prevFrameData.landmarks2D[49];
+
+                if (totalBodyCOMPrev && totalBodyCOMPrev.visibility >= 0.3) {
+                    const deltaTime = currentTime - prevFrameData.timestamp;
+
+                    if (deltaTime > 0) {
+                        // Calculate display coordinates for current Total Body COM (displayed)
+                        const currentDisplayCoord = calculateTotalBodyCOMDisplayCoord(
+                            totalBodyCOMCurrent,
+                            extendedLandmarks3D[49],
+                            analysisModeVideo,
+                            calibrationPoint1Video,
+                            calibrationPoint2Video,
+                            calibrationScaleVideo,
+                            width,
+                            height
+                        );
+
+                        // Calculate display coordinates for previous Total Body COM (saved)
+                        const prevDisplayCoord = calculateTotalBodyCOMDisplayCoord(
+                            totalBodyCOMPrev,
+                            prevFrameData.landmarks3D[49],
+                            analysisModeVideo,
+                            calibrationPoint1Video,
+                            calibrationPoint2Video,
+                            calibrationScaleVideo,
+                            width,
+                            height
+                        );
+
+                        if (currentDisplayCoord && prevDisplayCoord) {
+                            velocityX = (currentDisplayCoord.x - prevDisplayCoord.x) / deltaTime;
+                            velocityY = (currentDisplayCoord.y - prevDisplayCoord.y) / deltaTime;
+                        }
+                    }
+                }
+            }
+
+            // Draw velocity vectors
+            drawVelocityVectors(ctx, width, height, velocityX, velocityY, totalBodyCOMCurrent, effectiveFontSize);
+        }
+    }
+
+    // Render completed drawings
     renderCompletedDrawings(canvas, false, currentFrame);
 }
 
@@ -2182,17 +2254,27 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     context.strokeText('Calibration 2', x2 + 10, y2 - 10);
     context.fillText('Calibration 2', x2 + 10, y2 - 10);
 
-    // Display scale length at midpoint (without pixel information)
+    // Display scale length at midpoint
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
 
+    // Calculate calibration distance in pixels
+    const calibDistancePixels = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+
+    // Calculate pixels per meter
+    const pixelsPerMeter = calibDistancePixels / scaleLength;
+
     const scaleText = `Scale: ${scaleLength.toFixed(2)}m`;
+    const pixelText = `1 meter = ${pixelsPerMeter.toFixed(0)} pixels`;
+
     context.fillStyle = '#FFFFFF';
     context.strokeStyle = '#000000';
     context.lineWidth = 3;
     context.font = `bold ${fontSize}px Arial`;
     context.strokeText(scaleText, midX, midY - 20);
     context.fillText(scaleText, midX, midY - 20);
+    context.strokeText(pixelText, midX, midY + 5);
+    context.fillText(pixelText, midX, midY + 5);
 }
 
 // Draw coordinate system axes
@@ -2367,9 +2449,112 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
     }
 }
 
+// Helper function to calculate Total Body COM display coordinates
+function calculateTotalBodyCOMDisplayCoord(landmark2D, landmark3D, analysisMode, calibrationPoint1, calibrationPoint2, calibrationScale, canvasWidth, canvasHeight) {
+    if (!landmark2D) return null;
+
+    let displayCoord = { x: 0, y: 0 };
+
+    if (analysisMode === '3D' && landmark3D) {
+        // 3D mode: use 3D world coordinates with negated Y
+        displayCoord = {
+            x: landmark3D.x,
+            y: -landmark3D.y
+        };
+    } else if (analysisMode === '2D') {
+        // 2D mode: convert to meters using calibration
+        const pixelX = landmark2D.x * canvasWidth;
+        const pixelY = (1 - landmark2D.y) * canvasHeight;
+
+        const p1x = calibrationPoint1.x * canvasWidth;
+        const p1y = calibrationPoint1.y * canvasHeight;
+        const p2x = calibrationPoint2.x * canvasWidth;
+        const p2y = calibrationPoint2.y * canvasHeight;
+        const calibDistance = Math.sqrt(Math.pow(p2x - p1x, 2) + Math.pow(p2y - p1y, 2));
+
+        const pixelsPerMeter = calibDistance / calibrationScale;
+
+        displayCoord = {
+            x: pixelX / pixelsPerMeter,
+            y: pixelY / pixelsPerMeter
+        };
+    }
+
+    return displayCoord;
+}
+
+// Draw velocity vectors for Total Body COM
+function drawVelocityVectors(context, width, height, velocityX, velocityY, totalBodyCOM, fontSize) {
+    if (!totalBodyCOM || totalBodyCOM.visibility < 0.3) {
+        return;
+    }
+
+    // Get COM position in pixels
+    const comX = totalBodyCOM.x * width;
+    const comY = totalBodyCOM.y * height;
+
+    // Calculate resultant velocity
+    const resultantVelocity = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+
+    // Don't draw if velocity is essentially zero
+    if (resultantVelocity < 0.001) {
+        return;
+    }
+
+    // Scale factor for vector visualization
+    const vectorScale = 37.5; // pixels per m/s
+
+    // Calculate resultant vector end point
+    // velocityX is positive to the right, velocityY is positive upward (but canvas Y is inverted)
+    const endX = comX + (velocityX * vectorScale);
+    const endY = comY - (velocityY * vectorScale); // Subtract because canvas Y is inverted
+
+    const arrowSize = 12;
+
+    // Draw resultant velocity vector (red)
+    context.strokeStyle = '#FF0000';
+    context.lineWidth = 8;
+    context.beginPath();
+    context.moveTo(comX, comY);
+    context.lineTo(endX, endY);
+    context.stroke();
+
+    // Draw arrowhead for resultant vector
+    const angle = Math.atan2(comY - endY, endX - comX); // Note: Y is inverted
+    context.fillStyle = '#FF0000';
+    context.beginPath();
+    context.moveTo(endX, endY);
+    context.lineTo(endX - arrowSize * Math.cos(angle - Math.PI/6), endY + arrowSize * Math.sin(angle - Math.PI/6));
+    context.lineTo(endX - arrowSize * Math.cos(angle + Math.PI/6), endY + arrowSize * Math.sin(angle + Math.PI/6));
+    context.closePath();
+    context.fill();
+
+    // Draw velocity text near the arrow tip
+    context.font = `bold ${fontSize}px Arial`;
+    const velocityText = `Vx: ${velocityX.toFixed(2)} m/s, Vy: ${velocityY.toFixed(2)} m/s`;
+    const textWidth = context.measureText(velocityText).width;
+
+    // Position text near arrow tip
+    const textX = endX + 10;
+    const textY = endY - 10;
+
+    // Background for text
+    context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    context.fillRect(textX - 4, textY - fontSize, textWidth + 8, fontSize + 8);
+
+    // Draw text (white)
+    context.fillStyle = '#FFFFFF';
+    context.fillText(velocityText, textX, textY);
+}
+
 // Clear the canvas
 function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw calibration points in 2D mode
+    if (analysisModeVideo === '2D') {
+        drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo);
+    }
 
     // Render completed drawings even when canvas is cleared
     const currentFrame = Math.floor(video.currentTime * fps);
@@ -3046,6 +3231,9 @@ function handleMouseMove(e) {
             const frameData = getCurrentFramePoseData();
             if (showPose && frameData && frameData.landmarks2D) {
                 drawPose(frameData.landmarks2D, frameData.landmarks3D);
+            } else if (analysisModeVideo === '2D') {
+                // Draw calibration points even when no pose data
+                drawCalibrationPoints(ctx, canvas.width, canvas.height, calibrationPoint1Video, calibrationPoint2Video, calibrationScaleVideo);
             }
         }
         return;
