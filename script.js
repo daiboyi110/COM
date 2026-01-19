@@ -2279,11 +2279,13 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
 
 // Draw coordinate system axes
 function drawCoordinateSystem(context, width, height, analysisMode, calibrationPoint1, calibrationPoint2, midHipLandmark) {
-    const axisLength = 450; // Length of axes in pixels
+    const axisLength2D = 450; // Length of axes in pixels for 2D mode
+    const axisLength3D = 300; // Length of axes in pixels for 3D mode
     const arrowSize = 20; // Size of arrowhead (doubled for visibility)
     const lineThickness = 9; // Line thickness (3x of original 3)
 
     if (analysisMode === '2D') {
+        const axisLength = axisLength2D;
         // For 2D mode, origin is at left bottom corner
         const originX = 0;
         const originY = height;
@@ -2347,6 +2349,7 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
         context.fillText('O (0,0)', originX + 10, originY - 10);
 
     } else if (analysisMode === '3D') {
+        const axisLength = axisLength3D;
         // For 3D mode, origin is at mid-hip position if available
         let originX = 100; // Default position
         let originY = 100;
