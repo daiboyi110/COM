@@ -2279,7 +2279,7 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
 
 // Draw coordinate system axes
 function drawCoordinateSystem(context, width, height, analysisMode, calibrationPoint1, calibrationPoint2, midHipLandmark) {
-    const axisLength = 900; // Length of axes in pixels (3x of 300)
+    const axisLength = 450; // Length of axes in pixels
     const arrowSize = 20; // Size of arrowhead (doubled for visibility)
     const lineThickness = 9; // Line thickness (3x of original 3)
 
