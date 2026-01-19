@@ -338,7 +338,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoSection = document.getElementById('videoSection');
     const imageSection = document.getElementById('imageSection');
     const uploadSection = document.getElementById('uploadSection');
-    const fontSizeSection = document.getElementById('fontSizeSection');
     const videoRightSidebar = document.getElementById('videoRightSidebar');
     const imageRightSidebar = document.getElementById('imageRightSidebar');
     const playBtn = document.getElementById('playBtn');
@@ -435,7 +434,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = URL.createObjectURL(file);
             video.src = url;
             videoSection.style.display = 'block';
-            fontSizeSection.style.display = 'block';
 
             // Move upload section to video right sidebar
             if (uploadSection && videoRightSidebar) {
@@ -525,7 +523,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = URL.createObjectURL(file);
             imageDisplay.src = url;
             imageSection.style.display = 'block';
-            fontSizeSection.style.display = 'block';
 
             // Move upload section to image right sidebar
             if (uploadSection && imageRightSidebar) {
@@ -827,22 +824,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     });
 
-    // Global font size slider
-    const fontSizeSliderGlobal = document.getElementById('fontSizeSliderGlobal');
-    const fontSizeValueGlobal = document.getElementById('fontSizeValueGlobal');
-    if (fontSizeSliderGlobal && fontSizeValueGlobal) {
-        fontSizeSliderGlobal.addEventListener('input', (e) => {
+    // Font size slider for image
+    const fontSizeSliderImage = document.getElementById('fontSizeSliderImage');
+    const fontSizeValueImage = document.getElementById('fontSizeValueImage');
+    if (fontSizeSliderImage && fontSizeValueImage) {
+        fontSizeSliderImage.addEventListener('input', (e) => {
             displayFontSize = parseInt(e.target.value);
-            fontSizeValueGlobal.textContent = displayFontSize;
-            // Redraw both image and video if they have data
+            fontSizeValueImage.textContent = displayFontSize;
+            // Sync with video slider
+            const fontSizeSliderVideo = document.getElementById('fontSizeSliderVideo');
+            const fontSizeValueVideo = document.getElementById('fontSizeValueVideo');
+            if (fontSizeSliderVideo && fontSizeValueVideo) {
+                fontSizeSliderVideo.value = displayFontSize;
+                fontSizeValueVideo.textContent = displayFontSize;
+            }
             if (imagePoseData) {
                 redrawImagePose();
             }
-            if (video && !video.paused) {
-                drawPose();
-            } else if (poseDataArray.length > 0) {
-                drawPose();
+        });
+    }
+
+    // Font size slider for video
+    const fontSizeSliderVideo = document.getElementById('fontSizeSliderVideo');
+    const fontSizeValueVideo = document.getElementById('fontSizeValueVideo');
+    if (fontSizeSliderVideo && fontSizeValueVideo) {
+        fontSizeSliderVideo.addEventListener('input', (e) => {
+            displayFontSize = parseInt(e.target.value);
+            fontSizeValueVideo.textContent = displayFontSize;
+            // Sync with image slider
+            if (fontSizeSliderImage && fontSizeValueImage) {
+                fontSizeSliderImage.value = displayFontSize;
+                fontSizeValueImage.textContent = displayFontSize;
             }
+            drawPose();
         });
     }
 
@@ -1956,8 +1970,8 @@ function drawPose(landmarks, landmarks3D) {
         }
     });
 
-    // Draw connection between Mid-Shoulder (33) and Mid-Hip (34)
-    if (extendedLandmarks2D[33] && extendedLandmarks2D[34]) {
+    // Draw connection between Mid-Shoulder (33) and Mid-Hip (34) - only if Show COM is enabled
+    if (showCOM && extendedLandmarks2D[33] && extendedLandmarks2D[34]) {
         const midShoulder = extendedLandmarks2D[33];
         const midHip = extendedLandmarks2D[34];
 
@@ -1992,8 +2006,9 @@ function drawPose(landmarks, landmarks3D) {
             return;
         }
 
-        // Filter based on Show COM checkbox (segment COMs and total body COM)
-        if ((isSegmentCOM || isTotalBodyCOM) && !showCOM) {
+        // Filter based on Show COM checkbox (segment COMs, total body COM, and midpoints)
+        // Midpoints (mid-shoulder and mid-hip) are part of COM visualization
+        if ((isSegmentCOM || isTotalBodyCOM || isMidpoint) && !showCOM) {
             return;
         }
 
@@ -2888,8 +2903,8 @@ function downloadFile(content, filename, contentType) {
 function renderCompletedDrawings(canvas, isImageMode, currentFrame) {
     const ctx = canvas.getContext('2d');
     const calibrationScale = isImageMode ? calibrationScaleImage : calibrationScaleVideo;
-    const fontSizeSliderGlobal = document.getElementById('fontSizeSliderGlobal');
-    const fontSize = fontSizeSliderGlobal ? parseInt(fontSizeSliderGlobal.value) || 28 : 28;
+    const fontSizeSlider = isImageMode ? document.getElementById('fontSizeSliderImage') : document.getElementById('fontSizeSliderVideo');
+    const fontSize = fontSizeSlider ? parseInt(fontSizeSlider.value) || 28 : 28;
 
     completedDrawings.forEach(drawing => {
         // Skip if drawing is for different mode or frame
@@ -3514,8 +3529,8 @@ function drawImagePose(landmarks, landmarks3D) {
         }
     });
 
-    // Draw connection between Mid-Shoulder (33) and Mid-Hip (34)
-    if (extendedLandmarks2D[33] && extendedLandmarks2D[34]) {
+    // Draw connection between Mid-Shoulder (33) and Mid-Hip (34) - only if Show COM is enabled
+    if (showCOMImage && extendedLandmarks2D[33] && extendedLandmarks2D[34]) {
         const midShoulder = extendedLandmarks2D[33];
         const midHip = extendedLandmarks2D[34];
 
@@ -3550,8 +3565,9 @@ function drawImagePose(landmarks, landmarks3D) {
             return;
         }
 
-        // Filter based on Show COM checkbox (segment COMs and total body COM)
-        if ((isSegmentCOM || isTotalBodyCOM) && !showCOMImage) {
+        // Filter based on Show COM checkbox (segment COMs, total body COM, and midpoints)
+        // Midpoints (mid-shoulder and mid-hip) are part of COM visualization
+        if ((isSegmentCOM || isTotalBodyCOM || isMidpoint) && !showCOMImage) {
             return;
         }
 

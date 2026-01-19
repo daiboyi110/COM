@@ -61,14 +61,6 @@
             </button>
         </div>
 
-        <div class="font-size-section" id="fontSizeSection" style="display: none;">
-            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; margin-bottom: 10px;">
-                <strong>Font Size:</strong>
-                <input type="range" id="fontSizeSliderGlobal" min="12" max="60" value="28" step="2" style="width: 150px;">
-                <span id="fontSizeValueGlobal" style="min-width: 35px;">28</span>px
-            </div>
-        </div>
-
         <div id="imageSection" style="display: none;">
             <div class="video-layout-container">
                 <!-- Left Sidebar -->
@@ -176,6 +168,14 @@
                             <span><strong>Image:</strong> <span id="imageInfo">Loading...</span></span>
                             <span><strong>Points:</strong> <span id="jointCountImage">0</span></span>
                         </div>
+                    </div>
+
+                    <div class="side-control-group">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Font Size</h3>
+                        <label style="flex-direction: row; align-items: center; gap: 8px;">
+                            <input type="range" id="fontSizeSliderImage" min="12" max="60" value="28" step="2" style="flex: 1;">
+                            <span id="fontSizeValueImage" style="min-width: 35px;">28</span>px
+                        </label>
                     </div>
                 </div>
             </div>
@@ -303,6 +303,14 @@
                             <span><strong>Frames w/ Data:</strong> <span id="capturedFrames">0</span></span>
                             <span id="frameStep" class="frame-step" style="display: none;">Frame stepping...</span>
                         </div>
+                    </div>
+
+                    <div class="side-control-group">
+                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Font Size</h3>
+                        <label style="flex-direction: row; align-items: center; gap: 8px;">
+                            <input type="range" id="fontSizeSliderVideo" min="12" max="60" value="28" step="2" style="flex: 1;">
+                            <span id="fontSizeValueVideo" style="min-width: 35px;">28</span>px
+                        </label>
                     </div>
                 </div>
             </div>
