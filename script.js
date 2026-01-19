@@ -2568,6 +2568,193 @@ function clearCanvas() {
     renderCompletedDrawings(canvas, false, currentFrame);
 }
 
+// Recalculate all derived landmarks for image pose data after manual editing
+function recalculateAndUpdateImagePoseData(sex) {
+    if (!imagePoseData) return;
+
+    // Get raw landmarks (only indices 0-32, the original MediaPipe landmarks)
+    const rawLandmarks2D = imagePoseData.landmarks2D.slice(0, 33);
+    const rawLandmarks3D = imagePoseData.landmarks3D ? imagePoseData.landmarks3D.slice(0, 33) : [];
+
+    // Step 1: Fill missing landmarks with mirroring
+    const { filled2D, filled3D } = fillMissingLandmarksWithMirrors(rawLandmarks2D, rawLandmarks3D);
+
+    // Update raw landmarks with mirrored values
+    for (let i = 0; i < 33; i++) {
+        if (filled2D[i]) {
+            imagePoseData.landmarks2D[i] = filled2D[i];
+        }
+        if (filled3D && filled3D[i] && imagePoseData.landmarks3D) {
+            imagePoseData.landmarks3D[i] = filled3D[i];
+        }
+    }
+
+    // Step 2: Calculate midpoints
+    const { midpoints2D, midpoints3D } = calculateMidpoints(filled2D, filled3D);
+
+    // Step 3: Update midpoints
+    if (midpoints2D[33]) imagePoseData.landmarks2D[33] = midpoints2D[33];
+    if (midpoints2D[34]) imagePoseData.landmarks2D[34] = midpoints2D[34];
+    if (midpoints3D[33] && imagePoseData.landmarks3D) imagePoseData.landmarks3D[33] = midpoints3D[33];
+    if (midpoints3D[34] && imagePoseData.landmarks3D) imagePoseData.landmarks3D[34] = midpoints3D[34];
+
+    // Step 4: Build extended landmarks for COM calculation
+    const extendedLandmarks2D = [...filled2D];
+    const extendedLandmarks3D = filled3D ? [...filled3D] : [];
+    if (midpoints2D[33]) extendedLandmarks2D[33] = midpoints2D[33];
+    if (midpoints2D[34]) extendedLandmarks2D[34] = midpoints2D[34];
+    if (midpoints3D[33]) extendedLandmarks3D[33] = midpoints3D[33];
+    if (midpoints3D[34]) extendedLandmarks3D[34] = midpoints3D[34];
+
+    // Step 5: Calculate segment COMs
+    const { segmentCOMs2D, segmentCOMs3D } = calculateSegmentCOMs(extendedLandmarks2D, extendedLandmarks3D, sex);
+
+    // Update segment COMs (indices 35-48)
+    for (let i = 35; i <= 48; i++) {
+        if (segmentCOMs2D[i]) imagePoseData.landmarks2D[i] = segmentCOMs2D[i];
+        if (segmentCOMs3D[i] && imagePoseData.landmarks3D) imagePoseData.landmarks3D[i] = segmentCOMs3D[i];
+    }
+
+    // Step 6: Calculate total body COM
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex);
+
+    // Update total body COM (index 49)
+    if (totalBodyCOM2D) imagePoseData.landmarks2D[49] = totalBodyCOM2D;
+    if (totalBodyCOM3D && imagePoseData.landmarks3D) imagePoseData.landmarks3D[49] = totalBodyCOM3D;
+}
+
+// Recalculate all derived landmarks (midpoints, COMs) and update stored frame data
+// This should be called after manual joint editing to ensure stored data matches display
+function recalculateAndUpdateFrameData(frameData, sex) {
+    // Get raw landmarks (only indices 0-32, the original MediaPipe landmarks)
+    const rawLandmarks2D = frameData.landmarks2D.slice(0, 33);
+    const rawLandmarks3D = frameData.landmarks3D ? frameData.landmarks3D.slice(0, 33) : [];
+
+    // Step 1: Fill missing landmarks with mirroring
+    const { filled2D, filled3D } = fillMissingLandmarksWithMirrors(rawLandmarks2D, rawLandmarks3D);
+
+    // Update raw landmarks with mirrored values
+    for (let i = 0; i < 33; i++) {
+        if (filled2D[i]) {
+            frameData.landmarks2D[i] = {
+                id: i,
+                x: filled2D[i].x,
+                y: filled2D[i].y,
+                z: filled2D[i].z,
+                visibility: filled2D[i].visibility
+            };
+        }
+        if (filled3D && filled3D[i] && frameData.landmarks3D) {
+            frameData.landmarks3D[i] = {
+                id: i,
+                x: filled3D[i].x,
+                y: filled3D[i].y,
+                z: filled3D[i].z,
+                visibility: filled3D[i].visibility || 1.0
+            };
+        }
+    }
+
+    // Step 2: Calculate midpoints
+    const { midpoints2D, midpoints3D } = calculateMidpoints(filled2D, filled3D);
+
+    // Step 3: Update midpoints in stored data
+    if (midpoints2D[33]) {
+        frameData.landmarks2D[33] = {
+            id: 33,
+            x: midpoints2D[33].x,
+            y: midpoints2D[33].y,
+            z: midpoints2D[33].z,
+            visibility: midpoints2D[33].visibility
+        };
+    }
+    if (midpoints2D[34]) {
+        frameData.landmarks2D[34] = {
+            id: 34,
+            x: midpoints2D[34].x,
+            y: midpoints2D[34].y,
+            z: midpoints2D[34].z,
+            visibility: midpoints2D[34].visibility
+        };
+    }
+    if (midpoints3D[33] && frameData.landmarks3D) {
+        frameData.landmarks3D[33] = {
+            id: 33,
+            x: midpoints3D[33].x,
+            y: midpoints3D[33].y,
+            z: midpoints3D[33].z,
+            visibility: midpoints3D[33].visibility || 1.0
+        };
+    }
+    if (midpoints3D[34] && frameData.landmarks3D) {
+        frameData.landmarks3D[34] = {
+            id: 34,
+            x: midpoints3D[34].x,
+            y: midpoints3D[34].y,
+            z: midpoints3D[34].z,
+            visibility: midpoints3D[34].visibility || 1.0
+        };
+    }
+
+    // Step 4: Build extended landmarks for COM calculation
+    const extendedLandmarks2D = [...filled2D];
+    const extendedLandmarks3D = filled3D ? [...filled3D] : [];
+    if (midpoints2D[33]) extendedLandmarks2D[33] = midpoints2D[33];
+    if (midpoints2D[34]) extendedLandmarks2D[34] = midpoints2D[34];
+    if (midpoints3D[33]) extendedLandmarks3D[33] = midpoints3D[33];
+    if (midpoints3D[34]) extendedLandmarks3D[34] = midpoints3D[34];
+
+    // Step 5: Calculate segment COMs
+    const { segmentCOMs2D, segmentCOMs3D } = calculateSegmentCOMs(extendedLandmarks2D, extendedLandmarks3D, sex);
+
+    // Update segment COMs in stored data (indices 35-48)
+    for (let i = 35; i <= 48; i++) {
+        if (segmentCOMs2D[i]) {
+            frameData.landmarks2D[i] = {
+                id: i,
+                x: segmentCOMs2D[i].x,
+                y: segmentCOMs2D[i].y,
+                z: segmentCOMs2D[i].z,
+                visibility: segmentCOMs2D[i].visibility
+            };
+        }
+        if (segmentCOMs3D[i] && frameData.landmarks3D) {
+            frameData.landmarks3D[i] = {
+                id: i,
+                x: segmentCOMs3D[i].x,
+                y: segmentCOMs3D[i].y,
+                z: segmentCOMs3D[i].z,
+                visibility: segmentCOMs3D[i].visibility || 1.0
+            };
+        }
+    }
+
+    // Step 6: Calculate total body COM
+    const { totalBodyCOM2D, totalBodyCOM3D } = calculateTotalBodyCOM(segmentCOMs2D, segmentCOMs3D, sex);
+
+    // Update total body COM in stored data (index 49)
+    if (totalBodyCOM2D) {
+        frameData.landmarks2D[49] = {
+            id: 49,
+            x: totalBodyCOM2D.x,
+            y: totalBodyCOM2D.y,
+            z: totalBodyCOM2D.z,
+            visibility: totalBodyCOM2D.visibility
+        };
+    }
+    if (totalBodyCOM3D && frameData.landmarks3D) {
+        frameData.landmarks3D[49] = {
+            id: 49,
+            x: totalBodyCOM3D.x,
+            y: totalBodyCOM3D.y,
+            z: totalBodyCOM3D.z,
+            visibility: totalBodyCOM3D.visibility || 1.0
+        };
+    }
+
+    return frameData;
+}
+
 // Save pose data for export
 function savePoseData(landmarks2D, landmarks3D, manuallyEdited = false) {
     const currentTime = video.currentTime;
@@ -3295,6 +3482,9 @@ function handleMouseMove(e) {
             }
         }
 
+        // Recalculate all derived landmarks (midpoints, COMs) to match display
+        recalculateAndUpdateImagePoseData(sexSelectionImage);
+
         redrawImagePose();
     } else if (!isImageMode) {
         // Update video pose data for current frame
@@ -3342,6 +3532,9 @@ function handleMouseMove(e) {
 
             // Mark this frame as manually edited
             frameData.manuallyEdited = true;
+
+            // Recalculate all derived landmarks (midpoints, COMs) to match display
+            recalculateAndUpdateFrameData(frameData, sexSelectionVideo);
 
             // Redraw the current frame
             clearCanvas();
