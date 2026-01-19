@@ -15,6 +15,7 @@ A web-based application for analyzing human pose and calculating center of mass 
 - **MediaPipe Pose Estimation**: Automatic detection of 33 body landmarks using Google's MediaPipe Pose
 - **2D & 3D Analysis Modes**: Choose between 2D pixel-based or 3D world coordinate analysis
 - **Center of Mass Calculation**: Calculate segment COM and total-body COM with sex-specific models
+- **Velocity Vector Visualization**: Display total-body COM velocity as a vector with X and Y components (video only)
 - **Bilateral Symmetry Mirroring**: Automatically estimate missing landmarks using exact coordinates from opposite side (no noise added for accurate estimation)
 - **Interactive Editing**: Manually adjust joint positions and calibration points
 - **Coordinate System Visualization**: Display 2D or 3D coordinate axes with origin markers
@@ -113,6 +114,50 @@ The application uses different segment mass percentages and center of mass locat
 
 **Total Body COM**: Calculated as weighted average of all 12 segment COMs based on their mass percentages.
 
+## Velocity Calculation (Video Only)
+
+The application can display the velocity of the total-body center of mass as a vector overlay on video playback. This feature is only available for video analysis.
+
+### Calculation Method
+
+Velocity is calculated using a finite difference method between consecutive frames:
+
+```
+Velocity = (Position_current - Position_previous) / (Time_current - Time_previous)
+```
+
+Where:
+- **Position_current**: Total-body COM coordinates in the current frame
+- **Position_previous**: Total-body COM coordinates from the previous frame (stored data)
+- **Time_current**: Current video timestamp (seconds)
+- **Time_previous**: Previous frame timestamp (seconds)
+
+### Velocity Components
+
+The velocity is displayed as:
+- **Red vector arrow**: Resultant velocity vector starting from the total-body COM position
+- **Velocity text**: Shows X and Y velocity components in m/s
+  - **Vx**: Horizontal velocity (positive = rightward)
+  - **Vy**: Vertical velocity (positive = upward)
+
+### Display Settings
+
+- **Velocity checkbox**: Toggle velocity vector display under "Display Options"
+- **Vector scale**: 56.25 pixels per m/s
+- **Vector color**: Red with white text labels
+- **Requires**: At least two consecutive frames with pose data
+
+### Units
+
+- **2D Mode**: Velocity in meters per second (m/s), based on calibration scale
+- **3D Mode**: Velocity in meters per second (m/s), using MediaPipe world coordinates
+
+### Notes
+
+- Velocity is only calculated when pose data exists for both the current and previous frame
+- The velocity calculation uses mirrored landmark data for consistency with the displayed COM position
+- For accurate velocity measurements in 2D mode, ensure proper calibration is set before analysis
+
 ## How to Use
 
 ### 1. Open the Application
@@ -150,6 +195,8 @@ This clears the MediaPipe cache and ensures better pose detection accuracy.
 - Coordinates appear inline with the landmark name
 
 **Coordinate System**: Display coordinate axes showing origin and positive directions
+
+**Velocity** (Video only): Display total-body COM velocity vector with X and Y components
 
 **Full Size**: Display media at original resolution and double font size for better readability
 
