@@ -597,63 +597,9 @@ h1 {
     }
 }
 
-/* Disclaimer Modal */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-}
-
-.modal-overlay.hidden {
-    display: none;
-}
-
-.modal-content {
-    background: white;
-    padding: 30px 40px;
-    border-radius: 12px;
-    max-width: 500px;
-    width: 90%;
-    text-align: center;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-}
-
-.modal-content h2 {
-    margin: 0 0 20px 0;
-    color: #333;
-    font-size: 24px;
-}
-
-.modal-content p {
-    margin: 10px 0;
-    color: #555;
-    font-size: 16px;
-    line-height: 1.5;
-}
-
-.modal-content a {
-    color: #007bff;
-    text-decoration: none;
-}
-
-.modal-content a:hover {
-    text-decoration: underline;
-}
-
-.modal-hint {
-    margin-top: 20px;
-    font-size: 14px;
-    color: #888;
+/* Disclaimer in footer */
+.footer .disclaimer {
     font-style: italic;
-}
-
-.modal-overlay {
-    cursor: pointer;
+    color: #666;
+    margin: 12px 0;
 }
