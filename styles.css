@@ -647,25 +647,13 @@ h1 {
     text-decoration: underline;
 }
 
-.btn-accept {
+.modal-hint {
     margin-top: 20px;
-    padding: 12px 30px;
-    font-size: 16px;
-    font-weight: 600;
-    color: white;
-    background: #007bff;
-    border: none;
-    border-radius: 6px;
+    font-size: 14px;
+    color: #888;
+    font-style: italic;
+}
+
+.modal-overlay {
     cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-accept:hover {
-    background: #0056b3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
-}
-
-.btn-accept:active {
-    transform: translateY(0);
 }

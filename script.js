@@ -319,11 +319,10 @@ function fillMissingLandmarksWithMirrors(landmarks2D, landmarks3D) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOMContentLoaded event fired - initializing application');
 
-    // Show disclaimer modal on page load
+    // Show disclaimer modal on page load - click anywhere to dismiss
     const disclaimerModal = document.getElementById('disclaimerModal');
-    const disclaimerClose = document.getElementById('disclaimerClose');
 
-    disclaimerClose.addEventListener('click', () => {
+    disclaimerModal.addEventListener('click', () => {
         disclaimerModal.classList.add('hidden');
     });
 
