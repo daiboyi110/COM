@@ -338,6 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoSection = document.getElementById('videoSection');
     const imageSection = document.getElementById('imageSection');
     const uploadSection = document.getElementById('uploadSection');
+    const fontSizeSection = document.getElementById('fontSizeSection');
     const videoRightSidebar = document.getElementById('videoRightSidebar');
     const imageRightSidebar = document.getElementById('imageRightSidebar');
     const playBtn = document.getElementById('playBtn');
@@ -434,6 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = URL.createObjectURL(file);
             video.src = url;
             videoSection.style.display = 'block';
+            fontSizeSection.style.display = 'block';
 
             // Move upload section to video right sidebar
             if (uploadSection && videoRightSidebar) {
@@ -523,6 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = URL.createObjectURL(file);
             imageDisplay.src = url;
             imageSection.style.display = 'block';
+            fontSizeSection.style.display = 'block';
 
             // Move upload section to image right sidebar
             if (uploadSection && imageRightSidebar) {
@@ -824,37 +827,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     });
 
-    // Font size slider for image
-    const fontSizeSlider = document.getElementById('fontSizeSlider');
-    const fontSizeValue = document.getElementById('fontSizeValue');
-    if (fontSizeSlider && fontSizeValue) {
-        fontSizeSlider.addEventListener('input', (e) => {
+    // Global font size slider
+    const fontSizeSliderGlobal = document.getElementById('fontSizeSliderGlobal');
+    const fontSizeValueGlobal = document.getElementById('fontSizeValueGlobal');
+    if (fontSizeSliderGlobal && fontSizeValueGlobal) {
+        fontSizeSliderGlobal.addEventListener('input', (e) => {
             displayFontSize = parseInt(e.target.value);
-            fontSizeValue.textContent = displayFontSize;
-            // Also update the video slider if it exists
-            const fontSizeSliderVideo = document.getElementById('fontSizeSliderVideo');
-            const fontSizeValueVideo = document.getElementById('fontSizeValueVideo');
-            if (fontSizeSliderVideo && fontSizeValueVideo) {
-                fontSizeSliderVideo.value = displayFontSize;
-                fontSizeValueVideo.textContent = displayFontSize;
+            fontSizeValueGlobal.textContent = displayFontSize;
+            // Redraw both image and video if they have data
+            if (imagePoseData) {
+                redrawImagePose();
             }
-            redrawImagePose();
-        });
-    }
-
-    // Font size slider for video
-    const fontSizeSliderVideo = document.getElementById('fontSizeSliderVideo');
-    const fontSizeValueVideo = document.getElementById('fontSizeValueVideo');
-    if (fontSizeSliderVideo && fontSizeValueVideo) {
-        fontSizeSliderVideo.addEventListener('input', (e) => {
-            displayFontSize = parseInt(e.target.value);
-            fontSizeValueVideo.textContent = displayFontSize;
-            // Also update the image slider if it exists
-            if (fontSizeSlider && fontSizeValue) {
-                fontSizeSlider.value = displayFontSize;
-                fontSizeValue.textContent = displayFontSize;
+            if (video && !video.paused) {
+                drawPose();
+            } else if (poseDataArray.length > 0) {
+                drawPose();
             }
-            drawPose();
         });
     }
 
@@ -2900,7 +2888,8 @@ function downloadFile(content, filename, contentType) {
 function renderCompletedDrawings(canvas, isImageMode, currentFrame) {
     const ctx = canvas.getContext('2d');
     const calibrationScale = isImageMode ? calibrationScaleImage : calibrationScaleVideo;
-    const fontSize = isImageMode ? parseInt(fontSizeSlider.value) || 28 : parseInt(fontSizeSliderVideo.value) || 28;
+    const fontSizeSliderGlobal = document.getElementById('fontSizeSliderGlobal');
+    const fontSize = fontSizeSliderGlobal ? parseInt(fontSizeSliderGlobal.value) || 28 : 28;
 
     completedDrawings.forEach(drawing => {
         // Skip if drawing is for different mode or frame

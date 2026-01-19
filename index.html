@@ -60,6 +60,14 @@
             </button>
         </div>
 
+        <div class="font-size-section" id="fontSizeSection" style="display: none;">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; margin-bottom: 10px;">
+                <strong>Font Size:</strong>
+                <input type="range" id="fontSizeSliderGlobal" min="12" max="60" value="28" step="2" style="width: 150px;">
+                <span id="fontSizeValueGlobal" style="min-width: 35px;">28</span>px
+            </div>
+        </div>
+
         <div id="imageSection" style="display: none;">
             <div class="video-layout-container">
                 <!-- Left Sidebar -->
@@ -137,13 +145,6 @@
                         <button id="clearDrawingsImage" class="btn-clear" style="width: 100%; margin-top: 8px;">Clear Drawings</button>
                     </div>
 
-                    <div class="side-control-group">
-                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Font Size</h3>
-                        <label style="flex-direction: row; align-items: center; gap: 8px;">
-                            <input type="range" id="fontSizeSlider" min="12" max="60" value="28" step="2" style="flex: 1;">
-                            <span id="fontSizeValue" style="min-width: 35px;">28</span>px
-                        </label>
-                    </div>
                 </div>
 
                 <!-- Center Column (Image) -->
@@ -159,6 +160,11 @@
                         <img id="imageDisplay">
                         <canvas id="imageCanvas"></canvas>
                     </div>
+
+                    <div class="controls">
+                        <button id="exportImageExcel" class="btn-export">📗 Export Excel</button>
+                        <button id="exportImageScreenshot" class="btn-export">📷 Export Image</button>
+                    </div>
                 </div>
 
                 <!-- Right Sidebar -->
@@ -169,12 +175,6 @@
                             <span><strong>Image:</strong> <span id="imageInfo">Loading...</span></span>
                             <span><strong>Points:</strong> <span id="jointCountImage">0</span></span>
                         </div>
-                    </div>
-
-                    <div class="side-control-group">
-                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Export</h3>
-                        <button id="exportImageExcel" class="btn-export" style="width: 100%; margin-bottom: 8px;">📗 Export Excel</button>
-                        <button id="exportImageScreenshot" class="btn-export" style="width: 100%;">📷 Export Image</button>
                     </div>
                 </div>
             </div>
@@ -259,14 +259,6 @@
                         </label>
                         <button id="clearDrawingsVideo" class="btn-clear" style="width: 100%; margin-top: 8px;">Clear Drawings</button>
                     </div>
-
-                    <div class="side-control-group">
-                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Font Size</h3>
-                        <label style="flex-direction: row; align-items: center; gap: 8px;">
-                            <input type="range" id="fontSizeSliderVideo" min="12" max="60" value="28" step="2" style="flex: 1;">
-                            <span id="fontSizeValueVideo" style="min-width: 35px;">28</span>px
-                        </label>
-                    </div>
                 </div>
 
                 <!-- Center Column (Video) -->
@@ -289,6 +281,13 @@
                         <button id="prevFrameBtn" class="btn-frame">⏮ Previous Frame</button>
                         <button id="nextFrameBtn" class="btn-frame">Next Frame ⏭</button>
                     </div>
+
+                    <div class="controls">
+                        <button id="exportVideoExcel" class="btn-export">📗 Export Excel</button>
+                        <button id="exportFrameScreenshot" class="btn-export">📷 Export Frame</button>
+                        <button id="exportVideoWithOverlay" class="btn-export">🎬 Export Video</button>
+                        <button id="clearDataBtn" class="btn-clear">🗑️ Clear Data</button>
+                    </div>
                 </div>
 
                 <!-- Right Sidebar -->
@@ -303,14 +302,6 @@
                             <span><strong>Frames w/ Data:</strong> <span id="capturedFrames">0</span></span>
                             <span id="frameStep" class="frame-step" style="display: none;">Frame stepping...</span>
                         </div>
-                    </div>
-
-                    <div class="side-control-group">
-                        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Export</h3>
-                        <button id="exportVideoExcel" class="btn-export" style="width: 100%; margin-bottom: 8px;">📗 Export Excel</button>
-                        <button id="exportFrameScreenshot" class="btn-export" style="width: 100%; margin-bottom: 8px;">📷 Export Frame</button>
-                        <button id="exportVideoWithOverlay" class="btn-export" style="width: 100%; margin-bottom: 8px;">🎬 Export Video</button>
-                        <button id="clearDataBtn" class="btn-clear" style="width: 100%;">🗑️ Clear Data</button>
                     </div>
                 </div>
             </div>
