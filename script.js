@@ -321,9 +321,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show disclaimer modal on page load
     const disclaimerModal = document.getElementById('disclaimerModal');
-    const disclaimerAccept = document.getElementById('disclaimerAccept');
+    const disclaimerClose = document.getElementById('disclaimerClose');
 
-    disclaimerAccept.addEventListener('click', () => {
+    disclaimerClose.addEventListener('click', () => {
         disclaimerModal.classList.add('hidden');
     });
 
