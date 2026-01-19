@@ -2279,8 +2279,9 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
 
 // Draw coordinate system axes
 function drawCoordinateSystem(context, width, height, analysisMode, calibrationPoint1, calibrationPoint2, midHipLandmark) {
-    const axisLength = 300; // Length of axes in pixels (3x increased)
-    const arrowSize = 10; // Size of arrowhead
+    const axisLength = 900; // Length of axes in pixels (3x of 300)
+    const arrowSize = 20; // Size of arrowhead (doubled for visibility)
+    const lineThickness = 9; // Line thickness (3x of original 3)
 
     if (analysisMode === '2D') {
         // For 2D mode, origin is at left bottom corner
@@ -2289,7 +2290,7 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
 
         // Draw X axis (positive direction: right, red color)
         context.strokeStyle = '#FF0000'; // Red
-        context.lineWidth = 3;
+        context.lineWidth = lineThickness;
         context.beginPath();
         context.moveTo(originX, originY);
         context.lineTo(originX + axisLength, originY);
@@ -2314,7 +2315,7 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
 
         // Draw Y axis (positive direction: up, green color)
         context.strokeStyle = '#00FF00'; // Green
-        context.lineWidth = 3;
+        context.lineWidth = lineThickness;
         context.beginPath();
         context.moveTo(originX, originY);
         context.lineTo(originX, originY - axisLength); // Negative because screen Y is inverted
@@ -2357,7 +2358,7 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
 
         // Draw X axis (red, pointing right)
         context.strokeStyle = '#FF0000'; // Red
-        context.lineWidth = 3;
+        context.lineWidth = lineThickness;
         context.beginPath();
         context.moveTo(originX, originY);
         context.lineTo(originX + axisLength, originY);
@@ -2382,7 +2383,7 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
 
         // Draw Y axis (green, pointing up)
         context.strokeStyle = '#00FF00'; // Green
-        context.lineWidth = 3;
+        context.lineWidth = lineThickness;
         context.beginPath();
         context.moveTo(originX, originY);
         context.lineTo(originX, originY - axisLength);
@@ -2410,7 +2411,7 @@ function drawCoordinateSystem(context, width, height, analysisMode, calibrationP
         const zAxisEndY = originY + axisLength * 0.5;
 
         context.strokeStyle = '#0080FF'; // Blue
-        context.lineWidth = 3;
+        context.lineWidth = lineThickness;
         context.beginPath();
         context.moveTo(originX, originY);
         context.lineTo(zAxisEndX, zAxisEndY);
