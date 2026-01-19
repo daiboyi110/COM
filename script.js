@@ -319,24 +319,12 @@ function fillMissingLandmarksWithMirrors(landmarks2D, landmarks3D) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOMContentLoaded event fired - initializing application');
 
-    // Initialize global visit counter using CountAPI
+    // Initialize visit counter using localStorage (simple local tracking)
     const visitCounterElement = document.getElementById('visitCounter');
-    visitCounterElement.textContent = 'Loading...';
-
-    // Use CountAPI for global visit tracking (free, no registration required)
-    fetch('https://api.countapi.xyz/hit/daiboyi-com-visualization/visits')
-        .then(response => response.json())
-        .then(data => {
-            visitCounterElement.textContent = data.value.toLocaleString();
-        })
-        .catch(error => {
-            console.error('Failed to fetch visit count:', error);
-            // Fallback to local storage if API fails
-            let localCount = parseInt(localStorage.getItem('visitCount') || '0', 10);
-            localCount++;
-            localStorage.setItem('visitCount', localCount.toString());
-            visitCounterElement.textContent = localCount.toLocaleString();
-        });
+    let visitCount = parseInt(localStorage.getItem('comVisualizationVisits') || '0', 10);
+    visitCount++;
+    localStorage.setItem('comVisualizationVisits', visitCount.toString());
+    visitCounterElement.textContent = visitCount.toLocaleString();
 
     video = document.getElementById('video');
     canvas = document.getElementById('poseCanvas');
