@@ -319,12 +319,48 @@ function fillMissingLandmarksWithMirrors(landmarks2D, landmarks3D) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOMContentLoaded event fired - initializing application');
 
-    // Initialize visit counter using localStorage (simple local tracking)
+    // Initialize Firebase and global visit counter
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjIgKsb42KPbUF8ly4ZaIO8ZMU1UB-bJM",
+        authDomain: "pose-b0689.firebaseapp.com",
+        databaseURL: "https://pose-b0689-default-rtdb.firebaseio.com",
+        projectId: "pose-b0689",
+        storageBucket: "pose-b0689.firebasestorage.app",
+        messagingSenderId: "111510159218",
+        appId: "1:111510159218:web:371f3b7ad26f7517e0a7eb",
+        measurementId: "G-8RFM4740DL"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Global visit counter using Firebase
     const visitCounterElement = document.getElementById('visitCounter');
-    let visitCount = parseInt(localStorage.getItem('comVisualizationVisits') || '0', 10);
-    visitCount++;
-    localStorage.setItem('comVisualizationVisits', visitCount.toString());
-    visitCounterElement.textContent = visitCount.toLocaleString();
+    const visitsRef = database.ref('visits');
+
+    // Check if this session already counted (using sessionStorage to avoid counting refreshes)
+    const sessionCounted = sessionStorage.getItem('visitCounted');
+
+    if (!sessionCounted) {
+        // Increment the visit count in Firebase using transaction
+        visitsRef.transaction((currentCount) => {
+            return (currentCount || 0) + 1;
+        }).then((result) => {
+            if (result.committed) {
+                sessionStorage.setItem('visitCounted', 'true');
+                console.log('Visit count incremented to:', result.snapshot.val());
+            }
+        }).catch((error) => {
+            console.error('Firebase visit counter error:', error);
+        });
+    }
+
+    // Listen for real-time updates to the visit count
+    visitsRef.on('value', (snapshot) => {
+        const count = snapshot.val() || 0;
+        visitCounterElement.textContent = count.toLocaleString();
+    });
 
     video = document.getElementById('video');
     canvas = document.getElementById('poseCanvas');
