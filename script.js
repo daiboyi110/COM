@@ -334,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+    const analytics = firebase.analytics(); // Enable Google Analytics
 
     // Global visit counter using Firebase
     const visitCounterElement = document.getElementById('visitCounter');
