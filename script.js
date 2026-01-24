@@ -2553,23 +2553,32 @@ function drawVelocityVectors(context, width, height, velocityX, velocityY, total
     const endX = comX + (velocityX * vectorScale);
     const endY = comY - (velocityY * vectorScale); // Subtract because canvas Y is inverted
 
-    const arrowSize = 12;
+    const arrowHeadLength = 20; // Length of arrowhead
+    const arrowHeadAngle = Math.PI / 6; // 30 degrees
 
-    // Draw resultant velocity vector (red)
+    // Calculate the angle of the velocity vector
+    const angle = Math.atan2(endY - comY, endX - comX);
+
+    // Draw resultant velocity vector (red line)
     context.strokeStyle = '#FF0000';
-    context.lineWidth = 8;
+    context.lineWidth = 6;
     context.beginPath();
     context.moveTo(comX, comY);
     context.lineTo(endX, endY);
     context.stroke();
 
     // Draw arrowhead for resultant vector
-    const angle = Math.atan2(comY - endY, endX - comX); // Note: Y is inverted
     context.fillStyle = '#FF0000';
     context.beginPath();
     context.moveTo(endX, endY);
-    context.lineTo(endX - arrowSize * Math.cos(angle - Math.PI/6), endY + arrowSize * Math.sin(angle - Math.PI/6));
-    context.lineTo(endX - arrowSize * Math.cos(angle + Math.PI/6), endY + arrowSize * Math.sin(angle + Math.PI/6));
+    context.lineTo(
+        endX - arrowHeadLength * Math.cos(angle - arrowHeadAngle),
+        endY - arrowHeadLength * Math.sin(angle - arrowHeadAngle)
+    );
+    context.lineTo(
+        endX - arrowHeadLength * Math.cos(angle + arrowHeadAngle),
+        endY - arrowHeadLength * Math.sin(angle + arrowHeadAngle)
+    );
     context.closePath();
     context.fill();
 
