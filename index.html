@@ -46,6 +46,46 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
+
+    <!-- Data & Privacy Consent Modal -->
+    <div id="consentOverlay" class="consent-overlay">
+        <div class="consent-modal">
+            <h2>Data &amp; Privacy Notice</h2>
+            <p class="consent-subtitle">Please read carefully before using this website.</p>
+
+            <div class="consent-section">
+                <h3>What data is collected</h3>
+                <ul>
+                    <li><strong>Visit counter</strong> — a total visit count is stored in a Firebase Realtime Database operated by the web designer. No personal information is associated with this count.</li>
+                    <li><strong>General usage analytics</strong> — Firebase Analytics (Google) may log approximate geographic region and device/browser type derived from your IP address. Your full IP address is never stored by the web designer.</li>
+                </ul>
+                <p class="consent-note">These services are operated under their respective privacy policies (Google Firebase / Firebase Analytics).</p>
+            </div>
+
+            <div class="consent-section">
+                <h3>Third-party libraries used locally</h3>
+                <ul>
+                    <li><strong>MediaPipe Pose</strong> (Apache 2.0 License, Google LLC) — runs entirely in your browser to detect body landmarks. No pose data, images, or video frames are sent to any external server.</li>
+                    <li><strong>SheetJS Community Edition</strong> — runs entirely in your browser to generate Excel exports. No spreadsheet data is sent to any external server.</li>
+                </ul>
+            </div>
+
+            <div class="consent-section consent-highlight">
+                <h3>What is NOT collected</h3>
+                <p>Your <strong>videos</strong>, <strong>images</strong>, and <strong>motion / pose data</strong> are processed locally in your browser only and are <em>never uploaded to any server</em> by this website.</p>
+            </div>
+
+            <div class="consent-section">
+                <p>By clicking <strong>"I Agree &amp; Continue"</strong> you acknowledge that you have read and accepted these terms. If you do not agree, please close this page.</p>
+            </div>
+
+            <div class="consent-buttons">
+                <button id="consentAgreeBtn" class="consent-btn consent-agree">I Agree &amp; Continue</button>
+                <button id="consentDeclineBtn" class="consent-btn consent-decline">I Do Not Agree</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <h1>Center of Mass (COM) Visualization</h1>
 
@@ -332,5 +372,32 @@
     </div>
 
     <script src="script.js"></script>
+
+    <script>
+        (function () {
+            const overlay = document.getElementById('consentOverlay');
+            const agreeBtn = document.getElementById('consentAgreeBtn');
+            const declineBtn = document.getElementById('consentDeclineBtn');
+
+            // If user already agreed in a previous session, hide the modal immediately
+            if (sessionStorage.getItem('consentGiven') === 'true') {
+                overlay.style.display = 'none';
+                return;
+            }
+
+            // Show the overlay (CSS default is flex, but set explicitly for clarity)
+            overlay.style.display = 'flex';
+
+            agreeBtn.addEventListener('click', function () {
+                sessionStorage.setItem('consentGiven', 'true');
+                overlay.style.display = 'none';
+            });
+
+            declineBtn.addEventListener('click', function () {
+                // Redirect away or show a closed message
+                document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Arial,sans-serif;font-size:1.2rem;color:#555;">You must agree to the terms to use this website. You may close this tab.</div>';
+            });
+        })();
+    </script>
 </body>
 </html>

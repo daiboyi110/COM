@@ -4,6 +4,130 @@
     box-sizing: border-box;
 }
 
+/* ── Consent / Privacy Modal ── */
+.consent-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    padding: 16px;
+}
+
+.consent-modal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px 36px;
+    max-width: 620px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    font-family: Arial, sans-serif;
+}
+
+.consent-modal h2 {
+    font-size: 1.5rem;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+    text-align: center;
+}
+
+.consent-subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+}
+
+.consent-section {
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #eee;
+}
+
+.consent-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 22px;
+}
+
+.consent-section h3 {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.consent-section ul {
+    padding-left: 20px;
+}
+
+.consent-section ul li {
+    margin-bottom: 6px;
+    font-size: 0.92rem;
+    color: #444;
+    line-height: 1.5;
+}
+
+.consent-section p,
+.consent-note {
+    font-size: 0.92rem;
+    color: #555;
+    line-height: 1.55;
+}
+
+.consent-note {
+    margin-top: 8px;
+    font-style: italic;
+}
+
+.consent-highlight {
+    background: #eaf4ff;
+    border-radius: 8px;
+    padding: 14px 16px;
+    border-left: 4px solid #007bff;
+}
+
+.consent-highlight h3 {
+    color: #0056b3;
+}
+
+.consent-highlight p {
+    color: #333;
+}
+
+.consent-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.consent-btn {
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.consent-btn:hover {
+    opacity: 0.85;
+}
+
+.consent-agree {
+    background: #007bff;
+    color: #fff;
+}
+
+.consent-decline {
+    background: #e9ecef;
+    color: #555;
+}
+
 body {
     font-family: Arial, sans-serif;
     background: #f0f0f0;
