@@ -66,8 +66,8 @@
             <div class="consent-section">
                 <h3>Third-party libraries used locally</h3>
                 <ul>
-                    <li><strong>MediaPipe Pose</strong> (Apache 2.0 License, Google LLC) — runs entirely in your browser to detect body landmarks. No pose data, images, or video frames are sent to any external server.</li>
-                    <li><strong>SheetJS Community Edition</strong> — runs entirely in your browser to generate Excel exports. No spreadsheet data is sent to any external server.</li>
+                    <li><strong>MediaPipe Pose</strong> (Apache 2.0 License, Google LLC) — runs entirely in your browser to detect body landmarks. No pose data, images, or video frames are sent to any external server. However, the library file is loaded from <strong>jsDelivr CDN</strong> (<code>cdn.jsdelivr.net</code>), whose servers may log your <em>exact IP address</em>, browser type, OS, and referrer as part of standard CDN access logs. See <a href="https://www.jsdelivr.com/privacy-policy-jsdelivr-net" target="_blank" rel="noopener">jsDelivr's Privacy Policy</a>.</li>
+                    <li><strong>SheetJS Community Edition</strong> — runs entirely in your browser to generate Excel exports. No spreadsheet data is sent to any external server. However, the library file is loaded from <strong>SheetJS CDN</strong> (<code>cdn.sheetjs.com</code>), whose servers may log your <em>exact IP address</em>, browser type, OS, and referrer as part of standard CDN access logs. See <a href="https://sheetjs.com/privacy" target="_blank" rel="noopener">SheetJS's Privacy Policy</a>.</li>
                 </ul>
             </div>
 
