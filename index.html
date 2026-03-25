@@ -51,33 +51,129 @@
     <div id="consentOverlay" class="consent-overlay">
         <div class="consent-modal">
             <h2>Data &amp; Privacy Notice</h2>
-            <p class="consent-subtitle">Please read carefully before using this website.</p>
+            <p class="consent-subtitle">Please read carefully before using this website. You must agree to continue.</p>
 
+            <!-- 1. What data is collected -->
             <div class="consent-section">
-                <h3>What data is collected</h3>
+                <h3>1. What data is collected and by whom</h3>
                 <ul>
-                    <li><strong>Visit counter</strong> — a total visit count is stored in a Firebase Realtime Database operated by the web designer. No personal information or IP address is associated with this count.</li>
-                    <li><strong>General usage analytics</strong> — Firebase Analytics (Google) may log your approximate geographic region and device/browser type derived from your IP address. Your <em>exact</em> IP address is <strong>not stored</strong> by the web designer. Google may retain IP-derived data per its own privacy policy; IP anonymization is enabled where supported.</li>
-                    <li><strong>GitHub Pages (website host)</strong> — this website is served via GitHub Pages (GitHub, Inc.). GitHub's servers may automatically record your <em>exact IP address</em> in server access logs as part of standard web hosting operations. This is outside the web designer's control. See <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub's Privacy Statement</a> for details.</li>
+                    <li>
+                        <strong>Visit counter</strong> — a single anonymised count is incremented in a Firebase Realtime Database operated by the web designer each time a new browser session begins. <em>No IP address, name, or any personal identifier is stored alongside this number.</em>
+                    </li>
+                    <li>
+                        <strong>Firebase Analytics (Google LLC)</strong> — Firebase Analytics is active on this site. Google may collect your approximate geographic region, device type, browser type, operating system, language, and session duration. Your <em>exact IP address is not stored</em> by the web designer; Google applies IP anonymisation where supported. Google may use this data in accordance with its own privacy policy.
+                        See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.
+                    </li>
+                    <li>
+                        <strong>Firebase SDK — Google CDN (<code>gstatic.com</code>)</strong> — the Firebase JavaScript libraries are loaded from Google's own CDN (<code>www.gstatic.com</code>). When your browser fetches these three script files on page load, Google's CDN servers may log your <em>exact IP address</em>, browser User-Agent (browser name, version, OS), referrer URL, and request timestamp. This occurs before any user interaction and is outside the web designer's control.
+                    </li>
+                    <li>
+                        <strong>Firebase Realtime Database connection</strong> — when the page initialises, it opens a live HTTPS/WebSocket connection to Google Firebase servers (<code>pose-b0689-default-rtdb.firebaseio.com</code>) to update the visit counter. Google Firebase servers may log your <em>exact IP address</em> and connection metadata as part of this request.
+                    </li>
+                    <li>
+                        <strong>GitHub Pages (website host)</strong> — this website is hosted on GitHub Pages (GitHub, Inc., a Microsoft subsidiary). GitHub's web servers may automatically record your <em>exact IP address</em>, browser User-Agent, referrer, and request timestamp in standard server access logs for every page request. This is a standard practice of all web hosts and is entirely outside the web designer's control.
+                        See <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub's Privacy Statement</a>.
+                    </li>
                 </ul>
-                <p class="consent-note">These services are operated under their respective privacy policies (Google Firebase / Firebase Analytics / GitHub).</p>
+                <p class="consent-note">Summary of exact IP address storage by party: <strong>Web designer — NO &nbsp;|&nbsp; Google Firebase Analytics — NO (anonymised) &nbsp;|&nbsp; Google Firebase CDN / Database — YES (server logs) &nbsp;|&nbsp; GitHub Pages — YES (server logs) &nbsp;|&nbsp; jsDelivr CDN — YES (server logs) &nbsp;|&nbsp; SheetJS CDN — YES (server logs)</strong></p>
             </div>
 
+            <!-- 2. Third-party libraries -->
             <div class="consent-section">
-                <h3>Third-party libraries used locally</h3>
+                <h3>2. Third-party libraries — CDN metadata</h3>
+                <p>The following libraries run entirely within your browser and perform no analysis on any server. However, your browser must download each library file from an external CDN when the page first loads. Each CDN request exposes your <em>exact IP address</em>, browser type, OS, and referrer to that CDN provider:</p>
                 <ul>
-                    <li><strong>MediaPipe Pose</strong> (Apache 2.0 License, Google LLC) — runs entirely in your browser to detect body landmarks. No pose data, images, or video frames are sent to any external server. However, the library file is loaded from <strong>jsDelivr CDN</strong> (<code>cdn.jsdelivr.net</code>), whose servers may log your <em>exact IP address</em>, browser type, OS, and referrer as part of standard CDN access logs. See <a href="https://www.jsdelivr.com/privacy-policy-jsdelivr-net" target="_blank" rel="noopener">jsDelivr's Privacy Policy</a>.</li>
-                    <li><strong>SheetJS Community Edition</strong> — runs entirely in your browser to generate Excel exports. No spreadsheet data is sent to any external server. However, the library file is loaded from <strong>SheetJS CDN</strong> (<code>cdn.sheetjs.com</code>), whose servers may log your <em>exact IP address</em>, browser type, OS, and referrer as part of standard CDN access logs. See <a href="https://sheetjs.com/privacy" target="_blank" rel="noopener">SheetJS's Privacy Policy</a>.</li>
+                    <li>
+                        <strong>MediaPipe Pose</strong> (Apache 2.0 License, Google LLC) — four library files are fetched from <strong>jsDelivr CDN</strong> (<code>cdn.jsdelivr.net</code>). jsDelivr may log your exact IP address and connection metadata.
+                        See <a href="https://www.jsdelivr.com/privacy-policy-jsdelivr-net" target="_blank" rel="noopener">jsDelivr's Privacy Policy</a>. Once downloaded, all pose detection runs locally using your device's CPU/GPU via WebAssembly; no video frames, images, or landmark data are ever transmitted.
+                    </li>
+                    <li>
+                        <strong>SheetJS Community Edition</strong> — one library file is fetched from <strong>SheetJS CDN</strong> (<code>cdn.sheetjs.com</code>). SheetJS's CDN provider may log your exact IP address and connection metadata.
+                        See <a href="https://sheetjs.com/privacy" target="_blank" rel="noopener">SheetJS's Privacy Policy</a>. Once downloaded, all Excel file generation runs locally; no spreadsheet data is ever transmitted.
+                    </li>
                 </ul>
             </div>
 
+            <!-- 3. Camera access -->
+            <div class="consent-section">
+                <h3>3. Camera access</h3>
+                <p>If you choose to use the live camera feature, your browser will display a permission prompt asking for access to your camera. Please note:</p>
+                <ul>
+                    <li>Camera access is <strong>optional</strong> — the tool also works with uploaded video files and images without any camera permission.</li>
+                    <li>The live camera feed is processed <strong>entirely within your browser</strong> by MediaPipe Pose. <em>No video frames or images from your camera are ever transmitted to any server.</em></li>
+                    <li>The web designer has <strong>no access</strong> to your camera feed at any time.</li>
+                    <li>You can revoke camera permission at any time through your browser settings.</li>
+                    <li><strong>Microphone access is never requested</strong> by this website.</li>
+                </ul>
+            </div>
+
+            <!-- 4. Cookies and local storage -->
+            <div class="consent-section">
+                <h3>4. Cookies and browser storage</h3>
+                <ul>
+                    <li><strong>Google Analytics cookies</strong> — Firebase Analytics may set first-party cookies (such as <code>_ga</code> and <code>_gid</code>) in your browser to distinguish unique sessions and users. These cookies are set and read by Google's analytics scripts and are subject to Google's cookie policy. You can block or delete these cookies through your browser settings.</li>
+                    <li><strong>sessionStorage (local only)</strong> — this website stores two small flags in your browser's sessionStorage: one to record that you have given consent, and one to avoid counting the same browser session twice in the visit counter. sessionStorage data is stored <em>only on your device</em>, is never transmitted to any server, and is automatically deleted when you close the browser tab.</li>
+                    <li><strong>No tracking cookies by the web designer</strong> — the web designer does not set any cookies, does not use any cross-site tracking technology, and does not perform browser fingerprinting.</li>
+                </ul>
+            </div>
+
+            <!-- 5. What is NOT collected -->
             <div class="consent-section consent-highlight">
-                <h3>What is NOT collected</h3>
-                <p>Your <strong>videos</strong>, <strong>images</strong>, and <strong>motion / pose data</strong> are processed locally in your browser only and are <em>never uploaded to any server</em> by this website.</p>
+                <h3>5. What is NOT collected or uploaded</h3>
+                <ul>
+                    <li>Your <strong>uploaded videos</strong> and <strong>images</strong> — processed locally in your browser only, never uploaded.</li>
+                    <li>Your <strong>pose / motion / landmark data</strong> — computed locally, never transmitted.</li>
+                    <li>Your <strong>exported Excel files</strong> — generated locally and saved directly to your device; no data is sent to any server during export.</li>
+                    <li>Your <strong>name, email, or any account information</strong> — this website has no user accounts and no login system.</li>
+                    <li><strong>Microphone audio</strong> — never requested or accessed.</li>
+                    <li><strong>Browser fingerprint or device identifiers</strong> — not collected by the web designer.</li>
+                </ul>
             </div>
 
+            <!-- 6. Data retention -->
             <div class="consent-section">
-                <p>By clicking <strong>"I Agree &amp; Continue"</strong> you acknowledge that you have read and accepted these terms. If you do not agree, please close this page.</p>
+                <h3>6. Data retention</h3>
+                <ul>
+                    <li><strong>Visit counter (web designer / Firebase)</strong> — the anonymous count is retained indefinitely as an aggregate number with no personal data attached.</li>
+                    <li><strong>Google Firebase Analytics</strong> — Google retains analytics data for up to 26 months by default, subject to Google's data retention settings and privacy policy.</li>
+                    <li><strong>CDN access logs</strong> (Google gstatic.com, jsDelivr, SheetJS CDN) — retention periods are governed by each provider's own policy.</li>
+                    <li><strong>GitHub Pages server logs</strong> — governed by GitHub's privacy statement; typically retained for a limited period for security and operational purposes.</li>
+                    <li><strong>sessionStorage</strong> — deleted automatically when you close the browser tab.</li>
+                </ul>
+            </div>
+
+            <!-- 7. Security -->
+            <div class="consent-section">
+                <h3>7. Security</h3>
+                <ul>
+                    <li>All connections between your browser and external services (GitHub Pages, Firebase, CDNs) use <strong>HTTPS encryption</strong>.</li>
+                    <li>No user-generated content (videos, images, pose data) is stored on any server.</li>
+                    <li>The web designer does not have access to any server logs held by GitHub, Google, jsDelivr, or SheetJS.</li>
+                </ul>
+            </div>
+
+            <!-- 8. Children's privacy -->
+            <div class="consent-section">
+                <h3>8. Children's privacy</h3>
+                <p>This website is not directed at children under the age of 13. The web designer does not knowingly collect any personal information from children. If you are under 13, please do not use this website without parental consent. If you believe a child has provided personal information through this site, please contact the web designer.</p>
+            </div>
+
+            <!-- 9. Your rights -->
+            <div class="consent-section">
+                <h3>9. Your rights (GDPR / CCPA)</h3>
+                <p>Because the web designer does not collect or store any personal data, most data subject rights (access, deletion, portability) must be exercised directly with the third-party services that do hold connection metadata:</p>
+                <ul>
+                    <li><strong>Google (Firebase / Analytics / gstatic.com)</strong> — <a href="https://myaccount.google.com/data-and-privacy" target="_blank" rel="noopener">Google Account Privacy Controls</a></li>
+                    <li><strong>GitHub (GitHub Pages)</strong> — <a href="https://support.github.com/contact/privacy" target="_blank" rel="noopener">GitHub Privacy Request</a></li>
+                    <li><strong>jsDelivr</strong> — <a href="https://www.jsdelivr.com/privacy-policy-jsdelivr-net" target="_blank" rel="noopener">jsDelivr Privacy Policy</a></li>
+                    <li><strong>SheetJS</strong> — <a href="https://sheetjs.com/privacy" target="_blank" rel="noopener">SheetJS Privacy Policy</a></li>
+                </ul>
+                <p>California residents (CCPA) and EU/UK residents (GDPR) may have additional rights under applicable law, including the right to know what data is collected, the right to opt out of sale of personal data (no data is sold by the web designer), and the right to non-discrimination.</p>
+            </div>
+
+            <!-- 10. Agreement -->
+            <div class="consent-section">
+                <p>By clicking <strong>"I Agree &amp; Continue"</strong> you confirm that you are 13 years of age or older, have read and understood this notice, and agree to the data practices described above. If you do not agree, please close this page.</p>
             </div>
 
             <div class="consent-buttons">
