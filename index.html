@@ -62,26 +62,25 @@
                 </ul>
             </div>
 
-            <!-- IP address quick-reference -->
-            <div class="consent-section">
-                <h3>Who may log your IP address</h3>
-                <ul>
-                    <li><strong>Web designer</strong> — NO</li>
-                    <li><strong>Google Firebase Analytics</strong> — NO (anonymised)</li>
-                    <li><strong>Google Firebase CDN / Database</strong> — YES (server logs)</li>
-                    <li><strong>GitHub Pages</strong> — YES (server logs)</li>
-                    <li><strong>jsDelivr CDN</strong> — YES (server logs)</li>
-                    <li><strong>SheetJS CDN</strong> — YES (server logs)</li>
-                </ul>
-                <p class="consent-note">IP logging by these third-party services occurs as a standard part of web hosting and CDN operations and is outside the web designer's control.</p>
-            </div>
-
             <!-- Additional information — collapsible -->
             <div class="consent-section" style="border-bottom:none;margin-bottom:10px;">
                 <p style="font-size:0.9rem;color:#555;margin-bottom:10px;">For full details, expand the sections below:</p>
 
                 <details class="consent-details">
-                    <summary>1. What data is collected and by whom</summary>
+                    <summary>1. Who may log your IP address</summary>
+                    <ul>
+                        <li><strong>Web designer</strong> — NO</li>
+                        <li><strong>Google Firebase Analytics</strong> — NO (anonymised)</li>
+                        <li><strong>Google Firebase CDN / Database</strong> — YES (server logs)</li>
+                        <li><strong>GitHub Pages</strong> — YES (server logs)</li>
+                        <li><strong>jsDelivr CDN</strong> — YES (server logs)</li>
+                        <li><strong>SheetJS CDN</strong> — YES (server logs)</li>
+                    </ul>
+                    <p>IP logging by these third-party services occurs as a standard part of web hosting and CDN operations and is outside the web designer's control.</p>
+                </details>
+
+                <details class="consent-details">
+                    <summary>2. What data is collected and by whom</summary>
                     <ul>
                         <li><strong>Visit counter</strong> — a single anonymised count is incremented in a Firebase Realtime Database operated by the web designer each time a new browser session begins. No IP address, name, or personal identifier is stored.</li>
                         <li><strong>Firebase Analytics (Google LLC)</strong> — may collect approximate geographic region, device type, browser type, OS, language, and session duration. Exact IP is not stored by the web designer; Google applies IP anonymisation where supported. See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.</li>
@@ -92,7 +91,7 @@
                 </details>
 
                 <details class="consent-details">
-                    <summary>2. Third-party libraries — CDN metadata</summary>
+                    <summary>3. Third-party libraries — CDN metadata</summary>
                     <p>These libraries run entirely in your browser. However, each file is downloaded from an external CDN on first load, exposing your exact IP address, browser type, OS, and referrer to that CDN:</p>
                     <ul>
                         <li><strong>MediaPipe Pose</strong> (Apache 2.0 License, Google LLC) — loaded from jsDelivr CDN (<code>cdn.jsdelivr.net</code>). All pose detection runs locally via WebAssembly; no frames, images, or landmarks are ever transmitted. See <a href="https://www.jsdelivr.com/privacy-policy-jsdelivr-net" target="_blank" rel="noopener">jsDelivr's Privacy Policy</a>.</li>
@@ -101,7 +100,7 @@
                 </details>
 
                 <details class="consent-details">
-                    <summary>3. Camera access</summary>
+                    <summary>4. Camera access</summary>
                     <ul>
                         <li>Camera access is <strong>optional</strong> — the tool also works with uploaded video files and images.</li>
                         <li>The live camera feed is processed entirely within your browser by MediaPipe Pose. No video frames are ever transmitted to any server.</li>
@@ -112,7 +111,7 @@
                 </details>
 
                 <details class="consent-details">
-                    <summary>4. Cookies and browser storage</summary>
+                    <summary>5. Cookies and browser storage</summary>
                     <ul>
                         <li><strong>Google Analytics cookies</strong> — Firebase Analytics may set cookies (<code>_ga</code>, <code>_gid</code>) to distinguish sessions. These are governed by Google's cookie policy and can be blocked or deleted via your browser settings.</li>
                         <li><strong>sessionStorage (local only)</strong> — two small flags are stored locally: one for consent, one to avoid double-counting visits. This data is never transmitted and is deleted when you close the tab.</li>
@@ -121,7 +120,7 @@
                 </details>
 
                 <details class="consent-details">
-                    <summary>5. Data retention</summary>
+                    <summary>6. Data retention</summary>
                     <ul>
                         <li><strong>Visit counter</strong> — anonymous aggregate number, retained indefinitely with no personal data.</li>
                         <li><strong>Google Firebase Analytics</strong> — up to 26 months by default, per Google's policy.</li>
@@ -132,7 +131,7 @@
                 </details>
 
                 <details class="consent-details">
-                    <summary>6. Security</summary>
+                    <summary>7. Security</summary>
                     <ul>
                         <li>All connections use <strong>HTTPS encryption</strong>.</li>
                         <li>No user-generated content (videos, images, pose data) is stored on any server.</li>
@@ -141,12 +140,12 @@
                 </details>
 
                 <details class="consent-details">
-                    <summary>7. Children's privacy</summary>
+                    <summary>8. Children's privacy</summary>
                     <p>This website is suitable for all ages. The web designer does not collect any personal information from any user. Third-party services (Google Firebase, GitHub Pages, CDN providers) may log connection metadata for all visitors regardless of age. <strong>If you are under 13, we recommend using this website with a parent or guardian's knowledge and permission.</strong></p>
                 </details>
 
                 <details class="consent-details">
-                    <summary>8. Your rights (GDPR / CCPA)</summary>
+                    <summary>9. Your rights (GDPR / CCPA)</summary>
                     <p>The web designer holds no personal data. Data subject rights (access, deletion, portability) must be exercised directly with the relevant third parties:</p>
                     <ul>
                         <li><strong>Google</strong> — <a href="https://myaccount.google.com/data-and-privacy" target="_blank" rel="noopener">Google Account Privacy Controls</a></li>
