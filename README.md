@@ -481,13 +481,13 @@ All processing happens **locally in your browser**. No video, image, or pose dat
 - Gait analysis and postural assessment
 - Sports performance analysis
 - Rehabilitation monitoring
-- Ergonomics research
+- Ergonomics
 - Motion capture for animation reference
 - Physical therapy progress tracking
 
 ## Citations
 
-If you use this tool for research, please cite:
+Please cite:
 
 ### Segment Inertial Parameters
 [^1]: de Leva P. (1996). Adjustments to Zatsiorsky-Seluyanov's segment inertia parameters. *Journal of Biomechanics*, 29(9):1223-1230. doi: [10.1016/0021-9290(95)00178-6](https://doi.org/10.1016/0021-9290(95)00178-6)
