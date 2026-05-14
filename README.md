@@ -506,6 +506,21 @@ If you use this tool for research, please cite:
 }
 ```
 
+### Sports Biomechanics Theory
+Dai, B., Hughes, G., & Leigh, S. (2026). *Sports Biomechanics: Theories, Examples, and Data Analysis* (1st ed.). Elsevier. https://shop.elsevier.com/books/sports-biomechanics/dai/978-0-443-32814-5
+
+```bibtex
+@book{dai2026,
+  title={Sports Biomechanics: Theories, Examples, and Data Analysis},
+  author={Dai, Boyi and Hughes, Gerwyn and Leigh, Steven},
+  edition={1st},
+  publisher={Elsevier},
+  year={2026},
+  isbn={9780443328145},
+  url={https://shop.elsevier.com/books/sports-biomechanics/dai/978-0-443-32814-5}
+}
+```
+
 ### MediaPipe Pose Estimation
 ```bibtex
 @article{mediapipe2019,
