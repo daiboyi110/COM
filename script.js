@@ -2251,12 +2251,10 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
     // Draw line connecting the two points
     context.strokeStyle = '#FFFFFF'; // White
     context.lineWidth = 6;
-    context.setLineDash([10, 5]); // Dashed line
     context.beginPath();
     context.moveTo(x1, y1);
     context.lineTo(x2, y2);
     context.stroke();
-    context.setLineDash([]); // Reset to solid line
 
     // Draw Point 1
     const isDraggingPoint1 = draggedCalibrationPoint === 'point1';
