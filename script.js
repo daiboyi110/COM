@@ -2260,11 +2260,9 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
 
     // Draw Point 1
     const isDraggingPoint1 = draggedCalibrationPoint === 'point1';
-    context.fillStyle = isDraggingPoint1 ? '#FFFF00' : '#00FFFF'; // Yellow if dragging, cyan otherwise
     context.beginPath();
-    context.arc(x1, y1, isDraggingPoint1 ? 12 : 8, 0, 2 * Math.PI);
-    context.fill();
-    context.strokeStyle = '#000000';
+    context.arc(x1, y1, isDraggingPoint1 ? 10 : 6, 0, 2 * Math.PI);
+    context.strokeStyle = isDraggingPoint1 ? '#FFFF00' : '#00FFFF';
     context.lineWidth = 2;
     context.stroke();
 
@@ -2278,11 +2276,9 @@ function drawCalibrationPoints(context, width, height, point1, point2, scaleLeng
 
     // Draw Point 2
     const isDraggingPoint2 = draggedCalibrationPoint === 'point2';
-    context.fillStyle = isDraggingPoint2 ? '#FFFF00' : '#00FFFF'; // Yellow if dragging, cyan otherwise
     context.beginPath();
-    context.arc(x2, y2, isDraggingPoint2 ? 12 : 8, 0, 2 * Math.PI);
-    context.fill();
-    context.strokeStyle = '#000000';
+    context.arc(x2, y2, isDraggingPoint2 ? 10 : 6, 0, 2 * Math.PI);
+    context.strokeStyle = isDraggingPoint2 ? '#FFFF00' : '#00FFFF';
     context.lineWidth = 2;
     context.stroke();
 
