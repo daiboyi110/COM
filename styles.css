@@ -246,6 +246,58 @@ h1 {
     background: #5a6268;
 }
 
+/* ── Tutorials & Resources Section ── */
+.resources-section {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: #f0f4ff;
+    border-radius: 10px;
+    border: 1px solid #d0d9f0;
+}
+
+.resources-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.resources-group h3 {
+    font-size: 15px;
+    color: #333;
+    margin: 0;
+}
+
+.resources-links {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.resource-btn {
+    display: inline-block;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    background: #5a7fcb;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(90, 127, 203, 0.25);
+}
+
+.resource-btn:hover {
+    background: #3a5fa8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(90, 127, 203, 0.35);
+}
+
 #videoInput, #imageInput {
     padding: 10px;
     font-size: 16px;
